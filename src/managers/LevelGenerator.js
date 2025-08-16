@@ -355,6 +355,8 @@ export default class LevelGenerator {
             // Debug logging for Arctic theme
             if (this.scene.currentTheme.name === 'arctic' && type === 'fish') {
                 console.log(`Arctic: Created fish at (${x.toFixed(0)}, ${y.toFixed(0)}), texture: ${collectible.texture.key}`);
+                console.log(`  Body enabled: ${collectible.body?.enable}, visible: ${collectible.visible}, depth: ${collectible.depth}`);
+                console.log(`  Body size: ${collectible.body?.width}x${collectible.body?.height}`);
             }
         }
         

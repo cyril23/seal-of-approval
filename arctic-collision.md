@@ -70,10 +70,42 @@ onUpdate: () => {
 4. Fish should disappear and score should increase
 
 ## Status
-✅ **FIXED in Version 9.4** - Arctic-specific body update removed, collision detection restored.
+❌ **ISSUE PERSISTS in Version 1.0** - Arctic fish collision still not working despite v9.4 fix
+
+## Version 1.1 Investigation ⚠️
+
+### Additional Debug Logging Added
+Enhanced logging in three areas to diagnose the issue:
+
+1. **LevelGenerator.js**: Log body state when creating Arctic fish
+   - Body enabled status
+   - Body dimensions
+   - Visibility and depth
+
+2. **GameScene.js setupCollisions()**: Log collectibles group info
+   - Total collectibles count
+   - Fish count in Arctic theme
+
+3. **GameScene.js update()**: Periodic debug every 2 seconds
+   - Fish position and distance to player
+   - Body enabled state
+   - Body dimensions
+
+### Current Hypothesis
+The issue may be related to:
+- Physics body initialization timing
+- Arctic-specific rendering or depth issues
+- Collectible group addition sequence
+- Body enable state corruption
+
+### Next Steps
+1. Run game with enhanced logging
+2. Check if bodies are properly enabled
+3. Verify collectibles are added to physics group
+4. Test if manual body.enable = true fixes it
 
 ## Technical Notes
-- The bobbing animation continues to work via `updateFromGameObject()`
-- No special handling needed for Arctic theme
-- Physics bodies remain properly synchronized with visual positions
-- Collision detection works consistently across all themes
+- The bobbing animation works via `updateFromGameObject()`
+- No Arctic-specific code in Collectible.js (unified across themes)
+- Physics bodies should be synchronized with visual positions
+- Other themes work correctly, suggesting Arctic-specific issue

@@ -4,7 +4,7 @@ import { PHYSICS, PLAYER } from '../utils/constants.js';
 export default class Seal {
     constructor(scene, x, y) {
         // Version tracking for cache verification
-        console.log('Seal.js Version: 9.5 - Fixed critical undefined variable bug in LevelGenerator');
+        console.log('Seal.js Version: 1.1 - Fixed floating issue and Arctic collision');
         
         this.scene = scene;
         this.sprite = scene.physics.add.sprite(x, y, 'seal');
@@ -197,10 +197,18 @@ export default class Seal {
                 this.sprite.x = oldX; // Maintain X position
                 this.sprite.y = targetSpriteY;
                 
-                // Version 9.4: Manually set body position to ensure correctness
-                // This ensures the body is exactly where we want it
-                this.sprite.body.position.x = this.sprite.x - this.sprite.body.halfWidth;
-                this.sprite.body.position.y = targetBodyY;
+                // Version 1.1: Use Phaser's update method then fine-tune position
+                // First let Phaser update the body based on sprite position
+                this.sprite.body.updateFromGameObject();
+                
+                // Then adjust if there's still a gap
+                const currentBodyBottom = this.sprite.body.y + this.sprite.body.height;
+                const gap = currentBodyBottom - platformTop;
+                if (Math.abs(gap) > 1) {
+                    // Adjust sprite position to close the gap
+                    this.sprite.y -= gap;
+                    this.sprite.body.updateFromGameObject();
+                }
                 
                 // Enable collision skip for 2 frames
                 this.skipCollisionFrames = 2;

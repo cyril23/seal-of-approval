@@ -159,6 +159,13 @@ export default class GameScene extends Phaser.Scene {
             this.handleCollectiblePickup(collectible);
         });
         
+        // Debug: Log collectibles group info for Arctic theme
+        if (this.currentTheme.name === 'arctic') {
+            console.log(`Arctic theme: Collectibles group has ${this.collectibles.children.entries.length} items`);
+            const fishCount = this.collectibles.children.entries.filter(c => c.getData('collectibleData')?.type === 'fish').length;
+            console.log(`Arctic theme: ${fishCount} fish in collectibles group`);
+        }
+        
         this.physics.add.overlap(this.player.sprite, this.enemies, (player, enemy) => {
             this.handleEnemyCollision(enemy);
         });
@@ -513,6 +520,8 @@ export default class GameScene extends Phaser.Scene {
         levelCompleteText.setOrigin(0.5);
         
         this.time.delayedCall(2000, () => {
+            // Stop background music before restarting scene to prevent overlap
+            this.audioManager.stopBackgroundMusic();
             this.scene.restart({ level: this.currentLevel });
         });
     }
@@ -529,6 +538,21 @@ export default class GameScene extends Phaser.Scene {
     }
 
     update() {
+        // Debug Arctic fish collision every 2 seconds
+        if (!this.arcticDebugTimer) this.arcticDebugTimer = 0;
+        this.arcticDebugTimer++;
+        if (this.arcticDebugTimer > 120 && this.currentTheme.name === 'arctic') {
+            this.arcticDebugTimer = 0;
+            const fish = this.collectibles.children.entries.filter(c => c.getData('collectibleData')?.type === 'fish');
+            if (fish.length > 0) {
+                const firstFish = fish[0];
+                const distance = Phaser.Math.Distance.Between(this.player.sprite.x, this.player.sprite.y, firstFish.x, firstFish.y);
+                console.log(`Arctic debug: First fish at (${firstFish.x.toFixed(0)}, ${firstFish.y.toFixed(0)}), distance: ${distance.toFixed(0)}`);
+                console.log(`  Fish body: enabled=${firstFish.body?.enable}, size=${firstFish.body?.width}x${firstFish.body?.height}`);
+                console.log(`  Player at: (${this.player.sprite.x.toFixed(0)}, ${this.player.sprite.y.toFixed(0)})`);
+            }
+        }
+        
         if (!this.isPaused) {
             this.player.update(this.cursors, this.spaceKey);
             
