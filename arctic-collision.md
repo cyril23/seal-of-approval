@@ -70,39 +70,49 @@ onUpdate: () => {
 4. Fish should disappear and score should increase
 
 ## Status
-❌ **ISSUE PERSISTS in Version 1.0** - Arctic fish collision still not working despite v9.4 fix
+⚠️ **PARTIALLY FIXED in Version 1.2** - Texture issue identified but polar_bear still breaks Arctic!
 
-## Version 1.1 Investigation ⚠️
+## Root Cause Discovered 🎯
+The `polar_bear` enemy had a texture loading issue that broke ALL collision detection in Arctic theme!
 
-### Additional Debug Logging Added
-Enhanced logging in three areas to diagnose the issue:
+### The Bug
+```javascript
+// Enemy.js line 6 (BROKEN):
+const textureKey = type.toLowerCase().replace('_', ''); 
+// This converted 'polar_bear' to 'polarbear' (removed underscore)
 
-1. **LevelGenerator.js**: Log body state when creating Arctic fish
-   - Body enabled status
-   - Body dimensions
-   - Visibility and depth
+// But PreloadScene created texture as 'polar_bear' (with underscore)
+this.textures.addCanvas(key.toLowerCase(), canvas); // 'POLAR_BEAR' -> 'polar_bear'
+```
 
-2. **GameScene.js setupCollisions()**: Log collectibles group info
-   - Total collectibles count
-   - Fish count in Arctic theme
+**Result**: Enemy tried to load non-existent texture 'polarbear', causing physics system failure!
 
-3. **GameScene.js update()**: Periodic debug every 2 seconds
-   - Fish position and distance to player
-   - Body enabled state
-   - Body dimensions
+## Version 1.2 Partial Fix ⚠️
 
-### Current Hypothesis
-The issue may be related to:
-- Physics body initialization timing
-- Arctic-specific rendering or depth issues
-- Collectible group addition sequence
-- Body enable state corruption
+### What We Fixed
+Corrected the texture key mismatch in Enemy.js:
+```javascript
+// Fixed line 6:
+const textureKey = type.toLowerCase(); // Now keeps 'polar_bear' intact
+```
 
-### Next Steps
-1. Run game with enhanced logging
-2. Check if bodies are properly enabled
-3. Verify collectibles are added to physics group
-4. Test if manual body.enable = true fixes it
+### What's Still Broken
+**POLAR_BEAR STILL BREAKS ARCTIC COLLISION!** Even with correct texture loading:
+- When polar_bear is present, ALL collisions fail in Arctic
+- Commenting out polar_bear from enemies array fixes it
+- Replacing polar_bear with any other enemy fixes it
+- Issue is specific to polar_bear enemy, not just texture loading
+
+### Current Workaround
+In constants.js, Arctic theme has polar_bear commented out:
+```javascript
+enemies: ['human'] // polar_bear removed until fixed
+```
+
+### Next Investigation Needed
+1. Check if polar_bear's charge behavior corrupts physics
+2. Investigate if detection range calculation breaks collision system
+3. Test if polar_bear's tint/color changes affect collision detection
 
 ## Technical Notes
 - The bobbing animation works via `updateFromGameObject()`

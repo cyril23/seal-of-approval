@@ -3,7 +3,8 @@ import { ENEMIES } from '../utils/constants.js';
 
 export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     constructor(scene, x, y, type) {
-        const textureKey = type.toLowerCase().replace('_', '');
+        // Version 1.2: Keep underscore for polar_bear texture key
+        const textureKey = type.toLowerCase();
         super(scene, x, y, textureKey);
         
         scene.add.existing(this);

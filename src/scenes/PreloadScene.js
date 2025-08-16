@@ -8,7 +8,7 @@ export default class PreloadScene extends Phaser.Scene {
 
     preload() {
         const loadingBar = document.getElementById('loading-bar');
-        
+
         this.load.on('progress', (value) => {
             if (loadingBar) {
                 loadingBar.style.width = `${value * 100}%`;
@@ -37,7 +37,7 @@ export default class PreloadScene extends Phaser.Scene {
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(emoji, 16, 16);
-            
+
             this.textures.addCanvas(key.toLowerCase(), canvas);
         });
 
@@ -47,14 +47,14 @@ export default class PreloadScene extends Phaser.Scene {
 
     createPlatformTexture() {
         const graphics = this.add.graphics();
-        
+
         graphics.fillStyle(0x4A5859, 1);
         graphics.fillRect(0, 0, 16, 16);
         graphics.fillStyle(0x5A6869, 1);
         graphics.fillRect(0, 0, 16, 2);
         graphics.fillStyle(0x3A4849, 1);
         graphics.fillRect(0, 14, 16, 2);
-        
+
         graphics.generateTexture('platform', 16, 16);
         graphics.destroy();
     }
@@ -76,7 +76,7 @@ export default class PreloadScene extends Phaser.Scene {
         themes.forEach(theme => {
             graphics.clear();
             const [color1, color2] = colors[theme];
-            
+
             // Draw gradient background
             for (let i = 0; i < height; i++) {
                 const ratio = i / height;
@@ -86,24 +86,24 @@ export default class PreloadScene extends Phaser.Scene {
                 const r2 = (color2 >> 16) & 0xFF;
                 const g2 = (color2 >> 8) & 0xFF;
                 const b2 = color2 & 0xFF;
-                
+
                 const r = Math.floor(r1 + (r2 - r1) * ratio);
                 const g = Math.floor(g1 + (g2 - g1) * ratio);
                 const b = Math.floor(b1 + (b2 - b1) * ratio);
-                
+
                 graphics.fillStyle((r << 16) | (g << 8) | b, 1);
                 graphics.fillRect(0, i, width, 1);
             }
-            
+
             // Add themed elements
             this.addThemedElements(graphics, theme, width, height);
-            
+
             graphics.generateTexture(`bg_${theme}`, width, height);
         });
-        
+
         graphics.destroy();
     }
-    
+
     addThemedElements(graphics, theme, width, height) {
         switch(theme) {
             case 'arctic':
@@ -111,7 +111,7 @@ export default class PreloadScene extends Phaser.Scene {
                 graphics.fillStyle(0xFFFFFF, 0.8);
                 graphics.fillTriangle(100, height - 100, 200, height - 250, 300, height - 100);
                 graphics.fillTriangle(500, height - 80, 600, height - 200, 700, height - 80);
-                
+
                 // Add snow dots
                 graphics.fillStyle(0xFFFFFF, 0.6);
                 for (let i = 0; i < 50; i++) {
@@ -119,32 +119,24 @@ export default class PreloadScene extends Phaser.Scene {
                     const y = Math.random() * height;
                     graphics.fillCircle(x, y, 2);
                 }
-                
-                // Aurora effect
-                graphics.lineStyle(3, 0x00FF00, 0.3);
-                graphics.beginPath();
-                graphics.moveTo(0, 100);
-                for (let x = 0; x < width; x += 50) {
-                    graphics.lineTo(x, 100 + Math.sin(x * 0.01) * 30);
-                }
-                graphics.strokePath();
+
                 break;
-                
+
             case 'beach':
                 // Sun
                 graphics.fillStyle(0xFFDD00, 0.9);
                 graphics.fillCircle(width - 150, 150, 60);
-                
+
                 // Palm trees
                 graphics.fillStyle(0x8B4513, 1);
                 graphics.fillRect(150, height - 200, 20, 150);
                 graphics.fillRect(650, height - 180, 20, 130);
-                
+
                 // Palm leaves
                 graphics.fillStyle(0x228B22, 1);
                 graphics.fillTriangle(160, height - 200, 120, height - 170, 200, height - 170);
                 graphics.fillTriangle(660, height - 180, 620, height - 150, 700, height - 150);
-                
+
                 // Wave pattern
                 graphics.lineStyle(2, 0x4682B4, 0.5);
                 for (let y = height - 60; y < height; y += 15) {
@@ -156,7 +148,7 @@ export default class PreloadScene extends Phaser.Scene {
                     graphics.strokePath();
                 }
                 break;
-                
+
             case 'city':
                 // Buildings silhouettes
                 graphics.fillStyle(0x4A4A4A, 0.8);
@@ -166,7 +158,7 @@ export default class PreloadScene extends Phaser.Scene {
                 graphics.fillRect(450, height - 450, 120, 400);
                 graphics.fillRect(600, height - 320, 100, 270);
                 graphics.fillRect(750, height - 380, 80, 330);
-                
+
                 // Windows
                 graphics.fillStyle(0xFFFF99, 0.7);
                 for (let b = 0; b < 6; b++) {
@@ -180,14 +172,14 @@ export default class PreloadScene extends Phaser.Scene {
                         }
                     }
                 }
-                
+
                 // Street lights
                 graphics.fillStyle(0xFFFFAA, 0.6);
                 graphics.fillCircle(100, height - 50, 15);
                 graphics.fillCircle(400, height - 50, 15);
                 graphics.fillCircle(700, height - 50, 15);
                 break;
-                
+
             case 'ocean':
                 // Waves
                 graphics.lineStyle(3, 0x2E86AB, 0.6);
@@ -199,14 +191,14 @@ export default class PreloadScene extends Phaser.Scene {
                     }
                     graphics.strokePath();
                 }
-                
+
                 // Distant ship
                 graphics.fillStyle(0x333333, 0.7);
                 graphics.fillRect(width - 300, 180, 60, 20);
                 graphics.fillTriangle(width - 300, 180, width - 300, 160, width - 280, 180);
                 graphics.fillRect(width - 280, 160, 5, 20);
                 graphics.fillRect(width - 260, 150, 5, 30);
-                
+
                 // Seagulls
                 graphics.lineStyle(2, 0xFFFFFF, 0.8);
                 const seagulls = [[200, 100], [350, 80], [500, 120], [650, 90]];
@@ -219,7 +211,7 @@ export default class PreloadScene extends Phaser.Scene {
                     graphics.strokePath();
                 });
                 break;
-                
+
             case 'harbor':
                 // Cranes
                 graphics.fillStyle(0xFF6600, 0.8);
@@ -228,7 +220,7 @@ export default class PreloadScene extends Phaser.Scene {
                 graphics.lineStyle(2, 0xFF6600, 0.8);
                 graphics.lineBetween(100, height - 240, 170, height - 200);
                 graphics.lineBetween(170, height - 250, 170, height - 200);
-                
+
                 // Containers
                 graphics.fillStyle(0xCC0000, 0.9);
                 graphics.fillRect(300, height - 80, 100, 40);
@@ -238,11 +230,11 @@ export default class PreloadScene extends Phaser.Scene {
                 graphics.fillRect(520, height - 80, 100, 40);
                 graphics.fillStyle(0xFFCC00, 0.9);
                 graphics.fillRect(355, height - 120, 100, 40);
-                
+
                 // Dock
                 graphics.fillStyle(0x8B7355, 1);
                 graphics.fillRect(0, height - 40, width, 40);
-                
+
                 // Water reflections
                 graphics.lineStyle(1, 0x4A90E2, 0.4);
                 for (let x = 0; x < width; x += 40) {
