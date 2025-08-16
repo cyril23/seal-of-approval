@@ -16,6 +16,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         this.setBounce(0.1);
         
         this.direction = 1;
+        this.chargeTimer = null; // Store timer reference for cleanup
         this.setupBehavior();
     }
 
@@ -47,6 +48,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     setupCharge() {
         this.chargeSpeed = this.config.CHARGE_SPEED;
         this.normalSpeed = this.config.SPEED;
+        this.patrolSpeed = this.config.SPEED; // Version 1.3: Set patrolSpeed so updatePatrol() works
         this.detectionRange = this.config.DETECTION_RANGE;
         this.isCharging = false;
         this.setVelocityX(this.normalSpeed * this.direction);
@@ -127,6 +129,13 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
 
     updateCharge(player) {
+        // Version 1.3: Add null check for player parameter
+        if (!player || !player.x || !player.y) {
+            console.warn('polar_bear updateCharge: Invalid player parameter');
+            this.updatePatrol();
+            return;
+        }
+        
         const distance = Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y);
         
         if (distance < this.detectionRange && !this.isCharging) {
@@ -136,10 +145,19 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
             this.setFlipX(direction < 0);
             this.setTint(0xff0000);
             
-            this.scene.time.delayedCall(2000, () => {
-                this.isCharging = false;
-                this.clearTint();
-                this.setVelocityX(this.normalSpeed * this.direction);
+            // Version 1.3: Store timer and add safety checks
+            if (this.chargeTimer) {
+                this.chargeTimer.destroy();
+            }
+            
+            this.chargeTimer = this.scene.time.delayedCall(2000, () => {
+                // Safety check - enemy might be destroyed before callback fires
+                if (this && this.scene && this.active && this.body) {
+                    this.isCharging = false;
+                    this.clearTint();
+                    this.setVelocityX(this.normalSpeed * this.direction);
+                    this.chargeTimer = null;
+                }
             });
         }
         
@@ -186,6 +204,15 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         }
     }
 
+    // Version 1.3: Clean up timers on destroy
+    destroy() {
+        if (this.chargeTimer) {
+            this.chargeTimer.destroy();
+            this.chargeTimer = null;
+        }
+        super.destroy();
+    }
+    
     updateSideways() {
         if (this.body.blocked.left || this.body.touching.left) {
             this.direction = 1;

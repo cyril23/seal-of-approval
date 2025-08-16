@@ -119,7 +119,7 @@ export const THEMES = {
         name: 'arctic',
         background: '#E8F4F8',
         platform: '#FFFFFF',
-        enemies: ['polar_bear', 'human'],
+        enemies: ['polar_bear', 'human'], // Version 1.3: polar_bear re-enabled with fix
         tint: 0xE8F4F8
     },
     BEACH: {

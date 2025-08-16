@@ -70,7 +70,7 @@ onUpdate: () => {
 4. Fish should disappear and score should increase
 
 ## Status
-⚠️ **PARTIALLY FIXED in Version 1.2** - Texture issue identified but polar_bear still breaks Arctic!
+✅ **FIXED in Version 1.3** - polar_bear charge timer issue resolved!
 
 ## Root Cause Discovered 🎯
 The `polar_bear` enemy had a texture loading issue that broke ALL collision detection in Arctic theme!
@@ -87,32 +87,55 @@ this.textures.addCanvas(key.toLowerCase(), canvas); // 'POLAR_BEAR' -> 'polar_be
 
 **Result**: Enemy tried to load non-existent texture 'polarbear', causing physics system failure!
 
-## Version 1.2 Partial Fix ⚠️
+## Version 1.3 Complete Fix ✅
 
-### What We Fixed
-Corrected the texture key mismatch in Enemy.js:
+### The Real Problem
+The polar_bear's charge behavior had **two critical bugs**:
+
+1. **Unsafe delayed callback** (partially fixed)
+2. **Missing patrolSpeed causing NaN velocity** (the real culprit!)
+
+When polar_bear's updateCharge() fell back to updatePatrol(), it used undefined `patrolSpeed`, creating NaN velocities that corrupted the entire physics engine:
+
 ```javascript
-// Fixed line 6:
-const textureKey = type.toLowerCase(); // Now keeps 'polar_bear' intact
+// THE REAL PROBLEM:
+setupCharge() {
+    // Missing: this.patrolSpeed = this.config.SPEED;
+    // When updatePatrol() is called, it uses undefined patrolSpeed!
+}
+
+updatePatrol() {
+    this.setVelocityX(this.patrolSpeed * this.direction); 
+    // undefined * 1 = NaN → Corrupts physics engine!
+}
 ```
 
-### What's Still Broken
-**POLAR_BEAR STILL BREAKS ARCTIC COLLISION!** Even with correct texture loading:
-- When polar_bear is present, ALL collisions fail in Arctic
-- Commenting out polar_bear from enemies array fixes it
-- Replacing polar_bear with any other enemy fixes it
-- Issue is specific to polar_bear enemy, not just texture loading
+### The Solution
+Fixed the NaN velocity corruption by initializing patrolSpeed in Enemy.js:
 
-### Current Workaround
-In constants.js, Arctic theme has polar_bear commented out:
+1. **Added patrolSpeed to setupCharge()**:
 ```javascript
-enemies: ['human'] // polar_bear removed until fixed
+setupCharge() {
+    this.chargeSpeed = this.config.CHARGE_SPEED;
+    this.normalSpeed = this.config.SPEED;
+    this.patrolSpeed = this.config.SPEED; // FIX: Initialize patrolSpeed!
+    this.detectionRange = this.config.DETECTION_RANGE;
+    this.isCharging = false;
+    this.setVelocityX(this.normalSpeed * this.direction);
+}
 ```
 
-### Next Investigation Needed
-1. Check if polar_bear's charge behavior corrupts physics
-2. Investigate if detection range calculation breaks collision system
-3. Test if polar_bear's tint/color changes affect collision detection
+This ensures that when polar_bear falls back to patrol behavior, it has a valid speed value instead of undefined, preventing NaN velocities from corrupting the physics engine.
+
+Additional safety improvements:
+- Timer cleanup on destroy to prevent accessing destroyed enemies
+- Null checks for player parameter
+- Safety checks in delayed callbacks
+
+### Result
+- polar_bear now works correctly in Arctic theme
+- All collisions function properly
+- No physics corruption when enemy destroyed while charging
 
 ## Technical Notes
 - The bobbing animation works via `updateFromGameObject()`
