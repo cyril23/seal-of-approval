@@ -1,0 +1,91 @@
+import Phaser from 'phaser';
+
+export default class Collectible extends Phaser.Physics.Arcade.Sprite {
+    constructor(scene, x, y, type) {
+        super(scene, x, y, type);
+        
+        scene.add.existing(this);
+        scene.physics.add.existing(this);
+        
+        this.type = type;
+        this.setData('collectibleData', { type: type });
+        
+        this.setBounce(0.4);
+        this.setCollideWorldBounds(true);
+        
+        // Set depth to ensure collectibles render above backgrounds
+        this.setDepth(10);
+        
+        this.setupAnimation();
+    }
+
+    setupAnimation() {
+        // Store original position for bobbing animation
+        const originalY = this.y;
+        
+        // Bobbing animation with physics body refresh
+        this.scene.tweens.add({
+            targets: this,
+            y: originalY - 5,
+            duration: 1000,
+            ease: 'Sine.inOut',
+            yoyo: true,
+            repeat: -1,
+            onUpdate: () => {
+                // Update physics body to match visual position
+                // But only if the body exists and is enabled
+                if (this.body && this.body.enable) {
+                    // Version 9.4: Removed Arctic-specific handling that was corrupting collision detection
+                    // Always use updateFromGameObject for consistent physics behavior
+                    this.body.updateFromGameObject();
+                }
+            }
+        });
+        
+        if (this.type === 'star' || this.type === 'magnet') {
+            this.scene.tweens.add({
+                targets: this,
+                angle: 360,
+                duration: 3000,
+                repeat: -1
+            });
+        }
+        
+        if (this.type === 'fish') {
+            // Scale animation without affecting physics body
+            this.scene.tweens.add({
+                targets: this,
+                scaleX: 1.1,
+                scaleY: 0.9,
+                duration: 500,
+                ease: 'Power2',
+                yoyo: true,
+                repeat: -1
+            });
+            
+            // Make fish physics body slightly larger for better collision
+            if (this.body) {
+                this.body.setSize(this.width * 1.2, this.height * 1.2);
+            }
+        }
+        
+        this.createParticles();
+    }
+
+    createParticles() {
+        if (this.type === 'star') {
+            const particles = this.scene.add.particles(this.x, this.y, 'star', {
+                scale: { start: 0.2, end: 0 },
+                speed: { min: 20, max: 40 },
+                lifespan: 1000,
+                frequency: 200,
+                quantity: 1,
+                follow: this
+            });
+            
+            this.on('destroy', () => {
+                particles.destroy();
+            });
+        }
+    }
+}

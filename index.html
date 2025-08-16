@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>🦭 Seal of Approval - 8-bit Retro Game</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1e 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Press Start 2P', monospace;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+        
+        #game-container {
+            border: 4px solid #fff;
+            box-shadow: 
+                0 0 20px rgba(255, 255, 255, 0.5),
+                inset 0 0 20px rgba(0, 0, 0, 0.5);
+            position: relative;
+            background: #000;
+        }
+        
+        #game-container canvas {
+            display: block;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+        
+        .crt::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+        
+        .controls {
+            color: #fff;
+            text-align: center;
+            margin-top: 20px;
+            font-size: 10px;
+            line-height: 1.8;
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 12px;
+            text-align: center;
+            z-index: 10;
+        }
+        
+        .loading-bar {
+            width: 200px;
+            height: 20px;
+            border: 2px solid #fff;
+            margin-top: 20px;
+            position: relative;
+            background: #000;
+        }
+        
+        .loading-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00, #00aa00);
+            width: 0%;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <div id="game-container" class="crt">
+            <div class="loading" id="loading">
+                <div>LOADING...</div>
+                <div class="loading-bar">
+                    <div class="loading-bar-fill" id="loading-bar"></div>
+                </div>
+            </div>
+        </div>
+        <div class="controls">
+            <div>← → MOVE | SPACE JUMP | P PAUSE | M MUTE</div>
+        </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>
