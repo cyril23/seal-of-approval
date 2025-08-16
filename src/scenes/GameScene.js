@@ -78,7 +78,7 @@ export default class GameScene extends Phaser.Scene {
         this.cameras.main.fadeIn(500);
         
         console.log('GameScene.create() complete!');
-        console.log('Developer keys: S = Screenshot, P = Pause, M = Mute');
+        console.log('Developer keys: S = Screenshot, P = Pause, M = Mute, D = Dev Mode');
     }
 
     createScrollingBackground() {
@@ -198,6 +198,11 @@ export default class GameScene extends Phaser.Scene {
         this.input.keyboard.on('keydown-S', () => {
             this.captureScreenshot();
         });
+        
+        // Developer mode toggle
+        this.input.keyboard.on('keydown-D', () => {
+            this.toggleDeveloperMode();
+        });
     }
 
     createUI() {
@@ -235,6 +240,18 @@ export default class GameScene extends Phaser.Scene {
         });
         this.progressText.setOrigin(0.5, 0);
         this.progressText.setScrollFactor(0);
+        
+        // Developer mode indicator
+        this.devModeText = this.add.text(GAME_WIDTH / 2, 60, 'DEV MODE', {
+            fontSize: '24px',
+            fontFamily: '"Press Start 2P", monospace',
+            color: '#FF00FF',
+            stroke: '#000000',
+            strokeThickness: 3
+        });
+        this.devModeText.setOrigin(0.5, 0);
+        this.devModeText.setScrollFactor(0);
+        this.devModeText.setVisible(false);
         
         this.pauseText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'PAUSED', {
             fontSize: '48px',
@@ -471,6 +488,26 @@ export default class GameScene extends Phaser.Scene {
             this.physics.pause();
         } else {
             this.physics.resume();
+        }
+    }
+    
+    toggleDeveloperMode() {
+        if (!this.player) return;
+        
+        // Toggle the mode
+        const newState = !this.player.developerMode;
+        this.player.setDeveloperMode(newState);
+        
+        // Update UI
+        this.devModeText.setVisible(newState);
+        
+        // Visual feedback
+        if (newState) {
+            this.cameras.main.flash(100, 255, 0, 255);
+            console.log('Developer Mode: ENABLED');
+        } else {
+            this.cameras.main.flash(100, 255, 255, 255);
+            console.log('Developer Mode: DISABLED');
         }
     }
     

@@ -17,6 +17,7 @@ export default class Seal {
         this.invincible = false;
         this.speedBoost = false;
         this.hasMagnet = false;
+        this.developerMode = false;  // Developer mode flag
         
         this.jumpTimer = 0;
         this.isJumping = false;
@@ -33,7 +34,9 @@ export default class Seal {
     }
 
     update(cursors, spaceKey) {
-        const speed = this.speedBoost ? PHYSICS.MOVE_SPEED * 2 : PHYSICS.MOVE_SPEED;
+        // Calculate speed with developer mode multiplier
+        const baseSpeed = this.speedBoost ? PHYSICS.MOVE_SPEED * 2 : PHYSICS.MOVE_SPEED;
+        const speed = this.developerMode ? baseSpeed * 5 : baseSpeed;
         
         // Decrement collision skip counter
         if (this.skipCollisionFrames > 0) {
@@ -68,6 +71,18 @@ export default class Seal {
             this.sprite.setVelocityX(this.sprite.body.velocity.x * PHYSICS.DRAG);
         }
         
+        // Developer mode vertical flight controls
+        if (this.developerMode) {
+            if (cursors.up.isDown) {
+                this.sprite.setVelocityY(-speed);
+            } else if (cursors.down.isDown) {
+                this.sprite.setVelocityY(speed);
+            } else if (!cursors.up.isDown && !cursors.down.isDown) {
+                // Apply drag to vertical movement in dev mode for better control
+                this.sprite.setVelocityY(this.sprite.body.velocity.y * 0.9);
+            }
+        }
+        
         // Better ground detection using blocked.down to prevent falling through platforms
         const onGround = this.sprite.body.blocked.down || this.sprite.body.touching.down;
         
@@ -85,8 +100,8 @@ export default class Seal {
             this.hasDoubleJumped = false;
         }
         
-        // Handle jump input with double jump
-        if (Phaser.Input.Keyboard.JustDown(spaceKey)) {
+        // Handle jump input with double jump (skip in developer mode - use arrow keys instead)
+        if (Phaser.Input.Keyboard.JustDown(spaceKey) && !this.developerMode) {
             if (onGround) {
                 // First jump from ground
                 this.sprite.setVelocityY(PHYSICS.JUMP_VELOCITY);
@@ -105,22 +120,23 @@ export default class Seal {
             }
         }
         
-        // Variable jump height (hold for higher jump) - only for first jump
-        if (spaceKey.isDown && this.isJumping && !this.hasDoubleJumped) {
+        // Variable jump height (hold for higher jump) - only for first jump (skip in dev mode)
+        if (spaceKey.isDown && this.isJumping && !this.hasDoubleJumped && !this.developerMode) {
             if (this.jumpTimer < 15 && this.sprite.body.velocity.y < 0) {
                 this.sprite.setVelocityY(this.sprite.body.velocity.y + PHYSICS.JUMP_VELOCITY_BOOST / 15);
                 this.jumpTimer++;
             }
         }
         
-        if (spaceKey.isUp) {
+        if (spaceKey.isUp && !this.developerMode) {
             if (this.isJumping && this.sprite.body.velocity.y < 0 && !this.hasDoubleJumped) {
                 this.sprite.setVelocityY(this.sprite.body.velocity.y * 0.5);
             }
             this.jumpTimer = 15;
         }
         
-        if (this.invincible) {
+        // Handle invincibility visual effects (but not alpha in dev mode)
+        if (this.invincible && !this.developerMode) {
             const time = this.scene.time.now;
             this.sprite.setAlpha(Math.sin(time * 0.01) > 0 ? 1 : 0.5);
         }
@@ -275,6 +291,11 @@ export default class Seal {
     }
 
     takeDamage() {
+        // God mode in developer mode
+        if (this.developerMode) {
+            return;
+        }
+        
         if (!this.invincible) {
             this.lives--;
             this.setInvincible(PLAYER.INVINCIBLE_TIME);
@@ -356,5 +377,62 @@ export default class Seal {
                 ring.destroy();
             }
         });
+    }
+    
+    setDeveloperMode(enabled) {
+        this.developerMode = enabled;
+        
+        if (enabled) {
+            // Enable developer mode
+            console.log('Seal: Developer mode ENABLED');
+            
+            // Disable gravity for flying
+            this.sprite.body.setAllowGravity(false);
+            
+            // Set permanent invincibility
+            this.invincible = true;
+            
+            // Apply special purple tint
+            this.sprite.setTint(0xFF00FF);
+            
+            // Ensure full alpha
+            this.sprite.setAlpha(1);
+            
+            // Reset velocity for clean flight
+            this.sprite.setVelocity(0, 0);
+            
+            // Create particle effect for super speed
+            if (!this.devModeParticles) {
+                this.devModeParticles = this.scene.add.particles(0, 0, 'star', {
+                    follow: this.sprite,
+                    scale: { start: 0.5, end: 0 },
+                    speed: { min: 100, max: 200 },
+                    lifespan: 300,
+                    frequency: 30,
+                    tint: 0xFF00FF
+                });
+            }
+        } else {
+            // Disable developer mode
+            console.log('Seal: Developer mode DISABLED');
+            
+            // Re-enable gravity
+            this.sprite.body.setAllowGravity(true);
+            
+            // Remove invincibility (unless it was already active)
+            this.invincible = false;
+            
+            // Clear tint
+            this.sprite.clearTint();
+            
+            // Reset alpha
+            this.sprite.setAlpha(1);
+            
+            // Remove particle effect
+            if (this.devModeParticles) {
+                this.devModeParticles.destroy();
+                this.devModeParticles = null;
+            }
+        }
     }
 }
