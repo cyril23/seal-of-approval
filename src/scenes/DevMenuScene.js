@@ -9,12 +9,19 @@ export default class DevMenuScene extends Phaser.Scene {
     init(data) {
         this.currentLevel = data.currentLevel || 1;
         this.parentScene = data.parentScene;
+        
+        // Menu state management
+        this.menuState = 'main'; // 'main' or 'levelSelect'
+        this.mainMenuIndex = 0;
         this.selectedLevel = this.currentLevel;
+        
+        // Check if developer mode is currently active
+        this.isGodModeActive = this.parentScene?.player?.developerMode || false;
     }
 
     create() {
         // Semi-transparent background overlay
-        const bg = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.8);
+        this.bgOverlay = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.8);
         
         // Title
         const titleStyle = {
@@ -25,18 +32,128 @@ export default class DevMenuScene extends Phaser.Scene {
             strokeThickness: 3
         };
         
-        this.add.text(GAME_WIDTH / 2, 50, 'DEVELOPER MENU', titleStyle).setOrigin(0.5);
+        this.titleText = this.add.text(GAME_WIDTH / 2, 50, 'DEVELOPER MENU', titleStyle).setOrigin(0.5);
         
-        // Instructions
+        // Create container for main menu
+        this.mainMenuContainer = this.add.container(0, 0);
+        
+        // Create container for level selection submenu
+        this.levelMenuContainer = this.add.container(0, 0);
+        this.levelMenuContainer.setVisible(false);
+        
+        // Create both menus
+        this.createMainMenu();
+        this.createLevelMenu();
+        
+        // Setup controls
+        this.setupControls();
+        
+        // Show initial menu
+        this.showMainMenu();
+    }
+    
+    createMainMenu() {
+        const menuStyle = {
+            fontSize: '20px',
+            fontFamily: '"Press Start 2P", monospace',
+            color: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 2
+        };
+        
         const instructionStyle = {
             fontSize: '14px',
             fontFamily: '"Press Start 2P", monospace',
             color: '#aaaaaa'
         };
         
-        this.add.text(GAME_WIDTH / 2, 100, 'USE ↑↓ TO SELECT LEVEL', instructionStyle).setOrigin(0.5);
-        this.add.text(GAME_WIDTH / 2, 130, 'ENTER TO JUMP TO LEVEL', instructionStyle).setOrigin(0.5);
-        this.add.text(GAME_WIDTH / 2, 160, 'ESC TO CLOSE', instructionStyle).setOrigin(0.5);
+        // Main menu options
+        const menuY = 200;
+        const optionSpacing = 40;
+        
+        // Get current high score
+        const highScore = localStorage.getItem('sealHighScore') || '0';
+        
+        // Option 1: Toggle God Mode
+        const godModeStatus = this.isGodModeActive ? '[ON]' : '[OFF]';
+        this.godModeText = this.add.text(GAME_WIDTH / 2, menuY, 
+            `Toggle God Mode ${godModeStatus}`, menuStyle);
+        this.godModeText.setOrigin(0.5);
+        
+        // Option 2: Change Level
+        this.changeLevelText = this.add.text(GAME_WIDTH / 2, menuY + optionSpacing, 
+            'Change Level', menuStyle);
+        this.changeLevelText.setOrigin(0.5);
+        
+        // Option 3: Reset High Score
+        this.resetScoreText = this.add.text(GAME_WIDTH / 2, menuY + optionSpacing * 2, 
+            `Reset High Score (${highScore})`, menuStyle);
+        this.resetScoreText.setOrigin(0.5);
+        
+        // Selection indicator
+        this.mainSelectionIndicator = this.add.text(GAME_WIDTH / 2 - 250, menuY, 
+            '>', {
+            fontSize: '20px',
+            fontFamily: '"Press Start 2P", monospace',
+            color: '#ffff00'
+        });
+        
+        // Instructions
+        this.mainInstructions = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 100, 
+            'USE ↑↓ TO SELECT   ENTER TO ACTIVATE   ESC TO CLOSE', 
+            instructionStyle);
+        this.mainInstructions.setOrigin(0.5);
+        
+        // Confirmation text (initially hidden)
+        this.confirmationText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 150, '', {
+            fontSize: '16px',
+            fontFamily: '"Press Start 2P", monospace',
+            color: '#ffff00',
+            stroke: '#000000',
+            strokeThickness: 2
+        });
+        this.confirmationText.setOrigin(0.5);
+        
+        // Add all to main menu container
+        this.mainMenuContainer.add([
+            this.godModeText,
+            this.changeLevelText,
+            this.resetScoreText,
+            this.mainSelectionIndicator,
+            this.mainInstructions,
+            this.confirmationText
+        ]);
+        
+        // Store menu options for easy access
+        this.mainMenuOptions = [
+            this.godModeText,
+            this.changeLevelText,
+            this.resetScoreText
+        ];
+    }
+    
+    createLevelMenu() {
+        const instructionStyle = {
+            fontSize: '14px',
+            fontFamily: '"Press Start 2P", monospace',
+            color: '#aaaaaa'
+        };
+        
+        // Subtitle for level selection
+        this.levelSubtitle = this.add.text(GAME_WIDTH / 2, 100, 'SELECT LEVEL', {
+            fontSize: '24px',
+            fontFamily: '"Press Start 2P", monospace',
+            color: '#00ffff',
+            stroke: '#000000',
+            strokeThickness: 2
+        });
+        this.levelSubtitle.setOrigin(0.5);
+        
+        // Instructions
+        this.levelInstructions = this.add.text(GAME_WIDTH / 2, 140, 
+            'USE ↑↓ TO SELECT   ENTER TO JUMP   ESC TO GO BACK', 
+            instructionStyle);
+        this.levelInstructions.setOrigin(0.5);
         
         // Create level list container
         this.levelListContainer = this.add.container(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 20);
@@ -44,18 +161,12 @@ export default class DevMenuScene extends Phaser.Scene {
         // Generate level list
         this.createLevelList();
         
-        // Current selection indicator (add as child of container)
-        this.selectionIndicator = this.add.text(-230, 0, '>', {
-            fontSize: '18px',
-            fontFamily: '"Press Start 2P", monospace',
-            color: '#ffff00'
-        });
-        this.levelListContainer.add(this.selectionIndicator);
-        
-        // Setup controls
-        this.setupControls();
-        
-        this.updateSelection();
+        // Add to level menu container
+        this.levelMenuContainer.add([
+            this.levelSubtitle,
+            this.levelInstructions,
+            this.levelListContainer
+        ]);
     }
     
     createLevelList() {
@@ -102,6 +213,14 @@ export default class DevMenuScene extends Phaser.Scene {
             this.levelListContainer.add([levelText, themeText]);
             this.levelTexts.push({ level, levelText, themeText, yPos });
         }
+        
+        // Level selection indicator
+        this.levelSelectionIndicator = this.add.text(-230, 0, '>', {
+            fontSize: '18px',
+            fontFamily: '"Press Start 2P", monospace',
+            color: '#ffff00'
+        });
+        this.levelListContainer.add(this.levelSelectionIndicator);
     }
     
     getThemeColor(themeName) {
@@ -118,48 +237,159 @@ export default class DevMenuScene extends Phaser.Scene {
     setupControls() {
         this.cursors = this.input.keyboard.createCursorKeys();
         
-        // Level selection with arrow keys
+        // Arrow key navigation
         this.input.keyboard.on('keydown-UP', () => {
-            if (this.selectedLevel > 1) {
-                this.selectedLevel--;
-                this.updateSelection();
-                this.scrollList();
+            if (this.menuState === 'main') {
+                this.navigateMainMenu(-1);
+            } else if (this.menuState === 'levelSelect') {
+                this.navigateLevelMenu(-1);
             }
         });
         
         this.input.keyboard.on('keydown-DOWN', () => {
-            this.selectedLevel++;
-            this.updateSelection();
-            this.scrollList();
+            if (this.menuState === 'main') {
+                this.navigateMainMenu(1);
+            } else if (this.menuState === 'levelSelect') {
+                this.navigateLevelMenu(1);
+            }
         });
         
-        // Quick jump with number keys (1-9 for levels 1-9)
-        for (let i = 1; i <= 9; i++) {
-            this.input.keyboard.on(`keydown-${i}`, () => {
-                this.selectedLevel = i;
-                this.updateSelection();
-                this.scrollList();
-            });
-        }
-        
-        // Jump to selected level
+        // Enter key activation
         this.input.keyboard.on('keydown-ENTER', () => {
-            this.jumpToLevel();
+            if (this.menuState === 'main') {
+                this.activateMainMenuOption();
+            } else if (this.menuState === 'levelSelect') {
+                this.jumpToLevel();
+            }
         });
         
-        // Close menu
+        // ESC key behavior
         this.input.keyboard.on('keydown-ESC', () => {
-            this.closeMenu();
+            if (this.menuState === 'levelSelect') {
+                // Go back to main menu
+                this.showMainMenu();
+            } else {
+                // Close entire menu
+                this.closeMenu();
+            }
         });
     }
     
-    updateSelection() {
+    navigateMainMenu(direction) {
+        this.mainMenuIndex = Math.max(0, Math.min(2, this.mainMenuIndex + direction));
+        this.updateMainMenuSelection();
+    }
+    
+    updateMainMenuSelection() {
+        const menuY = 200;
+        const optionSpacing = 40;
+        this.mainSelectionIndicator.setY(menuY + (this.mainMenuIndex * optionSpacing));
+        
+        // Highlight selected option
+        this.mainMenuOptions.forEach((option, index) => {
+            if (index === this.mainMenuIndex) {
+                option.setColor('#ffff00');
+                option.setScale(1.1);
+            } else {
+                option.setColor('#ffffff');
+                option.setScale(1);
+            }
+        });
+    }
+    
+    activateMainMenuOption() {
+        switch(this.mainMenuIndex) {
+            case 0: // Toggle God Mode
+                this.toggleGodMode();
+                break;
+            case 1: // Change Level
+                this.showLevelMenu();
+                break;
+            case 2: // Reset High Score
+                this.resetHighScore();
+                break;
+        }
+    }
+    
+    toggleGodMode() {
+        if (!this.parentScene || !this.parentScene.player) return;
+        
+        // Toggle the mode
+        this.isGodModeActive = !this.isGodModeActive;
+        this.parentScene.toggleDeveloperMode();
+        
+        // Update display
+        const godModeStatus = this.isGodModeActive ? '[ON]' : '[OFF]';
+        this.godModeText.setText(`Toggle God Mode ${godModeStatus}`);
+        
+        // Show confirmation
+        const status = this.isGodModeActive ? 'ENABLED' : 'DISABLED';
+        this.showConfirmation(`God Mode ${status}`, 0xffff00);
+    }
+    
+    resetHighScore() {
+        // Get current high score
+        const oldScore = localStorage.getItem('sealHighScore') || '0';
+        
+        // Reset to 0
+        localStorage.setItem('sealHighScore', '0');
+        
+        // Update display
+        this.resetScoreText.setText('Reset High Score (0)');
+        
+        // Show confirmation
+        this.showConfirmation(`High Score Reset! (was ${oldScore})`, 0xff0000);
+    }
+    
+    showConfirmation(text, color = 0xffff00) {
+        this.confirmationText.setText(text);
+        this.confirmationText.setColor('#' + color.toString(16).padStart(6, '0'));
+        this.confirmationText.setAlpha(1);
+        
+        // Fade out after 2 seconds
+        this.tweens.add({
+            targets: this.confirmationText,
+            alpha: 0,
+            duration: 2000,
+            delay: 1000,
+            ease: 'Power2'
+        });
+    }
+    
+    showMainMenu() {
+        this.menuState = 'main';
+        this.mainMenuContainer.setVisible(true);
+        this.levelMenuContainer.setVisible(false);
+        this.titleText.setText('DEVELOPER MENU');
+        this.updateMainMenuSelection();
+    }
+    
+    showLevelMenu() {
+        this.menuState = 'levelSelect';
+        this.mainMenuContainer.setVisible(false);
+        this.levelMenuContainer.setVisible(true);
+        this.titleText.setText('DEVELOPER MENU');
+        this.updateLevelSelection();
+    }
+    
+    navigateLevelMenu(direction) {
+        if (direction < 0 && this.selectedLevel > 1) {
+            this.selectedLevel--;
+        } else if (direction > 0) {
+            this.selectedLevel++;
+        }
+        
+        this.updateLevelSelection();
+        this.scrollList();
+    }
+    
+    updateLevelSelection() {
         // Find the text object for the selected level
         const selectedItem = this.levelTexts.find(item => item.level === this.selectedLevel);
         
         if (selectedItem) {
-            // Position the selection indicator (now using local coordinates)
-            this.selectionIndicator.setY(selectedItem.yPos);
+            // Position the selection indicator
+            this.levelSelectionIndicator.setY(selectedItem.yPos);
             
             // Highlight selected level
             this.levelTexts.forEach(item => {

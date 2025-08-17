@@ -188,7 +188,7 @@ export default class GameScene extends Phaser.Scene {
             this.captureScreenshot();
         });
         
-        // Developer mode toggle with double-D detection for dev menu
+        // Developer menu with double-D detection
         this.input.keyboard.on('keydown-D', () => {
             const currentTime = this.time.now;
             
@@ -198,8 +198,7 @@ export default class GameScene extends Phaser.Scene {
                 this.openDeveloperMenu();
                 this.lastDKeyTime = 0; // Reset to prevent triple press
             } else {
-                // Single D - toggle developer mode
-                this.toggleDeveloperMode();
+                // Single D press - just update time for double-D detection
                 this.lastDKeyTime = currentTime;
             }
         });

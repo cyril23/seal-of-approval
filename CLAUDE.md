@@ -107,8 +107,7 @@ All game configuration in `src/utils/constants.js`:
 - **P**: Pause game
 - **M**: Mute audio
 - **S**: Take screenshot (developer tool)
-- **D**: Toggle Developer Mode (flying, 5x speed, god mode)
-- **DD** (double-tap D quickly): Open Developer Menu for level selection
+- **DD** (double-tap D quickly): Open Developer Menu
 - **ESC**: Return to menu
 
 #### Scoring System
@@ -133,22 +132,33 @@ All game configuration in `src/utils/constants.js`:
 - Progress percentage shown (distance to goal)
 - Goal completion triggers next level
 
-#### Developer Mode
-Activated with the **D** key for testing and debugging:
-- **Flying**: Gravity disabled, arrow keys control vertical movement
-- **Super Speed**: 5x normal movement speed
-- **God Mode**: Invincible to all damage (enemies, falls)
-- **Visual Indicators**: Purple tint, "DEV MODE" UI text, particle trail
-- **Fish Collection**: Still works normally for testing
-- **Camera Flash**: Purple flash when enabled, cyan when disabled
-
 #### Developer Menu
-Activated by pressing **DD** (double-tap D quickly):
-- **Level Selection**: Choose any level to jump to
-- **Theme Preview**: Shows theme name and color for each level
-- **Navigation**: Arrow keys to select, Enter to jump, ESC to close
-- **Theme Rotation**: Themes cycle deterministically: Beach → City → Ocean → Harbor
-- **Level Display**: Shows 20 levels before and after current level
+Activated by pressing **DD** (double-tap D quickly) to open the main developer menu:
+
+**Main Menu Options:**
+1. **Toggle God Mode**: Activates/deactivates developer mode features
+   - **Flying**: Gravity disabled, arrow keys control vertical movement
+   - **Super Speed**: 5x normal movement speed
+   - **God Mode**: Invincible to all damage (enemies, falls)
+   - **Visual Indicators**: Purple tint, "DEV MODE" UI text, particle trail
+   - **Fish Collection**: Still works normally for testing
+   - **Camera Flash**: Purple flash when enabled, cyan when disabled
+
+2. **Change Level**: Opens submenu for level selection
+   - **Level Selection**: Choose any level to jump to
+   - **Theme Preview**: Shows theme name and color for each level
+   - **Navigation**: Arrow keys to select, Enter to jump, ESC to go back to main menu
+   - **Theme Rotation**: Themes cycle deterministically: Beach → City → Ocean → Harbor
+   - **Level Display**: Shows 20 levels before and after current level
+
+3. **Reset High Score**: Resets the high score to 0
+   - Shows current high score value
+   - Displays confirmation when reset
+
+**Navigation:**
+- **Arrow Keys**: Navigate menu options
+- **Enter**: Activate selected option
+- **ESC**: From submenu returns to main menu, from main menu closes everything
 
 ### Important Notes
 - do not `npm run dev` yourself, but ask the user to do it
