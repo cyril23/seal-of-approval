@@ -88,13 +88,6 @@ export const ENEMIES = {
         POINTS: 200,
         TYPE: 'human'
     },
-    POLAR_BEAR: {
-        SPEED: 80,
-        CHARGE_SPEED: 150,
-        DETECTION_RANGE: 100,
-        POINTS: 300,
-        TYPE: 'polar_bear'
-    },
     SEAGULL: {
         SPEED: 60,
         DIVE_SPEED: 200,
@@ -115,13 +108,6 @@ export const ENEMIES = {
 };
 
 export const THEMES = {
-    ARCTIC: {
-        name: 'arctic',
-        background: '#E8F4F8',
-        platform: '#FFFFFF',
-        enemies: ['polar_bear', 'human'], // Version 1.3: polar_bear re-enabled with fix
-        tint: 0xE8F4F8
-    },
     BEACH: {
         name: 'beach',
         background: '#F4E4C1',
@@ -161,7 +147,6 @@ export const EMOJIS = {
     MAGNET: '🧲',
     SPEED: '💨',
     HUMAN: '🚶',
-    POLAR_BEAR: '🐻',
     SEAGULL: '🦅',
     ORCA: '🐋',
     CRAB: '🦀',

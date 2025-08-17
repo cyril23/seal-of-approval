@@ -3,7 +3,6 @@ import { ENEMIES } from '../utils/constants.js';
 
 export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     constructor(scene, x, y, type) {
-        // Version 1.2: Keep underscore for polar_bear texture key
         const textureKey = type.toLowerCase();
         super(scene, x, y, textureKey);
         
@@ -16,7 +15,6 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         this.setBounce(0.1);
         
         this.direction = 1;
-        this.chargeTimer = null; // Store timer reference for cleanup
         this.setupBehavior();
     }
 
@@ -24,9 +22,6 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         switch (this.type) {
             case 'human':
                 this.setupPatrol();
-                break;
-            case 'polar_bear':
-                this.setupCharge();
                 break;
             case 'seagull':
                 this.setupFlying();
@@ -43,15 +38,6 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     setupPatrol() {
         this.patrolSpeed = this.config.SPEED;
         this.setVelocityX(this.patrolSpeed * this.direction);
-    }
-
-    setupCharge() {
-        this.chargeSpeed = this.config.CHARGE_SPEED;
-        this.normalSpeed = this.config.SPEED;
-        this.patrolSpeed = this.config.SPEED; // Version 1.3: Set patrolSpeed so updatePatrol() works
-        this.detectionRange = this.config.DETECTION_RANGE;
-        this.isCharging = false;
-        this.setVelocityX(this.normalSpeed * this.direction);
     }
 
     setupFlying() {
@@ -96,9 +82,6 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
             case 'human':
                 this.updatePatrol();
                 break;
-            case 'polar_bear':
-                this.updateCharge(player);
-                break;
             case 'seagull':
                 this.updateFlying(player);
                 break;
@@ -125,44 +108,6 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         if (Math.abs(this.body.velocity.x) < 10) {
             this.direction *= -1;
             this.setVelocityX(this.patrolSpeed * this.direction);
-        }
-    }
-
-    updateCharge(player) {
-        // Version 1.3: Add null check for player parameter
-        if (!player || !player.x || !player.y) {
-            console.warn('polar_bear updateCharge: Invalid player parameter');
-            this.updatePatrol();
-            return;
-        }
-        
-        const distance = Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y);
-        
-        if (distance < this.detectionRange && !this.isCharging) {
-            this.isCharging = true;
-            const direction = player.x > this.x ? 1 : -1;
-            this.setVelocityX(this.chargeSpeed * direction);
-            this.setFlipX(direction < 0);
-            this.setTint(0xff0000);
-            
-            // Version 1.3: Store timer and add safety checks
-            if (this.chargeTimer) {
-                this.chargeTimer.destroy();
-            }
-            
-            this.chargeTimer = this.scene.time.delayedCall(2000, () => {
-                // Safety check - enemy might be destroyed before callback fires
-                if (this && this.scene && this.active && this.body) {
-                    this.isCharging = false;
-                    this.clearTint();
-                    this.setVelocityX(this.normalSpeed * this.direction);
-                    this.chargeTimer = null;
-                }
-            });
-        }
-        
-        if (!this.isCharging) {
-            this.updatePatrol();
         }
     }
 
@@ -204,15 +149,6 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         }
     }
 
-    // Version 1.3: Clean up timers on destroy
-    destroy() {
-        if (this.chargeTimer) {
-            this.chargeTimer.destroy();
-            this.chargeTimer = null;
-        }
-        super.destroy();
-    }
-    
     updateSideways() {
         if (this.body.blocked.left || this.body.touching.left) {
             this.direction = 1;

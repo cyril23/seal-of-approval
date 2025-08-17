@@ -35,7 +35,6 @@ export default class Collectible extends Phaser.Physics.Arcade.Sprite {
                 // Update physics body to match visual position
                 // But only if the body exists and is enabled
                 if (this.body && this.body.enable) {
-                    // Version 9.4: Removed Arctic-specific handling that was corrupting collision detection
                     // Always use updateFromGameObject for consistent physics behavior
                     this.body.updateFromGameObject();
                 }

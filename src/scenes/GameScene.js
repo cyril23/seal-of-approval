@@ -150,21 +150,8 @@ export default class GameScene extends Phaser.Scene {
         this.physics.add.collider(this.collectibles, this.platforms);
         
         this.physics.add.overlap(this.player.sprite, this.collectibles, (player, collectible) => {
-            // Version 9.4: Enhanced collision logging
-            const data = collectible.getData('collectibleData');
-            if (this.currentTheme.name === 'arctic' || data?.type === 'fish') {
-                console.log(`${this.currentTheme.name} theme: Collision detected with ${data?.type || 'unknown'} at (${collectible.x.toFixed(0)}, ${collectible.y.toFixed(0)})`);
-                console.log(`  Collectible body enabled: ${collectible.body?.enable}, visible: ${collectible.visible}`);
-            }
             this.handleCollectiblePickup(collectible);
         });
-        
-        // Debug: Log collectibles group info for Arctic theme
-        if (this.currentTheme.name === 'arctic') {
-            console.log(`Arctic theme: Collectibles group has ${this.collectibles.children.entries.length} items`);
-            const fishCount = this.collectibles.children.entries.filter(c => c.getData('collectibleData')?.type === 'fish').length;
-            console.log(`Arctic theme: ${fishCount} fish in collectibles group`);
-        }
         
         this.physics.add.overlap(this.player.sprite, this.enemies, (player, enemy) => {
             this.handleEnemyCollision(enemy);
@@ -575,26 +562,13 @@ export default class GameScene extends Phaser.Scene {
     }
 
     update() {
-        // Debug Arctic fish collision every 2 seconds
-        if (!this.arcticDebugTimer) this.arcticDebugTimer = 0;
-        this.arcticDebugTimer++;
-        if (this.arcticDebugTimer > 120 && this.currentTheme.name === 'arctic') {
-            this.arcticDebugTimer = 0;
-            const fish = this.collectibles.children.entries.filter(c => c.getData('collectibleData')?.type === 'fish');
-            if (fish.length > 0) {
-                const firstFish = fish[0];
-                const distance = Phaser.Math.Distance.Between(this.player.sprite.x, this.player.sprite.y, firstFish.x, firstFish.y);
-                console.log(`Arctic debug: First fish at (${firstFish.x.toFixed(0)}, ${firstFish.y.toFixed(0)}), distance: ${distance.toFixed(0)}`);
-                console.log(`  Fish body: enabled=${firstFish.body?.enable}, size=${firstFish.body?.width}x${firstFish.body?.height}`);
-                console.log(`  Player at: (${this.player.sprite.x.toFixed(0)}, ${this.player.sprite.y.toFixed(0)})`);
-            }
-        }
         
         if (!this.isPaused) {
             this.player.update(this.cursors, this.spaceKey);
             
             // Check if player fell to the bottom (increased threshold for detection)
-            if (this.player.sprite.y > GAME_HEIGHT + 50) {
+            // Skip fall death in developer mode - bottom boundary is handled in Seal.js
+            if (!this.player.developerMode && this.player.sprite.y > GAME_HEIGHT + 50) {
                 console.log(`Player falling detected at Y position: ${this.player.sprite.y.toFixed(0)} (threshold: ${GAME_HEIGHT + 50})`);
                 this.handlePlayerFall();
             }

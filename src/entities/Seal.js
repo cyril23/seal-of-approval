@@ -1,10 +1,10 @@
 import Phaser from 'phaser';
-import { PHYSICS, PLAYER } from '../utils/constants.js';
+import { PHYSICS, PLAYER, GAME_HEIGHT } from '../utils/constants.js';
 
 export default class Seal {
     constructor(scene, x, y) {
         // Version tracking for cache verification
-        console.log('Seal.js Version: 1.1 - Fixed floating issue and Arctic collision');
+        console.log('Seal.js Version: 1.4 - Removed Arctic theme and polar bear enemy');
         
         this.scene = scene;
         this.sprite = scene.physics.add.sprite(x, y, 'seal');
@@ -59,6 +59,16 @@ export default class Seal {
         if (this.sprite.y < 0) {
             this.sprite.y = 0;
             this.sprite.setVelocityY(0);
+        }
+        
+        // Developer mode bottom boundary - keep seal within screen
+        if (this.developerMode) {
+            // Keep seal 10 pixels inside bottom boundary to avoid edge issues
+            const bottomBoundary = GAME_HEIGHT - this.sprite.height / 2 - 10;
+            if (this.sprite.y > bottomBoundary) {
+                this.sprite.y = bottomBoundary;
+                this.sprite.setVelocityY(0);
+            }
         }
         
         if (cursors.left.isDown) {

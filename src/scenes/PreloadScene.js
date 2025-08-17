@@ -64,9 +64,8 @@ export default class PreloadScene extends Phaser.Scene {
         const height = this.cameras.main.height;
         const graphics = this.add.graphics();
 
-        const themes = ['arctic', 'beach', 'city', 'ocean', 'harbor'];
+        const themes = ['beach', 'city', 'ocean', 'harbor'];
         const colors = {
-            arctic: [0xE8F4F8, 0xD0E8F0],
             beach: [0xF4E4C1, 0xE8D4A1],
             city: [0x8B8B8B, 0x6B6B6B],
             ocean: [0x006994, 0x004A6F],
@@ -106,22 +105,6 @@ export default class PreloadScene extends Phaser.Scene {
 
     addThemedElements(graphics, theme, width, height) {
         switch(theme) {
-            case 'arctic':
-                // Add icebergs
-                graphics.fillStyle(0xFFFFFF, 0.8);
-                graphics.fillTriangle(100, height - 100, 200, height - 250, 300, height - 100);
-                graphics.fillTriangle(500, height - 80, 600, height - 200, 700, height - 80);
-
-                // Add snow dots
-                graphics.fillStyle(0xFFFFFF, 0.6);
-                for (let i = 0; i < 50; i++) {
-                    const x = Math.random() * width;
-                    const y = Math.random() * height;
-                    graphics.fillCircle(x, y, 2);
-                }
-
-                break;
-
             case 'beach':
                 // Sun
                 graphics.fillStyle(0xFFDD00, 0.9);

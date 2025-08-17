@@ -100,7 +100,6 @@ export default class AudioManager {
         } else {
             // Simple menu music
             const musicPatterns = {
-                arctic: [261.63, 293.66, 329.63, 349.23],
                 beach: [329.63, 392.00, 440.00, 493.88],
                 city: [261.63, 329.63, 392.00, 523.25],
                 ocean: [196.00, 246.94, 293.66, 392.00],
@@ -122,11 +121,6 @@ export default class AudioManager {
     playGameMusic(theme) {
         // More complex in-game music with bass line and melody
         const gameMusic = {
-            arctic: {
-                bass: [130.81, 130.81, 146.83, 146.83],
-                melody: [261.63, 293.66, 329.63, 349.23, 392.00, 349.23, 329.63, 293.66],
-                tempo: 250
-            },
             beach: {
                 bass: [164.81, 164.81, 196.00, 196.00],
                 melody: [329.63, 392.00, 440.00, 493.88, 523.25, 493.88, 440.00, 392.00],

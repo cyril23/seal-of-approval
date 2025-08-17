@@ -33,7 +33,7 @@ The game uses Phaser's scene system with four main scenes:
 #### Entity System
 All game entities extend Phaser's physics sprites:
 - **Seal** (player): Mario-style physics with variable jump height, double jump mechanic, size growth system (3 sizes), power-up states, physics body properly scaled with 70% of visual size to account for emoji padding and aligned to sprite bottom
-- **Enemy**: Base class with five enemy types (human, polar_bear, seagull, orca, crab), each with unique AI behaviors
+- **Enemy**: Base class with four enemy types (human, seagull, orca, crab), each with unique AI behaviors
 - **Collectible**: Power-ups and fish with magnetic attraction system, physics bodies update during animations for reliable collision
 
 #### Manager Classes
@@ -56,7 +56,6 @@ Instead of external sprite files, the game generates sprites dynamically:
 - Emoji characters rendered to canvas textures in PreloadScene
 - Platform textures created procedurally with gradient effects
 - Detailed themed backgrounds with visual elements:
-  - Arctic: icebergs, snow particles, aurora
   - Beach: sun, palm trees, waves
   - City: building silhouettes, windows, street lights
   - Ocean: wave patterns, ships, seagulls
