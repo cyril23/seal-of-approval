@@ -64,12 +64,13 @@ export default class PreloadScene extends Phaser.Scene {
         const height = this.cameras.main.height;
         const graphics = this.add.graphics();
 
-        const themes = ['beach', 'city', 'ocean', 'harbor'];
+        const themes = ['beach', 'city', 'ocean', 'harbor', 'arctic'];
         const colors = {
             beach: [0xF4E4C1, 0xE8D4A1],
             city: [0x8B8B8B, 0x6B6B6B],
             ocean: [0x006994, 0x004A6F],
-            harbor: [0x7B8D8E, 0x5B6D6E]
+            harbor: [0x7B8D8E, 0x5B6D6E],
+            arctic: [0xE0F4FF, 0xC0D8E6]
         };
 
         themes.forEach(theme => {
@@ -222,6 +223,66 @@ export default class PreloadScene extends Phaser.Scene {
                 graphics.lineStyle(1, 0x4A90E2, 0.4);
                 for (let x = 0; x < width; x += 40) {
                     graphics.lineBetween(x, height - 40, x + 20, height - 30);
+                }
+                break;
+
+            case 'arctic':
+                // Aurora borealis effect
+                const auroraColors = [0x00FF00, 0x00FFFF, 0xFF00FF];
+                for (let i = 0; i < 3; i++) {
+                    graphics.fillStyle(auroraColors[i], 0.15);
+                    graphics.beginPath();
+                    graphics.moveTo(0, 50 + i * 30);
+                    for (let x = 0; x <= width; x += 20) {
+                        const y = 80 + i * 40 + Math.sin(x * 0.01) * 30;
+                        graphics.lineTo(x, y);
+                    }
+                    graphics.lineTo(width, 0);
+                    graphics.lineTo(0, 0);
+                    graphics.closePath();
+                    graphics.fillPath();
+                }
+
+                // Floating icebergs
+                graphics.fillStyle(0xCCE5FF, 0.9);
+                graphics.fillTriangle(150, height - 150, 100, height - 80, 200, height - 80);
+                graphics.fillTriangle(500, height - 120, 450, height - 60, 550, height - 60);
+                graphics.fillTriangle(800, height - 140, 750, height - 70, 850, height - 70);
+                
+                // Iceberg shading
+                graphics.fillStyle(0xA8D5E2, 0.6);
+                graphics.fillTriangle(150, height - 150, 150, height - 80, 200, height - 80);
+                graphics.fillTriangle(500, height - 120, 500, height - 60, 550, height - 60);
+                graphics.fillTriangle(800, height - 140, 800, height - 70, 850, height - 70);
+
+                // Snow particles (static for background)
+                graphics.fillStyle(0xFFFFFF, 0.8);
+                for (let i = 0; i < 100; i++) {
+                    const x = Math.random() * width;
+                    const y = Math.random() * height;
+                    const size = Math.random() * 2 + 1;
+                    graphics.fillCircle(x, y, size);
+                }
+
+                // Distant mountains
+                graphics.fillStyle(0x9AC0CD, 0.5);
+                graphics.fillTriangle(0, height - 50, 200, height - 300, 400, height - 50);
+                graphics.fillTriangle(300, height - 50, 500, height - 250, 700, height - 50);
+                graphics.fillTriangle(600, height - 50, 800, height - 280, 1000, height - 50);
+
+                // Ice sheet at bottom
+                graphics.fillStyle(0xE6F3FF, 1);
+                graphics.fillRect(0, height - 50, width, 50);
+                
+                // Ice cracks
+                graphics.lineStyle(1, 0x8AC4D0, 0.5);
+                for (let i = 0; i < 5; i++) {
+                    const startX = Math.random() * width;
+                    graphics.beginPath();
+                    graphics.moveTo(startX, height - 50);
+                    graphics.lineTo(startX + Math.random() * 100 - 50, height - 25);
+                    graphics.lineTo(startX + Math.random() * 100 - 50, height);
+                    graphics.strokePath();
                 }
                 break;
         }

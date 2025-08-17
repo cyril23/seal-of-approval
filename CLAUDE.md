@@ -167,3 +167,16 @@ Activated by pressing **DD** (double-tap D quickly) to open the main developer m
 - Physics bodies properly scaled to 70% of visual size and bottom-aligned to prevent floating appearance
 - Different lift amounts based on movement: 2px when moving horizontally, 3px when stationary
 - Time is properly reset when scene restarts to prevent negative time values
+
+### Arctic Theme Features
+The Arctic theme (appears every 5 levels) includes special gameplay mechanics:
+- **Polarbear Enemy**: Intelligent AI with 4-state behavior system
+  - PATROL: Walks with edge detection to avoid falling
+  - ALERT: Detects player within 400x250px range, shows exclamation mark
+  - CHARGING: Rushes at 240 speed with visual effects, stops at edges
+  - COOLDOWN: Recovery period with breathing animation
+- **Ice Physics**: Slippery platforms with reduced friction (0.15)
+- **Cracking Ice**: Some platforms break after 2 seconds of standing
+- **Floating Ice**: Platforms that bob up and down
+- **Visual Effects**: Aurora borealis, icebergs, snow particles
+- **Audio**: Special roar, charge, and ice break sound effects

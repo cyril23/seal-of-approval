@@ -21,6 +21,12 @@ export default class LevelGenerator {
         console.log('Validating platform gaps...');
         this.validateAndFixPlatformGaps(platforms);
         
+        // Apply arctic theme modifications if needed
+        if (theme.name === 'arctic') {
+            console.log('Applying arctic ice physics to platforms...');
+            this.applyArcticFeatures(platforms);
+        }
+        
         console.log('Creating goal...');
         this.createGoal();
         
@@ -361,5 +367,75 @@ export default class LevelGenerator {
             collectible.body.setAllowGravity(false);
             this.scene.collectibles.add(collectible);
         }
+    }
+
+    applyArcticFeatures(platforms) {
+        // Mark all platforms as ice platforms for slippery physics
+        platforms.forEach((platform, index) => {
+            // Skip start and end platforms
+            if (index === 0 || index === platforms.length - 1) return;
+            
+            // All arctic platforms are ice platforms
+            platform.setData('isIce', true);
+            
+            // 20% chance for special ice platform types
+            const rand = Math.random();
+            if (rand < 0.1) {
+                // Cracking ice - breaks after player stands on it
+                platform.setData('crackingIce', true);
+                platform.setData('crackTimer', 0);
+                platform.setTint(0xE6F3FF); // Lighter tint for cracking ice
+            } else if (rand < 0.2) {
+                // Floating ice - bobs up and down
+                this.makeFloatingIce(platform);
+            }
+            
+            // Visual ice effect - slightly blue tint
+            if (!platform.getData('crackingIce')) {
+                platform.setTint(0xCCE5FF);
+            }
+        });
+        
+        // Add some icicle hazards hanging from platforms
+        this.addIcicles(platforms);
+    }
+
+    makeFloatingIce(platform) {
+        platform.setData('floatingIce', true);
+        
+        const originalY = platform.y;
+        const bobAmount = 30;
+        const duration = 3000 + Math.random() * 2000;
+        
+        this.scene.tweens.add({
+            targets: platform,
+            y: originalY + bobAmount,
+            duration: duration,
+            ease: 'Sine.inOut',
+            yoyo: true,
+            repeat: -1,
+            onUpdate: () => {
+                platform.refreshBody();
+            }
+        });
+    }
+
+    addIcicles(platforms) {
+        // Add icicles under some platforms (visual only for now)
+        platforms.forEach((platform, index) => {
+            if (index === 0 || index === platforms.length - 1) return;
+            
+            if (Math.random() < 0.3) {
+                const numIcicles = Math.floor(Math.random() * 3) + 1;
+                for (let i = 0; i < numIcicles; i++) {
+                    const x = platform.x - platform.displayWidth / 3 + (i * platform.displayWidth / (numIcicles + 1));
+                    const y = platform.y + platform.displayHeight / 2;
+                    
+                    // Create icicle visual (triangle shape)
+                    const icicle = this.scene.add.triangle(x, y, 0, 0, -4, 20, 4, 20, 0xCCE5FF);
+                    icicle.setDepth(-1); // Behind sprites
+                }
+            }
+        });
     }
 }

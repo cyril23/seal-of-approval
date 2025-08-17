@@ -96,6 +96,19 @@ export const ENEMIES = {
         SPEED: 100,
         POINTS: 150,
         TYPE: 'crab'
+    },
+    POLARBEAR: {
+        PATROL_SPEED: 40,
+        CHARGE_SPEED: 240,
+        DETECTION_RANGE_X: 400,  // Increased from 250 for earlier detection
+        DETECTION_RANGE_Y: 250,  // Increased from 150 for better vertical detection
+        ESCAPE_RANGE: 500,       // Increased from 400 to match wider detection
+        ALERT_DURATION: 1000,
+        CHARGE_MAX_DISTANCE: 500,
+        COOLDOWN_DURATION: 2000,
+        POINTS: 300,
+        STOMP_MULTIPLIER: 2,
+        TYPE: 'polarbear'
     }
 };
 
@@ -127,6 +140,14 @@ export const THEMES = {
         platform: '#4A5859',
         enemies: ['human', 'crab', 'seagull'],
         tint: 0x7B8D8E
+    },
+    ARCTIC: {
+        name: 'arctic',
+        background: '#E0F4FF',
+        platform: '#A8D5E2',
+        enemies: ['polarbear'],
+        tint: 0xE0F4FF,
+        friction: 0.15
     }
 };
 
@@ -142,5 +163,6 @@ export const EMOJIS = {
     SEAGULL: '🦅',
     ORCA: '🐋',
     CRAB: '🦀',
+    POLARBEAR: '🐻‍❄️',
     GOAL: '🏁'
 };

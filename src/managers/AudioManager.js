@@ -21,7 +21,11 @@ export default class AudioManager {
             enemyDefeat: () => this.playTone(200, 0.2, 'sawtooth'),
             warning: () => this.playTone(300, 0.3, 'square'),
             gameOver: () => this.playArpeggio([400, 300, 200, 100], 0.3),
-            levelComplete: () => this.playArpeggio([400, 500, 600, 800], 0.2)
+            levelComplete: () => this.playArpeggio([400, 500, 600, 800], 0.2),
+            // Arctic theme sounds
+            roar: () => this.playRoar(),
+            charge: () => this.playCharge(),
+            iceBreak: () => this.playIceBreak()
         };
     }
 
@@ -184,6 +188,98 @@ export default class AudioManager {
         }
         
         return this.isMuted;
+    }
+
+    // Arctic theme-specific sounds
+    playRoar() {
+        if (this.isMuted) return;
+        
+        // Low frequency rumble with reverb effect
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+        const filter = this.audioContext.createBiquadFilter();
+        
+        oscillator.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+        
+        oscillator.type = 'sawtooth';
+        oscillator.frequency.value = 100;
+        
+        filter.type = 'lowpass';
+        filter.frequency.value = 200;
+        filter.Q.value = 10;
+        
+        // Modulate frequency for growl effect
+        oscillator.frequency.exponentialRampToValueAtTime(80, this.audioContext.currentTime + 0.3);
+        oscillator.frequency.exponentialRampToValueAtTime(60, this.audioContext.currentTime + 0.6);
+        
+        gainNode.gain.setValueAtTime(0.4, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.8);
+        
+        oscillator.start(this.audioContext.currentTime);
+        oscillator.stop(this.audioContext.currentTime + 0.8);
+    }
+    
+    playCharge() {
+        if (this.isMuted) return;
+        
+        // Rising pitch effect
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+        
+        oscillator.type = 'square';
+        oscillator.frequency.setValueAtTime(100, this.audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(200, this.audioContext.currentTime + 0.5);
+        
+        gainNode.gain.setValueAtTime(0.2, this.audioContext.currentTime);
+        gainNode.gain.setValueAtTime(0.2, this.audioContext.currentTime + 0.4);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.5);
+        
+        oscillator.start(this.audioContext.currentTime);
+        oscillator.stop(this.audioContext.currentTime + 0.5);
+    }
+    
+    playIceBreak() {
+        if (this.isMuted) return;
+        
+        // Crackling sound using filtered noise
+        const bufferSize = this.audioContext.sampleRate * 0.3;
+        const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+        const output = buffer.getChannelData(0);
+        
+        // Create crackling noise pattern
+        for (let i = 0; i < bufferSize; i++) {
+            output[i] = (Math.random() * 2 - 1) * Math.sin(i * 0.01);
+        }
+        
+        const noise = this.audioContext.createBufferSource();
+        const gainNode = this.audioContext.createGain();
+        const filter = this.audioContext.createBiquadFilter();
+        
+        noise.buffer = buffer;
+        noise.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+        
+        filter.type = 'highpass';
+        filter.frequency.value = 1000;
+        
+        gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.3);
+        
+        noise.start(this.audioContext.currentTime);
+        noise.stop(this.audioContext.currentTime + 0.3);
+        
+        // Add some tonal elements for ice shatter
+        for (let i = 0; i < 3; i++) {
+            setTimeout(() => {
+                this.playTone(2000 + Math.random() * 1000, 0.05, 'sine');
+            }, i * 50);
+        }
     }
 
     destroy() {

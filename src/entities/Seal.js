@@ -29,6 +29,9 @@ export default class Seal {
     }
 
     update(cursors, spaceKey) {
+        // Check if on ice platform
+        const onIce = this.isOnIcePlatform();
+        
         // Calculate speed with developer mode multiplier
         const baseSpeed = this.speedBoost ? PHYSICS.MOVE_SPEED * 2 : PHYSICS.MOVE_SPEED;
         const speed = this.developerMode ? baseSpeed * 5 : baseSpeed;
@@ -57,14 +60,34 @@ export default class Seal {
             }
         }
         
+        // Apply ice physics if on ice
+        const acceleration = onIce ? 0.5 : 1.0;  // Slower acceleration on ice
+        const drag = onIce ? 0.95 : PHYSICS.DRAG;  // Less friction on ice
+        
         if (cursors.left.isDown) {
-            this.sprite.setVelocityX(-speed);
+            if (onIce) {
+                // Gradual acceleration on ice
+                const currentVel = this.sprite.body.velocity.x;
+                const targetVel = -speed;
+                const newVel = currentVel + (targetVel - currentVel) * acceleration * 0.1;
+                this.sprite.setVelocityX(newVel);
+            } else {
+                this.sprite.setVelocityX(-speed);
+            }
             this.sprite.setFlipX(false);
         } else if (cursors.right.isDown) {
-            this.sprite.setVelocityX(speed);
+            if (onIce) {
+                // Gradual acceleration on ice
+                const currentVel = this.sprite.body.velocity.x;
+                const targetVel = speed;
+                const newVel = currentVel + (targetVel - currentVel) * acceleration * 0.1;
+                this.sprite.setVelocityX(newVel);
+            } else {
+                this.sprite.setVelocityX(speed);
+            }
             this.sprite.setFlipX(true);
         } else {
-            this.sprite.setVelocityX(this.sprite.body.velocity.x * PHYSICS.DRAG);
+            this.sprite.setVelocityX(this.sprite.body.velocity.x * drag);
         }
         
         // Developer mode vertical flight controls
@@ -250,6 +273,91 @@ export default class Seal {
                 ring.destroy();
             }
         });
+    }
+    
+    isOnIcePlatform() {
+        // Check if the seal is on an ice platform
+        if (!this.scene.platforms) return false;
+        
+        const sealBounds = this.sprite.getBounds();
+        let onIce = false;
+        
+        this.scene.platforms.children.entries.forEach(platform => {
+            if (platform.getData('isIce')) {
+                const platformBounds = platform.getBounds();
+                
+                // Check if seal is standing on this platform
+                if (this.sprite.body.touching.down && 
+                    sealBounds.bottom >= platformBounds.top - 5 &&
+                    sealBounds.bottom <= platformBounds.top + 10 &&
+                    sealBounds.right > platformBounds.left &&
+                    sealBounds.left < platformBounds.right) {
+                    onIce = true;
+                    
+                    // Handle cracking ice
+                    if (platform.getData('crackingIce')) {
+                        this.handleCrackingIce(platform);
+                    }
+                }
+            }
+        });
+        
+        return onIce;
+    }
+    
+    handleCrackingIce(platform) {
+        // Increment crack timer
+        let crackTimer = platform.getData('crackTimer') || 0;
+        crackTimer += this.scene.game.loop.delta;
+        platform.setData('crackTimer', crackTimer);
+        
+        // Show cracks after 1 second
+        if (crackTimer > 1000 && crackTimer < 2000) {
+            platform.setTint(0xCCCCCC); // Grayer tint for cracking
+            // Add shake effect
+            if (!platform.getData('shaking')) {
+                platform.setData('shaking', true);
+                this.scene.tweens.add({
+                    targets: platform,
+                    x: platform.x + Phaser.Math.Between(-2, 2),
+                    duration: 50,
+                    yoyo: true,
+                    repeat: -1
+                });
+            }
+        }
+        
+        // Break after 2 seconds
+        if (crackTimer > 2000 && !platform.getData('broken')) {
+            platform.setData('broken', true);
+            
+            // Create breaking effect
+            for (let i = 0; i < 5; i++) {
+                const shard = this.scene.add.rectangle(
+                    platform.x + Phaser.Math.Between(-20, 20),
+                    platform.y,
+                    10, 10,
+                    0xCCE5FF
+                );
+                
+                this.scene.tweens.add({
+                    targets: shard,
+                    y: platform.y + 100,
+                    x: shard.x + Phaser.Math.Between(-50, 50),
+                    alpha: 0,
+                    duration: 500,
+                    onComplete: () => shard.destroy()
+                });
+            }
+            
+            // Play ice break sound if audio manager exists
+            if (this.scene.audioManager) {
+                this.scene.audioManager.playSound('iceBreak');
+            }
+            
+            // Destroy the platform
+            platform.destroy();
+        }
     }
     
     setDeveloperMode(enabled) {
