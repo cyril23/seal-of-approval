@@ -1,14 +1,19 @@
 import Enemy from '../entities/Enemy.js';
 import Collectible from '../entities/Collectible.js';
+import SpawnManager from './SpawnManager.js';
 import { LEVEL_WIDTH, GAME_HEIGHT, LEVEL, TILE_SIZE } from '../utils/constants.js';
 
 export default class LevelGenerator {
     constructor(scene) {
         this.scene = scene;
+        this.spawnManager = new SpawnManager(scene);
     }
 
     generateLevel(theme, levelNumber) {
         console.log('Generating level', levelNumber, 'with theme', theme.name);
+        
+        // Reset spawn manager for new level
+        this.spawnManager.reset();
         
         const difficulty = Math.min(levelNumber, 10);
         const platformCount = LEVEL.MIN_PLATFORMS + Math.floor(Math.random() * (LEVEL.MAX_PLATFORMS - LEVEL.MIN_PLATFORMS));
@@ -313,27 +318,55 @@ export default class LevelGenerator {
         const enemyTypes = theme.enemies;
         const platforms = this.scene.platforms.children.entries;
         
-        // Skip the first and last platforms (start and goal areas)
-        const spawnablePlatforms = platforms.slice(1, -1);
+        // Get spawnable platforms based on theme
+        const spawnablePlatforms = this.spawnManager.getSpawnablePlatforms(platforms, theme);
         
-        for (let i = 0; i < count && i < spawnablePlatforms.length; i++) {
-            const platform = spawnablePlatforms[i];
+        // Shuffle platforms for random distribution
+        const shuffledPlatforms = [...spawnablePlatforms].sort(() => Math.random() - 0.5);
+        
+        let enemiesSpawned = 0;
+        
+        for (const platform of shuffledPlatforms) {
+            if (enemiesSpawned >= count) break;
+            
             const enemyType = Phaser.Utils.Array.GetRandom(enemyTypes);
             
-            // Place enemy on platform
-            const x = platform.x;
-            const y = platform.y - 30;
+            // Find valid spawn position using SpawnManager
+            const position = this.spawnManager.findValidSpawnPosition(
+                platform, 
+                enemyType,
+                -30 // Y offset for enemies
+            );
             
-            const enemy = new Enemy(this.scene, x, y, enemyType);
-            this.scene.enemies.add(enemy);
+            if (position) {
+                const enemy = new Enemy(this.scene, position.x, position.y, enemyType);
+                this.scene.enemies.add(enemy);
+                
+                // Register position to prevent overlaps
+                this.spawnManager.registerPosition(position.x, position.y, enemyType);
+                enemiesSpawned++;
+                
+                // For polar bears, skip nearby platforms to give them space
+                if (enemyType === 'polarbear') {
+                    // Remove next platform from consideration
+                    const currentIndex = shuffledPlatforms.indexOf(platform);
+                    if (currentIndex < shuffledPlatforms.length - 1) {
+                        shuffledPlatforms.splice(currentIndex + 1, 1);
+                    }
+                }
+            }
         }
+        
+        console.log(`Spawned ${enemiesSpawned}/${count} enemies`);
     }
 
     spawnCollectibles(count) {
         const platforms = this.scene.platforms.children.entries;
         const collectibleTypes = ['fish', 'fish', 'fish', 'star', 'speed', 'time', 'life', 'magnet'];
         
-        // Distribute collectibles across the level
+        let collectiblesSpawned = 0;
+        
+        // First pass: Try to distribute collectibles evenly across the level
         const spacing = LEVEL_WIDTH / (count + 1);
         
         for (let i = 0; i < count; i++) {
@@ -352,21 +385,45 @@ export default class LevelGenerator {
             }
             
             const type = i < count * 0.6 ? 'fish' : Phaser.Utils.Array.GetRandom(collectibleTypes);
-            const x = nearestPlatform.x + Phaser.Math.Between(-nearestPlatform.displayWidth / 3, nearestPlatform.displayWidth / 3);
-            const y = nearestPlatform.y - 50;
             
-            const collectible = new Collectible(this.scene, x, y, type);
-            this.scene.collectibles.add(collectible);
+            // Find valid spawn position using SpawnManager
+            const position = this.spawnManager.findValidSpawnPosition(
+                nearestPlatform,
+                type,
+                -50 // Y offset for collectibles
+            );
+            
+            if (position) {
+                const collectible = new Collectible(this.scene, position.x, position.y, type);
+                this.scene.collectibles.add(collectible);
+                
+                // Register position to prevent overlaps
+                this.spawnManager.registerPosition(position.x, position.y, type);
+                collectiblesSpawned++;
+            }
         }
         
-        // Add some floating fish in the air for bonus points
-        for (let i = 0; i < 10; i++) {
+        // Add floating fish in the air (these don't need collision checks as they're in open space)
+        const floatingFishCount = 10;
+        let floatingSpawned = 0;
+        
+        for (let i = 0; i < floatingFishCount * 2 && floatingSpawned < floatingFishCount; i++) {
             const x = Phaser.Math.Between(500, LEVEL.GOAL_POSITION - 500);
             const y = Phaser.Math.Between(100, 300);
-            const collectible = new Collectible(this.scene, x, y, 'fish');
-            collectible.body.setAllowGravity(false);
-            this.scene.collectibles.add(collectible);
+            
+            // Check if position is valid (not overlapping with other floating items)
+            if (this.spawnManager.isPositionValid(x, y, 'fish')) {
+                const collectible = new Collectible(this.scene, x, y, 'fish');
+                collectible.body.setAllowGravity(false);
+                this.scene.collectibles.add(collectible);
+                
+                // Register floating fish position
+                this.spawnManager.registerPosition(x, y, 'fish');
+                floatingSpawned++;
+            }
         }
+        
+        console.log(`Spawned ${collectiblesSpawned}/${count} collectibles and ${floatingSpawned} floating fish`);
     }
 
     applyArcticFeatures(platforms) {
