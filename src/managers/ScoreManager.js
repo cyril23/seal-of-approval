@@ -1,7 +1,7 @@
 export default class ScoreManager {
-    constructor(scene) {
+    constructor(scene, initialScore = 0) {
         this.scene = scene;
-        this.score = 0;
+        this.score = initialScore;
         this.combo = 0;
         this.comboTimer = null;
         this.highScore = this.loadHighScore();

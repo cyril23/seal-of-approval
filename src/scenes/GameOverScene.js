@@ -9,6 +9,8 @@ export default class GameOverScene extends Phaser.Scene {
     init(data) {
         this.finalScore = data.score || 0;
         this.finalLevel = data.level || 1;
+        this.progressDistance = data.progressDistance || 0;
+        this.progressPoints = data.progressPoints || 0;
     }
 
     create() {
@@ -37,6 +39,17 @@ export default class GameOverScene extends Phaser.Scene {
         });
         levelText.setOrigin(0.5);
         
+        // Display progress points if any were earned
+        if (this.progressPoints > 0) {
+            const progressText = this.add.text(GAME_WIDTH / 2, 340, 
+                `DISTANCE: ${this.progressDistance}px (+${this.progressPoints} pts)`, {
+                fontSize: '18px',
+                fontFamily: '"Press Start 2P", monospace',
+                color: '#00ffff'
+            });
+            progressText.setOrigin(0.5);
+        }
+        
         const highScore = localStorage.getItem('sealHighScore') || 0;
         let highScoreMessage = '';
         
@@ -44,7 +57,7 @@ export default class GameOverScene extends Phaser.Scene {
             localStorage.setItem('sealHighScore', this.finalScore);
             highScoreMessage = 'NEW HIGH SCORE!';
             
-            const newHighScoreText = this.add.text(GAME_WIDTH / 2, 380, highScoreMessage, {
+            const newHighScoreText = this.add.text(GAME_WIDTH / 2, 420, highScoreMessage, {
                 fontSize: '28px',
                 fontFamily: '"Press Start 2P", monospace',
                 color: '#ffff00'
@@ -61,7 +74,7 @@ export default class GameOverScene extends Phaser.Scene {
                 repeat: -1
             });
         } else {
-            const highScoreText = this.add.text(GAME_WIDTH / 2, 380, `HIGH SCORE: ${highScore}`, {
+            const highScoreText = this.add.text(GAME_WIDTH / 2, 420, `HIGH SCORE: ${highScore}`, {
                 fontSize: '20px',
                 fontFamily: '"Press Start 2P", monospace',
                 color: '#aaaaaa'

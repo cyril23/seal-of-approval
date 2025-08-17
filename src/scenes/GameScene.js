@@ -19,7 +19,8 @@ export default class GameScene extends Phaser.Scene {
     init(data) {
         // Receive level from scene restart or start fresh
         this.currentLevel = data?.level || 1;
-        console.log('GameScene.init() - Starting level:', this.currentLevel);
+        this.initialScore = data?.score || 0;
+        console.log('GameScene.init() - Starting level:', this.currentLevel, 'with score:', this.initialScore);
     }
 
     create() {
@@ -45,7 +46,7 @@ export default class GameScene extends Phaser.Scene {
         
         console.log('Initializing managers...');
         this.levelGenerator = new LevelGenerator(this);
-        this.scoreManager = new ScoreManager(this);
+        this.scoreManager = new ScoreManager(this, this.initialScore);
         this.audioManager = new AudioManager(this);
         
         console.log('Creating physics groups...');
@@ -370,6 +371,14 @@ export default class GameScene extends Phaser.Scene {
         const timeBonus = this.timeRemaining * SCORING.TIME_BONUS_MULTIPLIER;
         this.scoreManager.addScore(timeBonus);
         
+        // Add progress points
+        const progress = this.calculateProgressPoints();
+        if (progress.points > 0) {
+            this.scoreManager.addScore(progress.points);
+            this.showScorePopup(this.player.sprite.x, this.player.sprite.y - 80, 
+                `PROGRESS: ${progress.distance}px = +${progress.points}!`, 0x00ffff);
+        }
+        
         // Play victory sound
         this.audioManager.playSound('levelComplete');
         
@@ -461,9 +470,9 @@ export default class GameScene extends Phaser.Scene {
         this.livesText.setText(`LIVES: ${this.player.lives}`);
         this.timeText.setText(`TIME: ${this.timeRemaining}`);
         
-        // Update progress
+        // Update progress percentage toward goal
         const progress = Math.floor((this.player.sprite.x / LEVEL.GOAL_POSITION) * 100);
-        this.progressText.setText(`PROGRESS: ${Math.min(progress, 100)}%`);
+        this.progressText.setText(`PROGRESS: ${Math.min(progress, 100)}%`);   
         
     }
 
@@ -540,6 +549,13 @@ export default class GameScene extends Phaser.Scene {
         });
     }
 
+    calculateProgressPoints() {
+        // Calculate points based on distance traveled
+        const distance = Math.floor(this.maxDistanceTraveled);
+        const points = Math.floor(distance / 100) * SCORING.DISTANCE_POINTS;
+        return { distance, points };
+    }
+
     nextLevel() {
         this.currentLevel++;
         this.timeRemaining = LEVEL.TIME_LIMIT;
@@ -557,18 +573,27 @@ export default class GameScene extends Phaser.Scene {
         this.time.delayedCall(2000, () => {
             // Stop background music before restarting scene to prevent overlap
             this.audioManager.stopBackgroundMusic();
-            this.scene.restart({ level: this.currentLevel });
+            this.scene.restart({ level: this.currentLevel, score: this.scoreManager.score });
         });
     }
 
     gameOver() {
         this.timerEvent.destroy();
+        
+        // Calculate and add progress points before saving high score
+        const progress = this.calculateProgressPoints();
+        if (progress.points > 0) {
+            this.scoreManager.addScore(progress.points);
+        }
+        
         this.scoreManager.saveHighScore();
         this.audioManager.stopBackgroundMusic();
         
         this.scene.start('GameOverScene', {
             score: this.scoreManager.score,
-            level: this.currentLevel
+            level: this.currentLevel,
+            progressDistance: progress.distance,
+            progressPoints: progress.points
         });
     }
 
@@ -584,14 +609,9 @@ export default class GameScene extends Phaser.Scene {
                 this.handlePlayerFall();
             }
             
-            // Track distance for scoring
+            // Track distance traveled (points awarded at level end)
             if (this.player.sprite.x > this.maxDistanceTraveled) {
-                const distancePoints = Math.floor((this.player.sprite.x - this.maxDistanceTraveled) / 100) * SCORING.DISTANCE_POINTS;
-                if (distancePoints > 0) {
-                    this.scoreManager.addScore(distancePoints);
-                    this.showScorePopup(this.player.sprite.x, this.player.sprite.y - 50, `+${distancePoints} DISTANCE!`, 0x0099ff);
-                    this.maxDistanceTraveled = this.player.sprite.x;
-                }
+                this.maxDistanceTraveled = this.player.sprite.x;
             }
             
             if (this.player.hasMagnet) {
