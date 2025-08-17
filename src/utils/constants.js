@@ -15,16 +15,8 @@ export const PHYSICS = {
 
 export const PLAYER = {
     INITIAL_LIVES: 3,
-    INITIAL_SIZE: 1,
-    MAX_SIZE: 3,
-    SIZE_SCALE: {
-        1: 1,
-        2: 1.3,
-        3: 1.6
-    },
     INVINCIBLE_TIME: 2000,
-    BLINK_RATE: 100,
-    DISABLE_GROWING: false  // Set to true to disable size changes for debugging
+    BLINK_RATE: 100
 };
 
 export const LEVEL = {

@@ -128,20 +128,6 @@ export default class GameScene extends Phaser.Scene {
     setupCollisions() {
         // Custom collision processor for player-platform collision
         const platformCollisionProcess = (player, platform) => {
-            // Skip collision processing if seal is in growth transition
-            if (this.player.skipCollisionFrames > 0) {
-                console.log(`Skipping collision for ${this.player.skipCollisionFrames} more frames`);
-                // Keep the seal at the stored platform Y if available
-                if (this.player.platformY !== null) {
-                    const bodyBottom = this.player.sprite.body.y + this.player.sprite.body.height;
-                    const diff = this.player.platformY - bodyBottom;
-                    if (Math.abs(diff) > 1) {
-                        this.player.sprite.y += diff;
-                        this.player.sprite.body.position.y += diff;
-                    }
-                }
-                return false; // Skip normal collision processing
-            }
             return true; // Process collision normally
         };
         
@@ -216,8 +202,6 @@ export default class GameScene extends Phaser.Scene {
         this.levelText.setOrigin(0.5, 0);
         this.levelText.setScrollFactor(0);
         
-        this.sizeIndicator = this.add.text(20, 80, '🦭', { fontSize: '32px' });
-        this.sizeIndicator.setScrollFactor(0);
         
         // Add progress bar
         this.progressText = this.add.text(GAME_WIDTH / 2, 60, 'PROGRESS: 0%', {
@@ -284,15 +268,11 @@ export default class GameScene extends Phaser.Scene {
         console.log(`Player on ground before: ${this.player.sprite.body.blocked.down || this.player.sprite.body.touching.down}`);
         
         if (data.type === 'fish') {
-            this.player.grow();
-            const points = 100 * this.player.size;
+            const points = 100;
             this.scoreManager.addScore(points);
             this.showScorePopup(collectible.x, collectible.y, `+${points} FISH!`, 0x00ff00);
             this.audioManager.playSound('eat');
-            console.log(`Fish eaten! Score: +${points}, New seal size: ${this.player.size}`);
-            console.log(`Player position after: (${this.player.sprite.x.toFixed(0)}, ${this.player.sprite.y.toFixed(0)})`);
-            console.log(`Player velocity after: (${this.player.sprite.body.velocity.x.toFixed(0)}, ${this.player.sprite.body.velocity.y.toFixed(0)})`);
-            console.log(`Player on ground after: ${this.player.sprite.body.blocked.down || this.player.sprite.body.touching.down}`);
+            console.log(`Fish eaten! Score: +${points}`);
         } else if (data.type === 'star') {
             this.player.setInvincible(10000);
             this.showScorePopup(collectible.x, collectible.y, 'INVINCIBLE!', 0xffff00);
@@ -457,14 +437,6 @@ export default class GameScene extends Phaser.Scene {
         const progress = Math.floor((this.player.sprite.x / LEVEL.GOAL_POSITION) * 100);
         this.progressText.setText(`PROGRESS: ${Math.min(progress, 100)}%`);
         
-        const sealEmoji = '🦭';
-        let sizeDisplay = sealEmoji;
-        
-        // Only update scale if it has changed to avoid repeated setScale calls
-        const targetScale = this.player.size === 3 ? 1.6 : (this.player.size === 2 ? 1.3 : 1.0);
-        if (this.sizeIndicator.scaleX !== targetScale) {
-            this.sizeIndicator.setScale(targetScale);
-        }
     }
 
     togglePause() {
@@ -509,7 +481,7 @@ export default class GameScene extends Phaser.Scene {
         console.log(`Progress: ${progress}% (Position: ${this.player.sprite.x.toFixed(0)} / ${LEVEL.GOAL_POSITION})`);
         console.log(`Player: ${playerPos}, ${bodyPos}`);
         console.log(`Theme: ${this.currentTheme.name}`);
-        console.log(`Size: ${this.player.size}, Lives: ${this.player.lives}, Score: ${this.scoreManager.score}`);
+        console.log(`Lives: ${this.player.lives}, Score: ${this.scoreManager.score}`);
         console.log(`On Ground: ${this.player.sprite.body ? this.player.sprite.body.blocked.down : 'N/A'}`);
         
         // Capture the current game canvas

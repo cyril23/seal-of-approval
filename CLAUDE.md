@@ -32,7 +32,7 @@ The game uses Phaser's scene system with four main scenes:
 
 #### Entity System
 All game entities extend Phaser's physics sprites:
-- **Seal** (player): Mario-style physics with variable jump height, double jump mechanic, size growth system (3 sizes), power-up states, physics body properly scaled with 70% of visual size to account for emoji padding and aligned to sprite bottom
+- **Seal** (player): Mario-style physics with variable jump height, double jump mechanic, power-up states, physics body properly scaled with 70% of visual size to account for emoji padding and aligned to sprite bottom
 - **Enemy**: Base class with four enemy types (human, seagull, orca, crab), each with unique AI behaviors
 - **Collectible**: Power-ups and fish with magnetic attraction system, physics bodies update during animations for reliable collision
 
@@ -111,7 +111,7 @@ All game configuration in `src/utils/constants.js`:
 - **ESC**: Return to menu
 
 #### Scoring System
-- Fish collection: 100 points × seal size (100/200/300)
+- Fish collection: 100 points
 - Enemy defeat: 200 points (stomp or invincible)
 - Distance traveled: 10 points per 100px
 - Time bonus: Remaining seconds × 10 at level completion
@@ -125,7 +125,7 @@ All game configuration in `src/utils/constants.js`:
 - Camera flash and position reset on respawn
 
 ### State Management
-- Lives and size tracked in Seal entity (3 lives, 3 size levels)
+- Lives tracked in Seal entity (3 lives)
 - Score managed by ScoreManager with visual feedback
 - High scores persisted to localStorage
 - Level progression with increasing difficulty
@@ -146,7 +146,5 @@ Activated with the **D** key for testing and debugging:
 - Game resolution is 1024x768
 - All platforms are guaranteed jumpable through gap validation
 - Physics bodies properly scaled to 70% of visual size and bottom-aligned to prevent floating appearance
-- When seal grows after eating fish, uses updateFromGameObject() to let Phaser handle physics body positioning
 - Different lift amounts based on movement: 2px when moving horizontally, 3px when stationary
 - Time is properly reset when scene restarts to prevent negative time values
-- Debug flag DISABLE_GROWING in constants.js can be set to true to test without size changes
