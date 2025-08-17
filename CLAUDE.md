@@ -33,7 +33,7 @@ The game uses Phaser's scene system with four main scenes:
 #### Entity System
 All game entities extend Phaser's physics sprites:
 - **Seal** (player): Mario-style physics with variable jump height, double jump mechanic, power-up states, physics body properly scaled with 70% of visual size to account for emoji padding and aligned to sprite bottom
-- **Enemy**: Base class with four enemy types (human, seagull, orca, crab), each with unique AI behaviors
+- **Enemy**: Base class with four enemy types (human, hawk, orca, crab), each with unique AI behaviors
 - **Collectible**: Power-ups and fish with magnetic attraction system, physics bodies update during animations for reliable collision
 
 #### Manager Classes
@@ -58,7 +58,7 @@ Instead of external sprite files, the game generates sprites dynamically:
 - Detailed themed backgrounds with visual elements:
   - Beach: sun, palm trees, waves
   - City: building silhouettes, windows, street lights
-  - Ocean: wave patterns, ships, seagulls
+  - Ocean: wave patterns, ships, hawks
   - Harbor: cranes, containers, docks
 
 #### Level Generation Algorithm
@@ -162,11 +162,13 @@ Activated by pressing **DD** (double-tap D quickly) to open the main developer m
 
 ### Important Notes
 - do not `npm run dev` yourself, but ask the user to do it
+- **ALWAYS advise user to restart the webserver** after modifying source files (especially src/main.js)
 - Game resolution is 1024x768
 - All platforms are guaranteed jumpable through gap validation
 - Physics bodies properly scaled to 70% of visual size and bottom-aligned to prevent floating appearance
 - Different lift amounts based on movement: 2px when moving horizontally, 3px when stationary
 - Time is properly reset when scene restarts to prevent negative time values
+- `window.game` is exposed globally for testing purposes (set in src/main.js)
 
 ### Arctic Theme Features
 The Arctic theme (appears every 5 levels) includes special gameplay mechanics:
@@ -180,3 +182,46 @@ The Arctic theme (appears every 5 levels) includes special gameplay mechanics:
 - **Floating Ice**: Platforms that bob up and down
 - **Visual Effects**: Aurora borealis, icebergs, snow particles
 - **Audio**: Special roar, charge, and ice break sound effects
+
+### Automated Testing
+
+#### Test Framework
+The game uses Playwright for end-to-end testing, which runs in headless Chromium on WSL/Linux environments. Originally attempted with Puppeteer but Playwright provides better WSL support and automatic browser management.
+
+#### Test Commands
+```bash
+npm test            # Run tests in headless mode
+npm run test:headed # Show browser while testing  
+npm run test:debug  # Debug mode with step-through
+npm run test:ui     # Interactive UI mode
+npm run test:report # View HTML test report
+```
+
+#### Test Structure
+- **tests/game.spec.js**: Main test suite covering:
+  - Game startup and menu interaction (verifies scene transition from MenuScene to GameScene)
+  - Seal movement with arrow keys (verifies X position changes after arrow key press)
+  - Jump mechanics with spacebar (verifies Y position decreases during jump)
+  - Screenshot capture capabilities (both full page and canvas-only)
+  
+- **tests/utils/**: Helper modules for test support:
+  - `screenshot.js`: Screenshot capture utilities
+  - `gameHelpers.js`: Game interaction functions (keyboard, focus, state inspection)
+  - `imageAnalysis.js`: Mock image analysis for future visual testing
+
+#### Important Test Implementation Details
+- **Canvas Focus**: Tests must focus the canvas element before sending keyboard events using `focusCanvas(page)`
+- **Scene Transitions**: Tests wait for scene changes after actions
+- **Game State Access**: Tests can inspect internal game state via `page.evaluate()` using `window.game`
+- **Screenshots**: Automatically saved to `tests/screenshots/` with timestamps
+- **Y Position Variance**: Seal Y position is ~645.5 on spawn (not exactly 568) due to physics settling
+- **Jump Timing**: Use 200ms delay after pressing Space to catch upward motion (not 500ms)
+- **Canvas Dimensions**: May be scaled by browser (1174x880 instead of 1024x768)
+- **Test Failures**: If tests fail with timeouts, ensure the dev server is running and restart it after source changes
+
+#### Test Configuration (playwright.config.js)
+- Auto-starts dev server on port 3000
+- Viewport: 1024x768 to match game resolution
+- Screenshots on failure for debugging
+- HTML reports for test results
+- Chromium browser with WSL-optimized settings
