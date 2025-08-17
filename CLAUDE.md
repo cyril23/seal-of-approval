@@ -103,11 +103,12 @@ All game configuration in `src/utils/constants.js`:
 ### Gameplay Features
 
 #### Controls
-- **Arrow Keys**: Move left/right
+- **Arrow Keys**: Move left/right (all directions in Developer Mode)
 - **Spacebar**: Jump (hold for higher), press again for double jump
 - **P**: Pause game
 - **M**: Mute audio
 - **S**: Take screenshot (developer tool)
+- **D**: Toggle Developer Mode (flying, 5x speed, god mode)
 - **ESC**: Return to menu
 
 #### Scoring System
@@ -131,6 +132,15 @@ All game configuration in `src/utils/constants.js`:
 - Level progression with increasing difficulty
 - Progress percentage shown (distance to goal)
 - Goal completion triggers next level
+
+#### Developer Mode
+Activated with the **D** key for testing and debugging:
+- **Flying**: Gravity disabled, arrow keys control vertical movement
+- **Super Speed**: 5x normal movement speed
+- **God Mode**: Invincible to all damage (enemies, falls)
+- **Visual Indicators**: Purple tint, "DEV MODE" UI text, particle trail
+- **Fish Collection**: Still works normally for testing
+- **Camera Flash**: Purple flash when enabled, cyan when disabled
 
 ### Important Notes
 - do not `npm run dev` yourself, but ask the user to do it
