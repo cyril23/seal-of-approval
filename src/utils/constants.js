@@ -80,12 +80,17 @@ export const ENEMIES = {
         POINTS: 200,
         TYPE: 'human'
     },
-    SEAGULL: {
+    HAWK: {
         SPEED: 60,
-        DIVE_SPEED: 200,
+        DIVE_SPEED: 250,
         HOVER_HEIGHT: 100,
+        DETECTION_RANGE: 250,
+        DIVE_TRIGGER_RANGE: 150,
+        FLY_RADIUS: 250,
+        PATROL_SPEED: 50,
+        DIVE_COOLDOWN: 1000,
         POINTS: 250,
-        TYPE: 'seagull'
+        TYPE: 'hawk'
     },
     ORCA: {
         JUMP_HEIGHT: 150,
@@ -117,28 +122,28 @@ export const THEMES = {
         name: 'beach',
         background: '#F4E4C1',
         platform: '#D4A373',
-        enemies: ['crab', 'seagull', 'human'],
+        enemies: ['crab', 'hawk', 'human'],
         tint: 0xF4E4C1
     },
     CITY: {
         name: 'city',
         background: '#8B8B8B',
         platform: '#5A5A5A',
-        enemies: ['human', 'seagull'],
+        enemies: ['human', 'hawk'],
         tint: 0x8B8B8B
     },
     OCEAN: {
         name: 'ocean',
         background: '#006994',
         platform: '#4A90E2',
-        enemies: ['orca', 'seagull'],
+        enemies: ['orca', 'hawk'],
         tint: 0x006994
     },
     HARBOR: {
         name: 'harbor',
         background: '#7B8D8E',
         platform: '#4A5859',
-        enemies: ['human', 'crab', 'seagull'],
+        enemies: ['human', 'crab', 'hawk'],
         tint: 0x7B8D8E
     },
     ARCTIC: {
@@ -160,7 +165,7 @@ export const EMOJIS = {
     MAGNET: '🧲',
     SPEED: '💨',
     HUMAN: '🚶',
-    SEAGULL: '🦅',
+    HAWK: '🦅',
     ORCA: '🐋',
     CRAB: '🦀',
     POLARBEAR: '🐻‍❄️',

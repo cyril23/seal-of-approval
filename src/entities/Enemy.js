@@ -23,7 +23,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
             case 'human':
                 this.setupPatrol();
                 break;
-            case 'seagull':
+            case 'hawk':
                 this.setupFlying();
                 break;
             case 'orca':
@@ -45,19 +45,19 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     setupFlying() {
         this.body.setAllowGravity(false);
-        this.flySpeed = this.config.SPEED;
+        this.patrolSpeed = this.config.PATROL_SPEED;
         this.diveSpeed = this.config.DIVE_SPEED;
-        this.hoverHeight = this.y;
-        this.isDiving = false;
+        this.detectionRange = this.config.DETECTION_RANGE;
+        this.diveCooldown = this.config.DIVE_COOLDOWN;
         
-        this.scene.tweens.add({
-            targets: this,
-            y: this.y - 20,
-            duration: 2000,
-            ease: 'Sine.inOut',
-            yoyo: true,
-            repeat: -1
-        });
+        this.hoverHeight = this.y;
+        this.startX = this.x;
+        this.isCharging = false;
+        this.canCharge = true;
+        this.direction = 1;
+        
+        // Start simple horizontal patrol
+        this.setVelocityX(this.patrolSpeed * this.direction);
     }
 
     setupJumping() {
@@ -85,7 +85,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
             case 'human':
                 this.updatePatrol();
                 break;
-            case 'seagull':
+            case 'hawk':
                 this.updateFlying(player);
                 break;
             case 'orca':
@@ -118,27 +118,56 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
 
     updateFlying(player) {
-        const distance = Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y);
-        
-        if (distance < 80 && !this.isDiving && player.y > this.y) {
-            this.isDiving = true;
-            this.scene.tweens.killTweensOf(this);
+        if (!this.isCharging) {
+            // Simple horizontal patrol
+            if (Math.abs(this.x - this.startX) > 200) {
+                this.direction *= -1;
+                this.setVelocityX(this.patrolSpeed * this.direction);
+                this.setFlipX(this.direction < 0);
+            }
             
-            const angle = Phaser.Math.Angle.Between(this.x, this.y, player.x, player.y);
-            this.setVelocity(
-                Math.cos(angle) * this.diveSpeed,
-                Math.sin(angle) * this.diveSpeed
-            );
-            
-            this.scene.time.delayedCall(1500, () => {
-                if (this && this.scene && this.active) {
-                    this.isDiving = false;
-                    this.setVelocity(0, 0);
-                    this.y = this.hoverHeight;
-                    this.setupFlying();
-                }
-            });
+            // Check for charge opportunity
+            const distance = Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y);
+            if (distance < this.detectionRange && this.canCharge) {
+                this.startCharge(player);
+            }
+        } else {
+            // Check if charge should end (timeout or distance)
+            this.chargeTimer += this.scene.game.loop.delta;
+            if (this.chargeTimer > 1500 || Math.abs(this.y - this.hoverHeight) > 400) {
+                this.endCharge();
+            }
         }
+    }
+    
+    startCharge(player) {
+        this.isCharging = true;
+        this.canCharge = false;
+        this.chargeTimer = 0;
+        
+        // Simple charge: horizontal toward player, downward dive
+        const horizontalDirection = player.x > this.x ? 1 : -1;
+        this.setVelocityX(this.diveSpeed * horizontalDirection);
+        this.setVelocityY(this.diveSpeed * 0.5); // Dive downward
+        
+        // Face the player
+        this.setFlipX(horizontalDirection < 0);
+    }
+    
+    endCharge() {
+        this.isCharging = false;
+        
+        // Instantly return to hover height and resume patrol
+        this.y = this.hoverHeight;
+        this.setVelocityY(0);
+        this.setVelocityX(this.patrolSpeed * this.direction);
+        
+        // Reset charge cooldown
+        this.scene.time.delayedCall(this.diveCooldown, () => {
+            if (this && this.active) {
+                this.canCharge = true;
+            }
+        });
     }
 
     updateJumping() {
