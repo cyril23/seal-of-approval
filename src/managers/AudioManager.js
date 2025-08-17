@@ -4,6 +4,7 @@ export default class AudioManager {
         this.isMuted = false;
         this.sounds = {};
         this.currentMusic = null;
+        this.isGameMusic = false;
         
         this.createSounds();
     }
@@ -96,6 +97,8 @@ export default class AudioManager {
             this.stopBackgroundMusic();
         }
         
+        this.isGameMusic = isGamePlay;
+        
         if (this.isMuted) return;
         
         if (isGamePlay) {
@@ -183,7 +186,7 @@ export default class AudioManager {
             this.stopBackgroundMusic();
         } else {
             if (this.scene.currentTheme) {
-                this.playBackgroundMusic(this.scene.currentTheme.name);
+                this.playBackgroundMusic(this.scene.currentTheme.name, this.isGameMusic);
             }
         }
         
