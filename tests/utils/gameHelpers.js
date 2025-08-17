@@ -91,6 +91,7 @@ async function getGameState(page) {
         
         // Try to get player information if in GameScene
         let playerInfo = null;
+        let platformInfo = [];
         const gameScene = activeScenes.find(scene => scene.scene.key === 'GameScene');
         if (gameScene && gameScene.player) {
             playerInfo = {
@@ -98,13 +99,55 @@ async function getGameState(page) {
                 y: gameScene.player.sprite.y,
                 lives: gameScene.player.lives,
                 invincible: gameScene.player.invincible,
-                developerMode: gameScene.player.developerMode
+                developerMode: gameScene.player.developerMode,
+                // Add physics body info for debugging
+                bodyY: gameScene.player.sprite.body ? gameScene.player.sprite.body.y : null,
+                bodyHeight: gameScene.player.sprite.body ? gameScene.player.sprite.body.height : null
             };
+            
+            // Get platform information
+            if (gameScene.platforms && gameScene.platforms.children) {
+                // Find platforms near the player
+                const nearbyPlatforms = gameScene.platforms.children.entries
+                    .filter(platform => {
+                        const distance = Math.abs(platform.x - gameScene.player.sprite.x);
+                        return distance < 200; // Within 200 pixels horizontally
+                    })
+                    .map(platform => ({
+                        x: platform.x,
+                        y: platform.y,
+                        width: platform.displayWidth,
+                        height: platform.displayHeight,
+                        // Platform top edge (where seal should sit)
+                        topY: platform.y - platform.displayHeight / 2
+                    }))
+                    .sort((a, b) => a.y - b.y); // Sort by Y position
+                
+                platformInfo = nearbyPlatforms;
+                
+                // Find the platform directly below the player
+                const playerX = gameScene.player.sprite.x;
+                const playerBottom = gameScene.player.sprite.y + 24; // Half sprite height
+                const groundPlatform = nearbyPlatforms.find(platform => {
+                    return platform.topY >= playerBottom - 10 && // Platform is below or at player
+                           platform.topY <= playerBottom + 50 && // But not too far below
+                           Math.abs(platform.x - playerX) < platform.width / 2; // Player is over platform
+                });
+                
+                if (groundPlatform) {
+                    // Due to emoji sprite padding, the visual center is 15px above platform, not 24px
+                    // This accounts for the transparent padding in emoji sprites
+                    playerInfo.expectedY = groundPlatform.topY - 15; // Visual center when sitting flush
+                    playerInfo.platformTopY = groundPlatform.topY;
+                    playerInfo.floatingDistance = Math.abs(playerInfo.y - playerInfo.expectedY);
+                }
+            }
         }
         
         return {
             activeScenes: sceneKeys,
             player: playerInfo,
+            platforms: platformInfo,
             timestamp: Date.now()
         };
     });

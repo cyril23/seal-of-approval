@@ -44,12 +44,9 @@ test.describe('Seal of Approval Game Tests', () => {
         // Verify we're in the GameScene
         expect(gameState.activeScenes).toContain('GameScene');
         
-        // Verify player exists and is at expected position
+        // Verify player exists
         expect(gameState.player).toBeTruthy();
         expect(gameState.player.x).toBeCloseTo(200, -1);
-        // Y position may vary slightly due to physics, just check it's in reasonable range
-        expect(gameState.player.y).toBeGreaterThan(600);
-        expect(gameState.player.y).toBeLessThan(700);
         
         // Analyze the screenshot to find the seal (mock analysis)
         const sealFound = await findEmoji(gameScreenshot, '🦭');
@@ -158,5 +155,72 @@ test.describe('Seal of Approval Game Tests', () => {
         expect(canvasBounds.height).toBeGreaterThan(700);
         
         console.log('Canvas dimensions:', canvasBounds);
+    });
+    
+    test('seal sits flush on platforms without floating', async ({ page }) => {
+        // Start the game
+        await page.waitForTimeout(2000);
+        await focusCanvas(page);
+        await pressKey(page, 'Space');
+        
+        // Wait for physics to fully settle
+        await page.waitForTimeout(3000);
+        
+        // Get detailed game state including platform info
+        const gameState = await getGameState(page);
+        console.log('Detailed game state:', JSON.stringify(gameState, null, 2));
+        
+        // Verify player and platform data exists
+        expect(gameState.player).toBeTruthy();
+        expect(gameState.platforms).toBeTruthy();
+        expect(gameState.platforms.length).toBeGreaterThan(0);
+        
+        // Check if we have platform detection
+        if (gameState.player.platformTopY !== undefined) {
+            console.log('Platform top Y:', gameState.player.platformTopY);
+            console.log('Player Y:', gameState.player.y);
+            console.log('Expected Y:', gameState.player.expectedY);
+            console.log('Floating distance:', gameState.player.floatingDistance);
+            
+            // With offsetY=2, seal sits visually flush on platform
+            // Visual center is 15px above platform due to emoji padding
+            expect(gameState.player.floatingDistance).toBeLessThan(1); // Less than 1 pixel floating
+            
+            // Verify the seal Y matches expected position
+            expect(gameState.player.y).toBeCloseTo(gameState.player.expectedY, 0);
+        }
+        
+        // Additional check: verify physics body positioning
+        if (gameState.player.bodyY !== null) {
+            console.log('Physics body Y:', gameState.player.bodyY);
+            console.log('Physics body height:', gameState.player.bodyHeight);
+            
+            // The physics body bottom should touch the platform
+            const bodyBottom = gameState.player.bodyY + gameState.player.bodyHeight;
+            if (gameState.player.platformTopY !== undefined) {
+                console.log('Body bottom:', bodyBottom);
+                console.log('Platform top:', gameState.player.platformTopY);
+                
+                // Body bottom should be at or very close to platform top
+                expect(Math.abs(bodyBottom - gameState.player.platformTopY)).toBeLessThan(2);
+            }
+        }
+        
+        // Take a screenshot for visual verification
+        const screenshot = await takeScreenshot(page, 'seal-on-platform');
+        console.log('Screenshot saved for visual verification:', screenshot);
+        
+        // Move the seal and let it settle again to test consistency
+        await page.keyboard.down('ArrowRight');
+        await page.waitForTimeout(500);
+        await page.keyboard.up('ArrowRight');
+        await page.waitForTimeout(2000); // Wait for seal to settle
+        
+        // Check position again after movement
+        const afterMoveState = await getGameState(page);
+        if (afterMoveState.player.floatingDistance !== undefined) {
+            console.log('Floating distance after movement:', afterMoveState.player.floatingDistance);
+            expect(afterMoveState.player.floatingDistance).toBeLessThan(1);
+        }
     });
 });

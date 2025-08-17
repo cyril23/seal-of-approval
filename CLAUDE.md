@@ -202,6 +202,7 @@ npm run test:report # View HTML test report
   - Game startup and menu interaction (verifies scene transition from MenuScene to GameScene)
   - Seal movement with arrow keys (verifies X position changes after arrow key press)
   - Jump mechanics with spacebar (verifies Y position decreases during jump)
+  - Seal position verification (ensures seal sits flush on platforms without floating)
   - Screenshot capture capabilities (both full page and canvas-only)
   
 - **tests/utils/**: Helper modules for test support:
@@ -214,9 +215,10 @@ npm run test:report # View HTML test report
 - **Scene Transitions**: Tests wait for scene changes after actions
 - **Game State Access**: Tests can inspect internal game state via `page.evaluate()` using `window.game`
 - **Screenshots**: Automatically saved to `tests/screenshots/` with timestamps
-- **Y Position Variance**: Seal Y position is ~645.5 on spawn (not exactly 568) due to physics settling
+- **Seal Position**: Y=689 when sitting flush on platform (platform top at Y=704)
 - **Jump Timing**: Use 200ms delay after pressing Space to catch upward motion (not 500ms)
 - **Canvas Dimensions**: May be scaled by browser (1174x880 instead of 1024x768)
+- **Test Timeouts**: Tests may take 30-40 seconds to complete, be patient
 - **Test Failures**: If tests fail with timeouts, ensure the dev server is running and restart it after source changes
 
 #### Test Configuration (playwright.config.js)
@@ -225,3 +227,15 @@ npm run test:report # View HTML test report
 - Screenshots on failure for debugging
 - HTML reports for test results
 - Chromium browser with WSL-optimized settings
+- Tests may need 30-60 seconds to complete due to physics settling
+
+#### Emoji Sprite Positioning Insights
+- **Visual vs Mathematical Center**: Emoji sprites have transparent padding that affects positioning
+- **Actual measurements**: 
+  - Mathematical sprite center would be 24px above platform (half of 48px sprite)
+  - Visual center is actually 15px above platform due to emoji padding
+  - Physics body offsetY=2 achieves perfect visual alignment
+- **Testing approach**: 
+  - Always verify visual appearance with screenshots, not just mathematical calculations
+  - Empirical testing is crucial - what looks right visually may differ from calculations
+  - Test with different offset values iteratively to find the best visual result
