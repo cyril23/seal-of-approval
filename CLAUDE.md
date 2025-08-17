@@ -108,6 +108,7 @@ All game configuration in `src/utils/constants.js`:
 - **M**: Mute audio
 - **S**: Take screenshot (developer tool)
 - **D**: Toggle Developer Mode (flying, 5x speed, god mode)
+- **DD** (double-tap D quickly): Open Developer Menu for level selection
 - **ESC**: Return to menu
 
 #### Scoring System
@@ -140,6 +141,14 @@ Activated with the **D** key for testing and debugging:
 - **Visual Indicators**: Purple tint, "DEV MODE" UI text, particle trail
 - **Fish Collection**: Still works normally for testing
 - **Camera Flash**: Purple flash when enabled, cyan when disabled
+
+#### Developer Menu
+Activated by pressing **DD** (double-tap D quickly):
+- **Level Selection**: Choose any level to jump to
+- **Theme Preview**: Shows theme name and color for each level
+- **Navigation**: Arrow keys to select, Enter to jump, ESC to close
+- **Theme Rotation**: Themes cycle deterministically: Beach → City → Ocean → Harbor
+- **Level Display**: Shows 20 levels before and after current level
 
 ### Important Notes
 - do not `npm run dev` yourself, but ask the user to do it

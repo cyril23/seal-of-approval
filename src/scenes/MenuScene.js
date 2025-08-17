@@ -93,7 +93,7 @@ export default class MenuScene extends Phaser.Scene {
         this.audioManager.stopBackgroundMusic();
         this.cameras.main.fade(500, 0, 0, 0);
         this.time.delayedCall(500, () => {
-            this.scene.start('GameScene');
+            this.scene.start('GameScene', { level: 1 });
         });
     }
 }

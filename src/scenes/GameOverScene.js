@@ -93,7 +93,7 @@ export default class GameOverScene extends Phaser.Scene {
         menuText.setOrigin(0.5);
         
         this.input.keyboard.once('keydown-SPACE', () => {
-            this.scene.start('GameScene');
+            this.scene.start('GameScene', { level: 1 });
         });
         
         this.input.keyboard.once('keydown-ESC', () => {

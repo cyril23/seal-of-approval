@@ -13,6 +13,13 @@ export default class GameScene extends Phaser.Scene {
         this.isPaused = false;
         this.currentLevel = 1;
         this.timeRemaining = LEVEL.TIME_LIMIT;
+        this.lastDKeyTime = 0;  // For double-D detection
+    }
+
+    init(data) {
+        // Receive level from scene restart or start fresh
+        this.currentLevel = data?.level || 1;
+        console.log('GameScene.init() - Starting level:', this.currentLevel);
     }
 
     create() {
@@ -26,10 +33,11 @@ export default class GameScene extends Phaser.Scene {
         this.physics.world.setBounds(0, 0, LEVEL_WIDTH, GAME_HEIGHT);
         this.physics.world.gravity.y = 800;
         
+        // Deterministic theme selection based on level
         const themeKeys = Object.keys(THEMES);
-        const randomTheme = themeKeys[Math.floor(Math.random() * themeKeys.length)];
-        this.currentTheme = THEMES[randomTheme];
-        console.log('Selected theme:', this.currentTheme.name);
+        const themeIndex = (this.currentLevel - 1) % themeKeys.length;
+        this.currentTheme = THEMES[themeKeys[themeIndex]];
+        console.log(`Level ${this.currentLevel} - Theme: ${this.currentTheme.name}`);
         
         // Create tiling background
         console.log('Creating scrolling background...');
@@ -73,6 +81,13 @@ export default class GameScene extends Phaser.Scene {
         console.log('Starting background music...');
         // Start in-game background music
         this.audioManager.playBackgroundMusic(this.currentTheme.name, true);
+        
+        // Clean up audio when scene is stopped
+        this.events.on('shutdown', () => {
+            if (this.audioManager) {
+                this.audioManager.stopBackgroundMusic();
+            }
+        });
         
         console.log('Fading in camera...');
         this.cameras.main.fadeIn(500);
@@ -172,9 +187,20 @@ export default class GameScene extends Phaser.Scene {
             this.captureScreenshot();
         });
         
-        // Developer mode toggle
+        // Developer mode toggle with double-D detection for dev menu
         this.input.keyboard.on('keydown-D', () => {
-            this.toggleDeveloperMode();
+            const currentTime = this.time.now;
+            
+            // Check for double-D press (within 300ms)
+            if (currentTime - this.lastDKeyTime < 300) {
+                // Double-D pressed - open developer menu
+                this.openDeveloperMenu();
+                this.lastDKeyTime = 0; // Reset to prevent triple press
+            } else {
+                // Single D - toggle developer mode
+                this.toggleDeveloperMode();
+                this.lastDKeyTime = currentTime;
+            }
         });
     }
 
@@ -198,7 +224,9 @@ export default class GameScene extends Phaser.Scene {
         this.timeText.setOrigin(1, 0);
         this.timeText.setScrollFactor(0);
         
-        this.levelText = this.add.text(GAME_WIDTH / 2, 20, `LEVEL ${this.currentLevel}`, uiStyle);
+        // Show level and theme name
+        const themeName = this.currentTheme.name.charAt(0).toUpperCase() + this.currentTheme.name.slice(1);
+        this.levelText = this.add.text(GAME_WIDTH / 2, 20, `LEVEL ${this.currentLevel} - ${themeName}`, uiStyle);
         this.levelText.setOrigin(0.5, 0);
         this.levelText.setScrollFactor(0);
         
@@ -468,6 +496,17 @@ export default class GameScene extends Phaser.Scene {
             this.cameras.main.flash(100, 255, 255, 255);
             console.log('Developer Mode: DISABLED');
         }
+    }
+    
+    openDeveloperMenu() {
+        console.log('Opening Developer Menu...');
+        // Launch the developer menu as an overlay scene
+        this.scene.launch('DevMenuScene', {
+            currentLevel: this.currentLevel,
+            parentScene: this
+        });
+        // Pause this scene while menu is open
+        this.scene.pause();
     }
     
     captureScreenshot() {

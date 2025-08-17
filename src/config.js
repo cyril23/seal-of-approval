@@ -4,6 +4,7 @@ import PreloadScene from './scenes/PreloadScene.js';
 import MenuScene from './scenes/MenuScene.js';
 import GameScene from './scenes/GameScene.js';
 import GameOverScene from './scenes/GameOverScene.js';
+import DevMenuScene from './scenes/DevMenuScene.js';
 
 export default {
     type: Phaser.AUTO,
@@ -22,5 +23,5 @@ export default {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH
     },
-    scene: [PreloadScene, MenuScene, GameScene, GameOverScene]
+    scene: [PreloadScene, MenuScene, GameScene, GameOverScene, DevMenuScene]
 };
