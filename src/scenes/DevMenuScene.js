@@ -186,9 +186,9 @@ export default class DevMenuScene extends Phaser.Scene {
             'polarbear': '🐻‍❄️'
         };
         
-        // Show 20 levels before and after current level
-        const startLevel = Math.max(1, this.currentLevel - 20);
-        const endLevel = this.currentLevel + 20;
+        // Show levels 1 through current level + 100
+        const startLevel = 1;
+        const endLevel = this.currentLevel + 100;
         
         this.levelTexts = [];
         
