@@ -177,13 +177,13 @@ export default class DevMenuScene extends Phaser.Scene {
             color: '#ffffff'
         };
         
-        // Enemy emoji mapping
+        // Enemy emoji mapping - matches EMOJIS from constants.js
         const enemyEmojis = {
             'crab': '🦀',
             'hawk': '🦅',
-            'human': '👤',
+            'human': '🚶',
             'orca': '🐋',
-            'polarbear': '🐻'
+            'polarbear': '🐻‍❄️'
         };
         
         // Show 20 levels before and after current level
