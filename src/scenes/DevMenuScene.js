@@ -177,6 +177,15 @@ export default class DevMenuScene extends Phaser.Scene {
             color: '#ffffff'
         };
         
+        // Enemy emoji mapping
+        const enemyEmojis = {
+            'crab': '🦀',
+            'hawk': '🦅',
+            'human': '👤',
+            'orca': '🐋',
+            'polarbear': '🐻'
+        };
+        
         // Show 20 levels before and after current level
         const startLevel = Math.max(1, this.currentLevel - 20);
         const endLevel = this.currentLevel + 20;
@@ -192,30 +201,39 @@ export default class DevMenuScene extends Phaser.Scene {
             const yPos = (level - this.currentLevel) * 25;
             
             // Level number and theme
-            const levelText = this.add.text(-200, yPos, `Level ${level.toString().padStart(3, ' ')}`, listStyle);
+            const levelText = this.add.text(-300, yPos, `Level ${level.toString().padStart(3, ' ')}`, listStyle);
             levelText.setData('level', level);
             
             // Theme name with color indicator
-            const themeText = this.add.text(0, yPos, themeName.toUpperCase(), {
+            const themeText = this.add.text(-100, yPos, themeName.toUpperCase(), {
                 ...listStyle,
                 color: this.getThemeColor(themeName)
             });
             
+            // Enemy types
+            const enemies = theme.enemies || [];
+            const enemyString = enemies.map(e => enemyEmojis[e] || e.substr(0,3).toUpperCase()).join(' ');
+            const enemyText = this.add.text(100, yPos, enemyString, {
+                ...listStyle,
+                fontSize: '14px',
+                color: '#ff9999'
+            });
+            
             // Add current level indicator
             if (level === this.currentLevel) {
-                const currentText = this.add.text(200, yPos, '← CURRENT', {
+                const currentText = this.add.text(250, yPos, '← CURRENT', {
                     ...listStyle,
                     color: '#00ff00'
                 });
                 this.levelListContainer.add(currentText);
             }
             
-            this.levelListContainer.add([levelText, themeText]);
-            this.levelTexts.push({ level, levelText, themeText, yPos });
+            this.levelListContainer.add([levelText, themeText, enemyText]);
+            this.levelTexts.push({ level, levelText, themeText, enemyText, yPos });
         }
         
         // Level selection indicator
-        this.levelSelectionIndicator = this.add.text(-230, 0, '>', {
+        this.levelSelectionIndicator = this.add.text(-330, 0, '>', {
             fontSize: '18px',
             fontFamily: '"Press Start 2P", monospace',
             color: '#ffff00'
