@@ -178,9 +178,17 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         this.alertTimer = 0;
         this.chargeStartX = 0;
         this.cooldownTimer = 0;
+        this.chargeLogTimer = 0; // For periodic logging during charge
         this.setVelocityX(this.patrolSpeed * this.direction);
         this.setScale(1.2); // Polarbears are bigger
         this.exclamation = null;
+    }
+
+    getTimestamp() {
+        const now = this.scene.game.loop.time;
+        const seconds = Math.floor(now / 1000);
+        const ms = now % 1000;
+        return `[${seconds}.${ms.toString().padStart(3, '0')}s]`;
     }
 
     updatePolarbear(player) {
@@ -280,6 +288,14 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
 
     enterAlertState() {
+        const player = this.scene.player?.sprite;
+        console.log(`${this.getTimestamp()} 🐻‍❄️ ENTERING ALERT STATE`);
+        console.log(`  Bear pos: (${this.x.toFixed(0)}, ${this.y.toFixed(0)})`);
+        if (player) {
+            console.log(`  Seal pos: (${player.x.toFixed(0)}, ${player.y.toFixed(0)})`);
+            console.log(`  Distance: X=${Math.abs(player.x - this.x).toFixed(0)}, Y=${Math.abs(player.y - this.y).toFixed(0)}`);
+        }
+        
         this.state = 'ALERT';
         this.alertTimer = 0;
         this.setVelocityX(0);
@@ -292,8 +308,13 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
             duration: 300,
             ease: 'Power2',
             onComplete: () => {
+                // Safety check - ensure scene and enemy still exist
+                if (!this.scene || !this.active) return;
+                
                 this.showExclamation();
-                this.scene.cameras.main.shake(100, 0.005);
+                if (this.scene.cameras && this.scene.cameras.main) {
+                    this.scene.cameras.main.shake(100, 0.005);
+                }
                 if (this.scene.audioManager) {
                     this.scene.audioManager.playSound('roar');
                 }
@@ -357,6 +378,10 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
 
     enterChargeState(player) {
+        console.log(`${this.getTimestamp()} 🐻‍❄️ ENTERING CHARGE STATE`);
+        console.log(`  Bear pos: (${this.x.toFixed(0)}, ${this.y.toFixed(0)})`);
+        console.log(`  Seal pos: (${player.x.toFixed(0)}, ${player.y.toFixed(0)})`);
+        
         this.state = 'CHARGING';
         this.clearTint();
         
@@ -365,15 +390,19 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         
         // Calculate charge direction
         this.chargeDirection = player.x > this.x ? 1 : -1;
+        console.log(`  Charge direction: ${this.chargeDirection === 1 ? 'RIGHT' : 'LEFT'}`);
         this.setFlipX(this.chargeDirection === -1);
         
         this.chargeStartX = this.x;
+        this.chargeLogTimer = 0;
         
         // Lean forward
         this.setRotation(this.chargeDirection * -0.26);
         
         // Set charge velocity
         this.setVelocityX(this.chargeSpeed * this.chargeDirection);
+        console.log(`  Charge velocity set to: ${this.chargeSpeed * this.chargeDirection}`);
+        console.log(`  Actual velocity: X=${this.body.velocity.x.toFixed(0)}, Y=${this.body.velocity.y.toFixed(0)}`);
         
         // Create initial dust effect
         this.createChargeEffect();
@@ -415,6 +444,19 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     updatePolarbearCharging() {
         const chargeDistance = Math.abs(this.x - this.chargeStartX);
+        const player = this.scene.player?.sprite;
+        
+        // Periodic status logging every 500ms
+        this.chargeLogTimer += this.scene.game.loop.delta;
+        if (this.chargeLogTimer >= 500) {
+            this.chargeLogTimer = 0;
+            console.log(`${this.getTimestamp()} 🐻‍❄️ CHARGING STATUS`);
+            console.log(`  Bear: pos=(${this.x.toFixed(0)}, ${this.y.toFixed(0)}), vel=(${this.body.velocity.x.toFixed(0)}, ${this.body.velocity.y.toFixed(0)})`);
+            if (player) {
+                console.log(`  Seal: pos=(${player.x.toFixed(0)}, ${player.y.toFixed(0)})`);
+            }
+            console.log(`  Charge distance: ${chargeDistance.toFixed(0)} / ${this.config.CHARGE_MAX_DISTANCE}`);
+        }
         
         // Create speed lines
         if (this.scene.game.loop.frame % 3 === 0) {
@@ -428,6 +470,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         const checkY = this.y + 35; // At feet level
         
         let platformAhead = false;
+        let platformCount = 0;
         this.scene.platforms.children.entries.forEach(platform => {
             if (!platform.active) return; // Skip destroyed platforms
             
@@ -435,22 +478,37 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
             if (checkX >= bounds.left && checkX <= bounds.right &&
                 checkY >= bounds.top - 10 && checkY <= bounds.bottom + 30) {
                 platformAhead = true;
+                platformCount++;
             }
         });
         
         // Check charge end conditions (including edge detection)
-        if (
-            chargeDistance > this.config.CHARGE_MAX_DISTANCE ||
-            this.body.blocked.left || 
-            this.body.blocked.right ||
-            !this.body.touching.down ||
-            !platformAhead // Stop at edges
-        ) {
+        let endReason = null;
+        if (chargeDistance > this.config.CHARGE_MAX_DISTANCE) {
+            endReason = 'MAX_DISTANCE';
+        } else if (this.body.blocked.left) {
+            endReason = 'BLOCKED_LEFT';
+        } else if (this.body.blocked.right) {
+            endReason = 'BLOCKED_RIGHT';
+        } else if (!this.body.touching.down) {
+            endReason = 'NOT_TOUCHING_DOWN';
+        } else if (!platformAhead) {
+            endReason = 'NO_PLATFORM_AHEAD';
+        }
+        
+        if (endReason) {
+            console.log(`${this.getTimestamp()} 🐻‍❄️ ENDING CHARGE - Reason: ${endReason}`);
+            console.log(`  Final position: (${this.x.toFixed(0)}, ${this.y.toFixed(0)})`);
+            console.log(`  Distance charged: ${chargeDistance.toFixed(0)}`);
+            console.log(`  Platform ahead check: X=${checkX.toFixed(0)}, Y=${checkY.toFixed(0)}, Found=${platformCount} platforms`);
             this.enterCooldownState();
         }
     }
 
     enterCooldownState() {
+        console.log(`${this.getTimestamp()} 🐻‍❄️ ENTERING COOLDOWN STATE`);
+        console.log(`  Position: (${this.x.toFixed(0)}, ${this.y.toFixed(0)})`);
+        
         this.state = 'COOLDOWN';
         this.cooldownTimer = 0;
         this.setVelocityX(0);
@@ -476,12 +534,17 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
 
     returnToPatrol() {
+        console.log(`${this.getTimestamp()} 🐻‍❄️ RETURNING TO PATROL`);
+        console.log(`  Position: (${this.x.toFixed(0)}, ${this.y.toFixed(0)})`);
+        console.log(`  Direction: ${this.direction === 1 ? 'RIGHT' : 'LEFT'}`);
+        
         this.state = 'PATROL';
         this.clearTint();
         this.setRotation(0);
         this.setScale(1.2);
         this.alertTimer = 0;
         this.cooldownTimer = 0;
+        this.chargeLogTimer = 0;
         this.setVelocityX(this.patrolSpeed * this.direction);
         
         if (this.exclamation) {
