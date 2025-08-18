@@ -404,7 +404,11 @@ export default class LevelGenerator {
 
     spawnCollectibles(count, theme) {
         const platforms = this.scene.platforms.children.entries;
-        const collectibleTypes = ['fish', 'fish', 'fish', 'star', 'speed', 'time', 'life', 'magnet'];
+        // Only spawn regular fish - all powerups handled by spawnSpecialPowerups
+        const collectibleTypes = ['fish', 'fish', 'fish'];
+        
+        // Spawn special powerups first with exact counts and position constraints
+        this.spawnSpecialPowerups();
         
         let collectiblesSpawned = 0;
         
@@ -471,6 +475,110 @@ export default class LevelGenerator {
         }
         
         console.log(`Spawned ${collectiblesSpawned}/${count} collectibles in ${theme.name} theme`);
+    }
+
+    spawnSpecialPowerups() {
+        console.log('Spawning special powerups with exact counts and position constraints...');
+        
+        // Spawn exactly 2 magnets (25-35% and 55-65% progress, never after 80%)
+        const magnetPositions = [
+            { min: 0.25, max: 0.35 }, // First magnet
+            { min: 0.55, max: 0.65 }  // Second magnet
+        ];
+        
+        for (const range of magnetPositions) {
+            const progress = Phaser.Math.FloatBetween(range.min, range.max);
+            this.spawnPowerupAtProgress('magnet', progress);
+        }
+        
+        // Spawn 1-2 stars (20-80% progress)
+        const starCount = Phaser.Math.Between(1, 2);
+        if (starCount === 1) {
+            const progress = Phaser.Math.FloatBetween(0.40, 0.60);
+            this.spawnPowerupAtProgress('star', progress);
+        } else {
+            this.spawnPowerupAtProgress('star', 0.30 + Phaser.Math.FloatBetween(-0.05, 0.05));
+            this.spawnPowerupAtProgress('star', 0.65 + Phaser.Math.FloatBetween(-0.05, 0.05));
+        }
+        
+        // Spawn 0-2 speed boosts (20-90% progress)
+        const speedCount = Phaser.Math.Between(0, 2);
+        if (speedCount === 1) {
+            const progress = Phaser.Math.FloatBetween(0.45, 0.55);
+            this.spawnPowerupAtProgress('speed', progress);
+        } else if (speedCount === 2) {
+            this.spawnPowerupAtProgress('speed', 0.35 + Phaser.Math.FloatBetween(-0.05, 0.05));
+            this.spawnPowerupAtProgress('speed', 0.70 + Phaser.Math.FloatBetween(-0.05, 0.05));
+        }
+        
+        // Spawn 1-3 time bonuses (50-95% progress)
+        const timeCount = Phaser.Math.Between(1, 3);
+        const timeSpacing = 0.45 / (timeCount + 1); // Distribute within 50-95% range
+        for (let i = 0; i < timeCount; i++) {
+            const baseProgress = 0.50 + timeSpacing * (i + 1);
+            const progress = baseProgress + Phaser.Math.FloatBetween(-0.05, 0.05);
+            this.spawnPowerupAtProgress('time', Math.min(progress, 0.95));
+        }
+        
+        // Spawn 1-3 extra lives (20-95% progress) - per user request
+        // Alternative: 0-2 would make them rarer and more special
+        const lifeCount = Phaser.Math.Between(1, 3);
+        if (lifeCount === 1) {
+            const progress = Phaser.Math.FloatBetween(0.45, 0.65);
+            this.spawnPowerupAtProgress('life', progress);
+        } else if (lifeCount === 2) {
+            this.spawnPowerupAtProgress('life', 0.35 + Phaser.Math.FloatBetween(-0.05, 0.05));
+            this.spawnPowerupAtProgress('life', 0.70 + Phaser.Math.FloatBetween(-0.05, 0.05));
+        } else if (lifeCount === 3) {
+            this.spawnPowerupAtProgress('life', 0.25 + Phaser.Math.FloatBetween(-0.05, 0.05));
+            this.spawnPowerupAtProgress('life', 0.50 + Phaser.Math.FloatBetween(-0.05, 0.05));
+            this.spawnPowerupAtProgress('life', 0.80 + Phaser.Math.FloatBetween(-0.05, 0.05));
+        }
+        
+        console.log(`Special powerups spawned: 2 magnets, ${starCount} star(s), ${speedCount} speed(s), ${timeCount} time bonus(es), ${lifeCount} extra life/lives`);
+    }
+    
+    spawnPowerupAtProgress(type, progressPercent) {
+        const targetX = LEVEL.GOAL_POSITION * progressPercent;
+        const platform = this.findNearestPlatformAtProgress(progressPercent);
+        
+        if (platform) {
+            // Use SpawnManager to find valid position
+            const position = this.spawnManager.findValidSpawnPosition(
+                platform,
+                type,
+                -50 // Y offset for collectibles
+            );
+            
+            if (position) {
+                const collectible = new Collectible(this.scene, position.x, position.y, type);
+                this.scene.collectibles.add(collectible);
+                this.spawnManager.registerPosition(position.x, position.y, type);
+                console.log(`Spawned ${type} at ${Math.round(progressPercent * 100)}% progress (x: ${position.x})`);
+            } else {
+                console.warn(`Could not find valid position for ${type} at ${Math.round(progressPercent * 100)}% progress`);
+            }
+        } else {
+            console.warn(`No platform found near ${Math.round(progressPercent * 100)}% progress for ${type}`);
+        }
+    }
+    
+    findNearestPlatformAtProgress(progressPercent) {
+        const targetX = LEVEL.GOAL_POSITION * progressPercent;
+        const platforms = this.scene.platforms.children.entries;
+        
+        let nearestPlatform = null;
+        let minDistance = Infinity;
+        
+        for (const platform of platforms) {
+            const distance = Math.abs(platform.x - targetX);
+            if (distance < minDistance) {
+                minDistance = distance;
+                nearestPlatform = platform;
+            }
+        }
+        
+        return nearestPlatform;
     }
 
     applyArcticFeatures(platforms) {
