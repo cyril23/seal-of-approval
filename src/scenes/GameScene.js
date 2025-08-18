@@ -23,6 +23,7 @@ export default class GameScene extends Phaser.Scene {
         // Receive level from scene restart or start fresh
         this.currentLevel = data?.level || 1;
         this.initialScore = data?.score || 0;
+        this.currentLevelInfo = null;  // Reset cached level info for new level
         console.log('GameScene.init() - Starting level:', this.currentLevel, 'with score:', this.initialScore);
     }
 

@@ -70,12 +70,12 @@ export const LEVEL_INFO = {
                 name: 'ORCA',
                 behaviors: [
                     'Swims faster than hawks fly',
-                    'Detects seal within huge radius (750px)',
+                    'Detects seal from very far away',
                     'Ascends slowly before diving attack',
-                    'Lightning-fast dive at 350 speed',
+                    'Lightning-fast diving attacks',
                     'LETHAL - touching or stomping kills the seal',
                     'Rests with 💤 after attacking',
-                    'Wakes up after 3 seconds to hunt again'
+                    'Wakes up quickly to hunt again'
                 ]
             }
         ]
