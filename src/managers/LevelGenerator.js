@@ -52,7 +52,7 @@ export default class LevelGenerator {
         this.spawnEnemies(theme, enemyCount);
         
         console.log('Spawning', collectibleCount, 'collectibles...');
-        this.spawnCollectibles(collectibleCount);
+        this.spawnCollectibles(collectibleCount, theme);
         
         console.log('Level generation complete!');
     }
@@ -402,7 +402,7 @@ export default class LevelGenerator {
         console.log(`Spawned ${enemiesSpawned}/${count} enemies`);
     }
 
-    spawnCollectibles(count) {
+    spawnCollectibles(count, theme) {
         const platforms = this.scene.platforms.children.entries;
         const collectibleTypes = ['fish', 'fish', 'fish', 'star', 'speed', 'time', 'life', 'magnet'];
         

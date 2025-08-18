@@ -20,27 +20,6 @@ export default class Collectible extends Phaser.Physics.Arcade.Sprite {
     }
 
     setupAnimation() {
-        // Store original position for bobbing animation
-        const originalY = this.y;
-        
-        // Bobbing animation with physics body refresh
-        this.scene.tweens.add({
-            targets: this,
-            y: originalY - 5,
-            duration: 1000,
-            ease: 'Sine.inOut',
-            yoyo: true,
-            repeat: -1,
-            onUpdate: () => {
-                // Update physics body to match visual position
-                // But only if the body exists and is enabled
-                if (this.body && this.body.enable) {
-                    // Always use updateFromGameObject for consistent physics behavior
-                    this.body.updateFromGameObject();
-                }
-            }
-        });
-        
         if (this.type === 'star' || this.type === 'magnet') {
             this.scene.tweens.add({
                 targets: this,
@@ -51,17 +30,6 @@ export default class Collectible extends Phaser.Physics.Arcade.Sprite {
         }
         
         if (this.type === 'fish') {
-            // Scale animation without affecting physics body
-            this.scene.tweens.add({
-                targets: this,
-                scaleX: 1.1,
-                scaleY: 0.9,
-                duration: 500,
-                ease: 'Power2',
-                yoyo: true,
-                repeat: -1
-            });
-            
             // Make fish physics body slightly larger for better collision
             if (this.body) {
                 this.body.setSize(this.width * 1.2, this.height * 1.2);
