@@ -74,6 +74,16 @@ Located in `LevelGenerator.js`:
   - **Non-ocean themes**: Collectibles spawn above platforms and fall naturally with gravity
 - Safety ground platforms every 2000px as fallback
 
+#### Powerup Spawn Distribution
+Controlled powerup spawning implemented in `spawnSpecialPowerups()` method (src/managers/LevelGenerator.js:480-539):
+- **Magnets**: Exactly 2 per level at 25-35% and 55-65% progress
+- **Stars (Invincibility)**: 1-2 per level at 20-80% progress
+- **Speed Boosts**: 0-2 per level at 20-90% progress  
+- **Time Bonuses**: 1-3 per level at 50-95% progress
+- **Extra Lives**: 1-3 per level at 20-95% progress
+- All powerups use `findNearestPlatformAtProgress()` helper for placement
+- Positions have ±5% variance for unpredictability
+
 #### Collectible Animations
 Theme-specific animations for collectibles:
 - **Ocean fish**: Gentle vertical bobbing (8px amplitude, 2 second period, Sine.inOut easing)
