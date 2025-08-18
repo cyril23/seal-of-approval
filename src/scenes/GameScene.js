@@ -555,6 +555,13 @@ export default class GameScene extends Phaser.Scene {
     
     openDeveloperMenu() {
         console.log('Opening Developer Menu...');
+        
+        // Close info overlay instantly if it's showing
+        if (this.infoOverlay && this.infoOverlay.isShowing) {
+            console.log('Closing info overlay before opening developer menu');
+            this.infoOverlay.hide(true);  // true = instant hide without animation
+        }
+        
         // Launch the developer menu as an overlay scene
         this.scene.launch('DevMenuScene', {
             currentLevel: this.currentLevel,

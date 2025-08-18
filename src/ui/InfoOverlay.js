@@ -205,7 +205,7 @@ export default class InfoOverlay {
         this.scene.input.keyboard.on('keydown-SPACE', this.handleSpacePress);
     }
 
-    hide() {
+    hide(instant = false) {
         if (!this.isShowing) return;
 
         // Remove space key listener
@@ -213,25 +213,39 @@ export default class InfoOverlay {
             this.scene.input.keyboard.off('keydown-SPACE', this.handleSpacePress);
         }
 
-        // Fade out and destroy
-        this.scene.tweens.add({
-            targets: this.container,
-            alpha: 0,
-            duration: 200,
-            ease: 'Power2',
-            onComplete: () => {
-                if (this.container) {
-                    this.container.destroy();
-                    this.container = null;
-                }
-                this.isShowing = false;
-                
-                // Notify scene that overlay is hidden
-                if (this.scene.onInfoOverlayHidden) {
-                    this.scene.onInfoOverlayHidden();
-                }
+        if (instant) {
+            // Instant hide - no animation
+            if (this.container) {
+                this.container.destroy();
+                this.container = null;
             }
-        });
+            this.isShowing = false;
+            
+            // Notify scene that overlay is hidden
+            if (this.scene.onInfoOverlayHidden) {
+                this.scene.onInfoOverlayHidden();
+            }
+        } else {
+            // Fade out and destroy
+            this.scene.tweens.add({
+                targets: this.container,
+                alpha: 0,
+                duration: 200,
+                ease: 'Power2',
+                onComplete: () => {
+                    if (this.container) {
+                        this.container.destroy();
+                        this.container = null;
+                    }
+                    this.isShowing = false;
+                    
+                    // Notify scene that overlay is hidden
+                    if (this.scene.onInfoOverlayHidden) {
+                        this.scene.onInfoOverlayHidden();
+                    }
+                }
+            });
+        }
     }
 
     getThemeTitle(level, theme) {
