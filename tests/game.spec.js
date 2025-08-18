@@ -33,6 +33,13 @@ test.describe('Seal of Approval Game Tests', () => {
         // Wait for game scene to load
         await page.waitForTimeout(3000);
         
+        // Wait for scene transition to GameScene
+        await page.waitForFunction(() => {
+            if (!window.game || !window.game.scene) return false;
+            const activeScenes = window.game.scene.scenes.filter(scene => scene.scene.isActive());
+            return activeScenes.some(scene => scene.scene.key === 'GameScene');
+        }, { timeout: 5000 });
+        
         // Take screenshot of the game
         const gameScreenshot = await takeScreenshot(page, 'game-start');
         console.log('Game screenshot saved:', gameScreenshot);
@@ -61,6 +68,14 @@ test.describe('Seal of Approval Game Tests', () => {
         await focusCanvas(page);
         await pressKey(page, 'Space');
         await page.waitForTimeout(3000); // Increased wait for scene to fully load
+        
+        // Wait for scene transition to GameScene
+        await page.waitForFunction(() => {
+            if (!window.game || !window.game.scene) return false;
+            const activeScenes = window.game.scene.scenes.filter(scene => scene.scene.isActive());
+            const gameScene = activeScenes.find(scene => scene.scene.key === 'GameScene');
+            return gameScene && gameScene.player && gameScene.player.sprite;
+        }, { timeout: 5000 });
         
         // Get initial state
         const initialState = await getGameState(page);
@@ -107,6 +122,18 @@ test.describe('Seal of Approval Game Tests', () => {
         }, { timeout: 5000 });
         
         await page.waitForTimeout(1000); // Additional wait for physics to settle
+        
+        // Wait for seal to be on ground before testing jump
+        await page.waitForFunction(() => {
+            if (!window.game || !window.game.scene) return false;
+            const activeScenes = window.game.scene.scenes.filter(scene => scene.scene.isActive());
+            const gameScene = activeScenes.find(scene => scene.scene.key === 'GameScene');
+            if (!gameScene || !gameScene.player || !gameScene.player.sprite || !gameScene.player.sprite.body) {
+                return false;
+            }
+            // Check if seal is on ground (blocked.down means standing on something)
+            return gameScene.player.sprite.body.blocked.down;
+        }, { timeout: 5000 });
         
         // Get initial state
         const initialState = await getGameState(page);

@@ -222,6 +222,40 @@ npm run test:report # View HTML test report
 - **Test Failures**: If tests fail with timeouts, ensure the dev server is running and restart it after source changes
 - **Physics Settlement**: Always wait for `body.blocked.down` to be true before testing seal position
 
+#### Critical Test Timing Patterns
+**Scene Transition Waiting**: Tests must wait for scene transitions to complete before assertions
+```javascript
+// Wait for GameScene to be active with player ready
+await page.waitForFunction(() => {
+    if (!window.game || !window.game.scene) return false;
+    const activeScenes = window.game.scene.scenes.filter(scene => scene.scene.isActive());
+    const gameScene = activeScenes.find(scene => scene.scene.key === 'GameScene');
+    return gameScene && gameScene.player && gameScene.player.sprite;
+}, { timeout: 5000 });
+```
+
+**Jump Test Requirements**: Before testing jumps, ensure seal is on ground
+```javascript
+// Wait for seal to be standing on platform
+await page.waitForFunction(() => {
+    if (!window.game || !window.game.scene) return false;
+    const activeScenes = window.game.scene.scenes.filter(scene => scene.scene.isActive());
+    const gameScene = activeScenes.find(scene => scene.scene.key === 'GameScene');
+    if (!gameScene || !gameScene.player || !gameScene.player.sprite || !gameScene.player.sprite.body) {
+        return false;
+    }
+    // Check if seal is on ground (blocked.down means standing on something)
+    return gameScene.player.sprite.body.blocked.down;
+}, { timeout: 5000 });
+```
+
+**Key Timing Insights**:
+- Seal starts at Y=689 when properly settled on platform (not mid-air)
+- Jump tests fail if seal hasn't settled - initial Y might be ~598 (falling) instead of 689 (on platform)
+- Scene transitions from MenuScene to GameScene take time - must wait for completion
+- Player object doesn't exist immediately after scene transition - wait for it
+- Tests that check game state too early get null player or wrong scene
+
 #### Test Configuration (playwright.config.js)
 - Auto-starts dev server on port 3000
 - Viewport: 1024x768 to match game resolution
