@@ -284,7 +284,7 @@ npm run test:report # View HTML test report
 - **Jump Timing**: Use 200ms delay after pressing Space to catch upward motion (not 500ms)
 - **Canvas Dimensions**: May be scaled by browser (1174x880 instead of 1024x768)
 - **Test Completion**: Tests output "Serving HTML report at http://localhost:9323. Press Ctrl+C to quit." when done - need to Ctrl+C to exit
-- **Test Timeouts**: Tests may take 30-60 seconds to complete, be patient
+- **Test Timeouts**: Tests take 60-90 seconds to complete, be patient
 - **Test Failures**: If tests fail with timeouts, ensure the dev server is running and restart it after source changes
 - **Physics Settlement**: Always wait for `body.blocked.down` to be true before testing seal position
 
@@ -328,21 +328,23 @@ await page.waitForFunction(() => {
 - Screenshots on failure for debugging
 - HTML reports for test results
 - Chromium browser with WSL-optimized settings
-- Tests may need 30-60 seconds to complete due to physics settling
+- **Test timeout**: 90 seconds (increased for reliability)
+- **Test workers**: 16 workers for faster parallel execution (1 on CI)
+- Tests may need 60-90 seconds to complete due to physics settling
 
 #### Test Artifact Management
-- **Automatic cleanup**: Run `npm run clean:test` to clean test artifacts
-- **Screenshot retention**: Cleanup script keeps only the 5 most recent screenshots for debugging
+- **Complete cleanup**: Run `./scripts/clean-test-artifacts.sh` to remove all test artifacts
+- **Cleanup behavior**: Script removes ALL files instead of keeping recent ones
 - **Gitignore configuration**: Test artifacts automatically ignored:
   - `tests/screenshots/` - Test screenshot outputs
   - `test-results/` - Playwright test results
   - `playwright-report/` - HTML test reports
 - **Cleanup script location**: `scripts/clean-test-artifacts.sh`
 - **What gets cleaned**:
-  - Old test screenshots (keeps 5 most recent)
-  - test-results directory contents
-  - playwright-report directory contents
-  - Old log files in logs/ (keeps 3 most recent)
+  - All test screenshots in tests/screenshots/
+  - All test-results directory contents
+  - All playwright-report directory contents  
+  - All log files in logs/ directory
   - All screenshots in logs/ directory
 
 #### Emoji Sprite Positioning Insights
@@ -369,15 +371,46 @@ await page.waitForFunction(() => {
 
 #### Global Functions (available in browser console and tests)
 - **`window.jumpToLevel(levelNumber)`**: Jump directly to any level without using menus
+  - Uses the same proven logic as DevMenuScene for consistency
   - Stops any active GameScene and DevMenuScene
   - Restarts with specified level number
   - Returns true on success, false if game not initialized
   - Example: `window.jumpToLevel(101)` jumps to level 101
 
-#### Test Utility Functions (from tests/utils/gameHelpers.js)
-- **`startGameWithInfoOverlay(page)`**: Starts game from menu and handles info overlay
-  - Waits for menu to load
-  - Focuses canvas and presses Space to start
-  - Waits for GameScene transition
-  - Automatically dismisses info overlay if present (appears on level 1)
-  - Used in most test files for consistent game startup
+#### Base Helper Functions (from tests/utils/gameHelpers.js)
+Atomic helper functions that can be composed together:
+
+- **`initializeGame(page)`**: Core game loading and page navigation
+  - Navigates to game page with networkidle wait
+  - Calls waitForGameLoad() and settles timing
+  - Use at start of tests to ensure clean game state
+
+- **`startGameFromMenu(page)`**: Menu → GameScene transition
+  - Focuses canvas and presses Space
+  - Waits for GameScene to be active with 30s timeout
+
+- **`handleInfoOverlay(page)`**: Info overlay management  
+  - Detects if info overlay is showing (appears on level 1)
+  - Dismisses overlay if present by pressing Space
+  - Waits for game to resume normally
+
+- **`waitForGameReady(page)`**: Comprehensive game state validation
+  - Waits for player, enemies, platforms to be fully loaded
+  - Uses 30s timeout for reliability
+  - Call before accessing game state in tests
+
+- **`jumpToSpecificLevel(page, levelNumber)`**: Level jumping with validation
+  - Uses global window.jumpToLevel() function
+  - Includes error handling and success validation
+  - Waits for level transition to complete
+
+#### Composed Helper Functions
+High-level functions that combine base helpers:
+
+- **`loadLevel(page, levelNumber)`**: Complete level loading workflow
+  - Calls: initializeGame() → jumpToSpecificLevel() → handleInfoOverlay() → waitForGameReady()
+  - Use for enemy scaling tests and level-specific testing
+
+- **`startGameWithInfoOverlay(page)`**: Game startup from menu 
+  - Calls: startGameFromMenu() → handleInfoOverlay() → waitForGameReady()
+  - Use for basic game tests starting from menu (assumes page already loaded)
