@@ -25,6 +25,12 @@ export default class LevelGenerator {
             console.log(`Arctic level: increasing enemy count to ${enemyCount}`);
         }
         
+        // Ocean levels get more enemies (orcas)
+        if (theme.name === 'ocean') {
+            enemyCount = Math.floor(enemyCount * 1.5); // 50% more orcas
+            console.log(`Ocean level: increasing enemy count to ${enemyCount} orcas`);
+        }
+        
         const collectibleCount = LEVEL.MIN_COLLECTIBLES + Math.floor(Math.random() * (LEVEL.MAX_COLLECTIBLES - LEVEL.MIN_COLLECTIBLES));
         
         console.log('Creating', platformCount, 'platforms...');
@@ -338,6 +344,8 @@ export default class LevelGenerator {
             // Shuffle platforms for random distribution
             sortedPlatforms = [...spawnablePlatforms].sort(() => Math.random() - 0.5);
         }
+        
+        // Note: Ocean theme now only has orcas, which will spawn across all platforms
         
         let enemiesSpawned = 0;
         const polarBearsByPlatform = new Map(); // Track polar bears per platform

@@ -123,7 +123,7 @@ export const THEMES = {
         name: 'beach',
         background: '#F4E4C1',
         platform: '#D4A373',
-        enemies: ['crab', 'hawk', 'human'],
+        enemies: ['crab', 'human'],
         tint: 0xF4E4C1
     },
     CITY: {
@@ -137,7 +137,7 @@ export const THEMES = {
         name: 'ocean',
         background: '#006994',
         platform: '#4A90E2',
-        enemies: ['orca', 'hawk'],
+        enemies: ['orca'],
         tint: 0x006994
     },
     HARBOR: {

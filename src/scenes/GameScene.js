@@ -5,6 +5,8 @@ import Collectible from '../entities/Collectible.js';
 import LevelGenerator from '../managers/LevelGenerator.js';
 import ScoreManager from '../managers/ScoreManager.js';
 import AudioManager from '../managers/AudioManager.js';
+import InfoOverlay from '../ui/InfoOverlay.js';
+import { getLevelInfo, shouldShowInfo } from '../utils/gameInfo.js';
 import { GAME_WIDTH, GAME_HEIGHT, LEVEL_WIDTH, LEVEL, THEMES, CAMERA, SCORING } from '../utils/constants.js';
 
 export default class GameScene extends Phaser.Scene {
@@ -92,6 +94,16 @@ export default class GameScene extends Phaser.Scene {
         
         console.log('Fading in camera...');
         this.cameras.main.fadeIn(500);
+        
+        // Create info overlay
+        this.infoOverlay = new InfoOverlay(this);
+        
+        // Check if we should show info for this level
+        if (shouldShowInfo(this.currentLevel)) {
+            this.showLevelInfo();
+        } else {
+            this.isLevelStarted = true;
+        }
         
         console.log('GameScene.create() complete!');
         console.log('Developer keys: S = Screenshot, P = Pause, M = Mute, D = Dev Mode');
@@ -268,7 +280,8 @@ export default class GameScene extends Phaser.Scene {
         this.timerEvent = this.time.addEvent({
             delay: 1000,
             callback: () => {
-                if (!this.isPaused) {
+                // Only countdown if level has started (not showing info) and not paused
+                if (this.isLevelStarted && !this.isPaused) {
                     this.timeRemaining--;
                     this.updateUI();
                     
@@ -612,7 +625,29 @@ export default class GameScene extends Phaser.Scene {
         });
     }
 
+    showLevelInfo() {
+        // Pause physics and timer
+        this.physics.pause();
+        this.isLevelStarted = false;
+        
+        // Get info for this level
+        const info = getLevelInfo(this.currentLevel, this.currentTheme.name);
+        
+        // Show the overlay
+        this.infoOverlay.show(this.currentLevel, this.currentTheme.name, info);
+    }
+    
+    onInfoOverlayHidden() {
+        // Resume physics and start the level
+        this.physics.resume();
+        this.isLevelStarted = true;
+    }
+
     update() {
+        // Don't update if level hasn't started yet (info screen is showing)
+        if (!this.isLevelStarted) {
+            return;
+        }
         
         if (!this.isPaused) {
             this.player.update(this.cursors, this.spaceKey);
