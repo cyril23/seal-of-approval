@@ -53,7 +53,7 @@ All game entities extend Phaser's physics sprites:
 
 #### Sprite Generation
 Instead of external sprite files, the game generates sprites dynamically:
-- Emoji characters rendered to canvas textures in PreloadScene
+- Emoji characters rendered to canvas textures in PreloadScene using consistent naming (LIFE: ❤️, TIME: ⏰)
 - Platform textures created procedurally with gradient effects
 - Detailed themed backgrounds with visual elements:
   - Beach: sun, palm trees, waves
