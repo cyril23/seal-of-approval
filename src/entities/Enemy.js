@@ -341,9 +341,6 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
                 if (!this.scene || !this.active) return;
                 
                 this.showExclamation();
-                if (this.scene.cameras && this.scene.cameras.main) {
-                    this.scene.cameras.main.shake(100, 0.005);
-                }
                 if (this.scene.audioManager) {
                     this.scene.audioManager.playSound('roar');
                 }
@@ -475,6 +472,10 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         const chargeDistance = Math.abs(this.x - this.chargeStartX);
         const player = this.scene.player?.sprite;
         
+        // Calculate distance to seal
+        const distanceToSeal = player ? Math.abs(this.x - player.x) : Infinity;
+        const isCloseToseal = distanceToSeal < 60; // Within 60 pixels of seal
+        
         // Periodic status logging every 500ms
         this.chargeLogTimer += this.scene.game.loop.delta;
         if (this.chargeLogTimer >= 500) {
@@ -482,7 +483,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
             console.log(`${this.getTimestamp()} 🐻‍❄️ CHARGING STATUS`);
             console.log(`  Bear: pos=(${this.x.toFixed(0)}, ${this.y.toFixed(0)}), vel=(${this.body.velocity.x.toFixed(0)}, ${this.body.velocity.y.toFixed(0)})`);
             if (player) {
-                console.log(`  Seal: pos=(${player.x.toFixed(0)}, ${player.y.toFixed(0)})`);
+                console.log(`  Seal: pos=(${player.x.toFixed(0)}, ${player.y.toFixed(0)}), distance=${distanceToSeal.toFixed(0)}`);
             }
             console.log(`  Charge distance: ${chargeDistance.toFixed(0)} / ${this.config.CHARGE_MAX_DISTANCE}`);
         }
@@ -492,9 +493,10 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
             this.createSpeedLine();
         }
         
-        // Edge detection during charge - stop at ledges
+        // Edge detection during charge - be less cautious when close to seal
         const bearHalfWidth = 20;
-        const checkDistance = bearHalfWidth + 50; // Look further ahead when charging
+        const baseCheckDistance = isCloseToseal ? 10 : 25; // Much shorter look-ahead when close to seal
+        const checkDistance = bearHalfWidth + baseCheckDistance;
         const checkX = this.x + (this.chargeDirection * checkDistance);
         const checkY = this.y + 35; // At feet level
         
@@ -511,6 +513,14 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
             }
         });
         
+        // Check if bear reached seal (success condition)
+        if (distanceToSeal < 40) {
+            console.log(`${this.getTimestamp()} 🐻‍❄️ REACHED SEAL!`);
+            console.log(`  Final distance to seal: ${distanceToSeal.toFixed(0)}`);
+            this.enterCooldownState();
+            return;
+        }
+        
         // Check charge end conditions (including edge detection)
         let endReason = null;
         if (chargeDistance > this.config.CHARGE_MAX_DISTANCE) {
@@ -519,7 +529,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
             endReason = 'BLOCKED_LEFT';
         } else if (this.body.blocked.right) {
             endReason = 'BLOCKED_RIGHT';
-        } else if (!platformAhead) {
+        } else if (!platformAhead && !isCloseToseal) { // Only stop for edge if not close to seal
             endReason = 'NO_PLATFORM_AHEAD';
         }
         
@@ -527,6 +537,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
             console.log(`${this.getTimestamp()} 🐻‍❄️ ENDING CHARGE - Reason: ${endReason}`);
             console.log(`  Final position: (${this.x.toFixed(0)}, ${this.y.toFixed(0)})`);
             console.log(`  Distance charged: ${chargeDistance.toFixed(0)}`);
+            console.log(`  Distance to seal: ${distanceToSeal.toFixed(0)}`);
             console.log(`  Platform ahead check: X=${checkX.toFixed(0)}, Y=${checkY.toFixed(0)}, Found=${platformCount} platforms`);
             this.enterCooldownState();
         }
