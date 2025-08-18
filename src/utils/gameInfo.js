@@ -127,7 +127,7 @@ export const LEVEL_INFO = {
                     'Shows ❗ alert when detecting intruders',
                     'Roars before charging',
                     'Charges at high speed',
-                    'Cannot be defeated by stomping',
+                    'Avoid - touching or stomping kills the seal',
                     'Needs recovery time after charging'
                 ]
             }
@@ -215,7 +215,7 @@ function getThemeInfo(theme, level) {
                         'Alert state with ❗ indicator',
                         'Loud roar before action',
                         'High-speed charging',
-                        'Immune to stomp attacks',
+                        'Fatal to touch - stomping kills the seal',
                         'Cooldown period after charging'
                     ] 
                 }
