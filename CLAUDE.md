@@ -230,6 +230,21 @@ npm run test:report # View HTML test report
 - Chromium browser with WSL-optimized settings
 - Tests may need 30-60 seconds to complete due to physics settling
 
+#### Test Artifact Management
+- **Automatic cleanup**: Run `npm run clean:test` to clean test artifacts
+- **Screenshot retention**: Cleanup script keeps only the 5 most recent screenshots for debugging
+- **Gitignore configuration**: Test artifacts automatically ignored:
+  - `tests/screenshots/` - Test screenshot outputs
+  - `test-results/` - Playwright test results
+  - `playwright-report/` - HTML test reports
+- **Cleanup script location**: `scripts/clean-test-artifacts.sh`
+- **What gets cleaned**:
+  - Old test screenshots (keeps 5 most recent)
+  - test-results directory contents
+  - playwright-report directory contents
+  - Old log files in logs/ (keeps 3 most recent)
+  - All screenshots in logs/ directory
+
 #### Emoji Sprite Positioning Insights
 - **Visual vs Mathematical Center**: Emoji sprites have transparent padding that affects positioning
 - **Actual measurements**: 
