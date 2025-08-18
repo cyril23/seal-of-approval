@@ -16,6 +16,7 @@ export default class GameScene extends Phaser.Scene {
         this.currentLevel = 1;
         this.timeRemaining = LEVEL.TIME_LIMIT;
         this.lastDKeyTime = 0;  // For double-D detection
+        this.currentLevelInfo = null;  // Store level info for 'I' key
     }
 
     init(data) {
@@ -196,6 +197,14 @@ export default class GameScene extends Phaser.Scene {
         
         this.input.keyboard.on('keydown-ESC', () => {
             this.scene.start('MenuScene');
+        });
+        
+        // Info overlay hotkey
+        this.input.keyboard.on('keydown-I', () => {
+            // Only show if we have info stored and the overlay isn't already showing
+            if (this.currentLevelInfo && !this.infoOverlay.isShowing && this.isLevelStarted) {
+                this.showLevelInfo();
+            }
         });
         
         // Developer screenshot hotkey
@@ -633,11 +642,13 @@ export default class GameScene extends Phaser.Scene {
         this.physics.pause();
         this.isLevelStarted = false;
         
-        // Get info for this level
-        const info = getLevelInfo(this.currentLevel, this.currentTheme.name);
+        // Get info for this level (or use stored info if available)
+        if (!this.currentLevelInfo) {
+            this.currentLevelInfo = getLevelInfo(this.currentLevel, this.currentTheme.name);
+        }
         
         // Show the overlay
-        this.infoOverlay.show(this.currentLevel, this.currentTheme.name, info);
+        this.infoOverlay.show(this.currentLevel, this.currentTheme.name, this.currentLevelInfo);
     }
     
     onInfoOverlayHidden() {

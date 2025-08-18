@@ -137,6 +137,7 @@ All game configuration in `src/utils/constants.js`:
 - **Spacebar**: Jump (hold for higher), press again for double jump
 - **P**: Pause game
 - **M**: Mute audio
+- **I**: Show info overlay (displays level information again)
 - **S**: Take screenshot (developer tool)
 - **DD** (double-tap D quickly): Open Developer Menu
 - **ESC**: Return to menu
