@@ -327,7 +327,8 @@ export default class LevelGenerator {
             console.log(`Spawning ${count} swimming enemies in open water`);
             
             // Calculate evenly distributed X positions
-            const minX = 400;
+            // Start further away (1000px) to give player time before encountering lethal orcas
+            const minX = 1000;
             const maxX = LEVEL.GOAL_POSITION - 400;
             const spawnRange = maxX - minX;
             
