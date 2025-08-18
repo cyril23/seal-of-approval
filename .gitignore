@@ -21,6 +21,3 @@ Thumbs.db
 tests/screenshots/
 test-results/
 playwright-report/
-
-# Local Claude documentation
-CLAUDE_GIT.md
