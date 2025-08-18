@@ -2,6 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Git and GitHub Workflow
+- Git workflow instructions: @CLAUDE_GIT.md
+
 ## Commands
 
 ### Development
