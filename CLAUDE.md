@@ -32,7 +32,7 @@ The game uses Phaser's scene system with four main scenes:
 
 #### Entity System
 All game entities extend Phaser's physics sprites:
-- **Seal** (player): Mario-style physics with variable jump height, double jump mechanic, power-up states, physics body properly scaled with 70% of visual size to account for emoji padding and aligned to sprite bottom
+- **Seal** (player): Mario-style physics with variable jump height, double jump mechanic, power-up states. Physics body scaled to 75% width and 50% height of sprite, with offsetY=2 for perfect visual alignment
 - **Enemy**: Base class with four enemy types (human, hawk, orca, crab), each with unique AI behaviors
 - **Collectible**: Power-ups and fish with magnetic attraction system, physics bodies update during animations for reliable collision
 
@@ -165,8 +165,7 @@ Activated by pressing **DD** (double-tap D quickly) to open the main developer m
 - **ALWAYS advise user to restart the webserver** after modifying source files (especially src/main.js)
 - Game resolution is 1024x768
 - All platforms are guaranteed jumpable through gap validation
-- Physics bodies properly scaled to 70% of visual size and bottom-aligned to prevent floating appearance
-- Different lift amounts based on movement: 2px when moving horizontally, 3px when stationary
+- Seal physics body: 75% width, 50% height, offsetY=2 for perfect visual alignment (seal sits at Y=689 on platform at Y=704)
 - Time is properly reset when scene restarts to prevent negative time values
 - `window.game` is exposed globally for testing purposes (set in src/main.js)
 
@@ -212,14 +211,16 @@ npm run test:report # View HTML test report
 
 #### Important Test Implementation Details
 - **Canvas Focus**: Tests must focus the canvas element before sending keyboard events using `focusCanvas(page)`
-- **Scene Transitions**: Tests wait for scene changes after actions
+- **Scene Transitions**: Tests wait for scene changes after actions (3+ seconds for physics to settle)
 - **Game State Access**: Tests can inspect internal game state via `page.evaluate()` using `window.game`
 - **Screenshots**: Automatically saved to `tests/screenshots/` with timestamps
 - **Seal Position**: Y=689 when sitting flush on platform (platform top at Y=704)
 - **Jump Timing**: Use 200ms delay after pressing Space to catch upward motion (not 500ms)
 - **Canvas Dimensions**: May be scaled by browser (1174x880 instead of 1024x768)
-- **Test Timeouts**: Tests may take 30-40 seconds to complete, be patient
+- **Test Completion**: Tests output "Serving HTML report at http://localhost:9323. Press Ctrl+C to quit." when done - need to Ctrl+C to exit
+- **Test Timeouts**: Tests may take 30-60 seconds to complete, be patient
 - **Test Failures**: If tests fail with timeouts, ensure the dev server is running and restart it after source changes
+- **Physics Settlement**: Always wait for `body.blocked.down` to be true before testing seal position
 
 #### Test Configuration (playwright.config.js)
 - Auto-starts dev server on port 3000
@@ -232,10 +233,19 @@ npm run test:report # View HTML test report
 #### Emoji Sprite Positioning Insights
 - **Visual vs Mathematical Center**: Emoji sprites have transparent padding that affects positioning
 - **Actual measurements**: 
+  - Sprite is 48px tall (32px base × 1.5 scale)
   - Mathematical sprite center would be 24px above platform (half of 48px sprite)
   - Visual center is actually 15px above platform due to emoji padding
+  - Physics body: 36px width (75% of 48px), 24px height (50% of 48px)
   - Physics body offsetY=2 achieves perfect visual alignment
+  - When sitting flush: Seal Y=689, Platform top Y=704, Physics body bottom=704
+- **Key findings from empirical testing**:
+  - offsetY = 0-1: Seal appears slightly underground/embedded in platform
+  - offsetY = 2: PERFECT - Seal sits visually flush on platform
+  - offsetY = 3+: Seal begins to float visibly above platform
+  - The 9px difference from mathematical expectations (689 vs expected 680) is due to emoji visual weight distribution
 - **Testing approach**: 
   - Always verify visual appearance with screenshots, not just mathematical calculations
   - Empirical testing is crucial - what looks right visually may differ from calculations
-  - Test with different offset values iteratively to find the best visual result
+  - Test expectations must match visual reality, not theoretical calculations
+  - Platform detection in tests should look for platforms within 25px of expected position to account for physics variations
