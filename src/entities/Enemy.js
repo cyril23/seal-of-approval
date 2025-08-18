@@ -80,6 +80,24 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         });
     }
 
+    checkPlatformAhead(direction, checkDistance = 30) {
+        const checkX = this.x + (direction * checkDistance);
+        const checkY = this.y + 35;
+        
+        let platformAhead = false;
+        this.scene.platforms.children.entries.forEach(platform => {
+            if (!platform.active) return;
+            
+            const bounds = platform.getBounds();
+            if (checkX >= bounds.left && checkX <= bounds.right &&
+                checkY >= bounds.top - 10 && checkY <= bounds.bottom + 30) {
+                platformAhead = true;
+            }
+        });
+        
+        return platformAhead;
+    }
+
     update(player) {
         switch (this.type) {
             case 'human':
@@ -101,20 +119,20 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
 
     updatePatrol() {
-        if (this.body.blocked.left || this.body.touching.left) {
+        const platformAhead = this.checkPlatformAhead(this.direction);
+        
+        if (!platformAhead) {
+            this.direction *= -1;
+        } else if (this.body.blocked.left || this.body.touching.left) {
             this.direction = 1;
-            this.setVelocityX(this.patrolSpeed * this.direction);
-            this.setFlipX(false);
         } else if (this.body.blocked.right || this.body.touching.right) {
             this.direction = -1;
-            this.setVelocityX(this.patrolSpeed * this.direction);
-            this.setFlipX(true);
+        } else if (Math.abs(this.body.velocity.x) < 10) {
+            this.direction *= -1;
         }
         
-        if (Math.abs(this.body.velocity.x) < 10) {
-            this.direction *= -1;
-            this.setVelocityX(this.patrolSpeed * this.direction);
-        }
+        this.setVelocityX(this.patrolSpeed * this.direction);
+        this.setFlipX(this.direction === 1);
     }
 
     updateFlying(player) {
@@ -185,15 +203,18 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
 
     updateSideways() {
-        if (this.body.blocked.left || this.body.touching.left) {
+        const platformAhead = this.checkPlatformAhead(this.direction, 35);
+        
+        if (!platformAhead) {
+            this.direction *= -1;
+        } else if (this.body.blocked.left || this.body.touching.left) {
             this.direction = 1;
-            this.setVelocityX(this.sideSpeed * this.direction);
-            this.setFlipX(false);
         } else if (this.body.blocked.right || this.body.touching.right) {
             this.direction = -1;
-            this.setVelocityX(this.sideSpeed * this.direction);
-            this.setFlipX(true);
         }
+        
+        this.setVelocityX(this.sideSpeed * this.direction);
+        this.setFlipX(this.direction === -1);
         
         if (Math.random() < 0.01) {
             this.setVelocityY(-200);
