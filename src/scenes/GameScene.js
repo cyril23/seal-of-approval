@@ -339,11 +339,27 @@ export default class GameScene extends Phaser.Scene {
             this.audioManager.playSound('enemyDefeat');
         } else if (this.player.sprite.body.velocity.y > 0 && 
                    this.player.sprite.y < enemy.y - 10) {
-            this.scoreManager.addScore(200);
-            this.showScorePopup(enemy.x, enemy.y, '+200 STOMP!', 0xff9900);
-            enemy.destroy();
-            this.player.sprite.setVelocityY(-300);
-            this.audioManager.playSound('enemyDefeat');
+            // Check if this is a polar bear - they can't be stomped
+            if (enemy.type === 'polarbear') {
+                // Attempting to stomp a polar bear results in death and respawn
+                this.player.lives--;
+                this.audioManager.playSound('fall');
+                
+                console.log('Player tried to stomp a polar bear! Lives remaining:', this.player.lives);
+                
+                if (this.player.lives <= 0) {
+                    this.gameOver();
+                } else {
+                    this.respawnPlayer();
+                }
+            } else {
+                // Normal stomp for other enemies
+                this.scoreManager.addScore(200);
+                this.showScorePopup(enemy.x, enemy.y, '+200 STOMP!', 0xff9900);
+                enemy.destroy();
+                this.player.sprite.setVelocityY(-300);
+                this.audioManager.playSound('enemyDefeat');
+            }
         } else {
             this.player.takeDamage();
             this.audioManager.playSound('hurt');

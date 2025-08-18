@@ -519,8 +519,6 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
             endReason = 'BLOCKED_LEFT';
         } else if (this.body.blocked.right) {
             endReason = 'BLOCKED_RIGHT';
-        } else if (!this.body.touching.down) {
-            endReason = 'NOT_TOUCHING_DOWN';
         } else if (!platformAhead) {
             endReason = 'NO_PLATFORM_AHEAD';
         }
