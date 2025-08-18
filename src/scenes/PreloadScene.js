@@ -183,10 +183,10 @@ export default class PreloadScene extends Phaser.Scene {
                 graphics.fillRect(width - 280, 160, 5, 20);
                 graphics.fillRect(width - 260, 150, 5, 30);
 
-                // Seagulls
+                // Hawks
                 graphics.lineStyle(2, 0xFFFFFF, 0.8);
-                const seagulls = [[200, 100], [350, 80], [500, 120], [650, 90]];
-                seagulls.forEach(([x, y]) => {
+                const hawks = [[200, 100], [350, 80], [500, 120], [650, 90]];
+                hawks.forEach(([x, y]) => {
                     graphics.beginPath();
                     graphics.arc(x - 10, y, 10, 0, Math.PI * 0.5);
                     graphics.strokePath();
