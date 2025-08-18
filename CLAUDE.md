@@ -169,7 +169,22 @@ Activated by pressing **DD** (double-tap D quickly) to open the main developer m
 - Time is properly reset when scene restarts to prevent negative time values
 - `window.game` is exposed globally for testing purposes (set in src/main.js)
 
-### Arctic Theme Features
+### Enemy Behaviors
+
+#### Hawk Enemy
+The hawk enemy features a sophisticated two-phase attack system:
+- **Patrol**: Flies horizontally at speed 50, turning every 200px
+- **Detection**: Scans for player within 350px radius
+- **Attack Sequence**:
+  1. **Ascend Phase**: Rises slowly (60 speed) for 800ms when detecting player
+  2. **Dive Phase**: Calculates straight-line trajectory to player's stored position, dives at 250 speed
+- **Rest Cycle**: After attack, hawk becomes tired for 3 seconds
+  - Shows 💤 sleep indicator above hawk
+  - Physics completely disabled during rest
+  - Automatically wakes up and resumes hunting after 3 seconds
+- **Death Cleanup**: Sleep indicator properly removed when hawk is destroyed
+
+#### Arctic Theme Features
 The Arctic theme (appears every 5 levels) includes special gameplay mechanics:
 - **Polarbear Enemy**: Intelligent AI with 4-state behavior system
   - PATROL: Walks with edge detection to avoid falling

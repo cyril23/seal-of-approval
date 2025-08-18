@@ -85,7 +85,7 @@ export const ENEMIES = {
         SPEED: 60,
         DIVE_SPEED: 250,
         HOVER_HEIGHT: 100,
-        DETECTION_RANGE: 250,
+        DETECTION_RANGE: 350,
         DIVE_TRIGGER_RANGE: 150,
         FLY_RADIUS: 250,
         PATROL_SPEED: 50,
