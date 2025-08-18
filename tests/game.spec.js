@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 const path = require('path');
 const { takeScreenshot, takeCanvasScreenshot } = require('./utils/screenshot');
-const { focusCanvas, pressKey, holdKey, waitForGameLoad, getGameState } = require('./utils/gameHelpers');
+const { focusCanvas, pressKey, holdKey, waitForGameLoad, getGameState, startGameWithInfoOverlay } = require('./utils/gameHelpers');
 const { findEmoji, analyzeGameState } = require('./utils/imageAnalysis');
 
 test.describe('Seal of Approval Game Tests', () => {
@@ -17,28 +17,13 @@ test.describe('Seal of Approval Game Tests', () => {
     });
     
     test('can start the game and find the seal', async ({ page }) => {
-        // Wait a bit more for the menu scene to initialize
-        await page.waitForTimeout(2000);
-        
         // Take screenshot of menu
+        await page.waitForTimeout(2000);
         const menuScreenshot = await takeScreenshot(page, 'menu');
         console.log('Menu screenshot saved:', menuScreenshot);
         
-        // Focus the canvas before pressing space
-        await focusCanvas(page);
-        
-        // Press spacebar to start the game
-        await pressKey(page, 'Space');
-        
-        // Wait for game scene to load
-        await page.waitForTimeout(3000);
-        
-        // Wait for scene transition to GameScene
-        await page.waitForFunction(() => {
-            if (!window.game || !window.game.scene) return false;
-            const activeScenes = window.game.scene.scenes.filter(scene => scene.scene.isActive());
-            return activeScenes.some(scene => scene.scene.key === 'GameScene');
-        }, { timeout: 5000 });
+        // Start the game and handle info overlay
+        await startGameWithInfoOverlay(page);
         
         // Take screenshot of the game
         const gameScreenshot = await takeScreenshot(page, 'game-start');
@@ -63,19 +48,8 @@ test.describe('Seal of Approval Game Tests', () => {
     });
     
     test('can move the seal with arrow keys', async ({ page }) => {
-        // Start the game
-        await page.waitForTimeout(2000);
-        await focusCanvas(page);
-        await pressKey(page, 'Space');
-        await page.waitForTimeout(3000); // Increased wait for scene to fully load
-        
-        // Wait for scene transition to GameScene
-        await page.waitForFunction(() => {
-            if (!window.game || !window.game.scene) return false;
-            const activeScenes = window.game.scene.scenes.filter(scene => scene.scene.isActive());
-            const gameScene = activeScenes.find(scene => scene.scene.key === 'GameScene');
-            return gameScene && gameScene.player && gameScene.player.sprite;
-        }, { timeout: 5000 });
+        // Start the game and handle info overlay
+        await startGameWithInfoOverlay(page);
         
         // Get initial state
         const initialState = await getGameState(page);
@@ -108,20 +82,8 @@ test.describe('Seal of Approval Game Tests', () => {
     });
     
     test('can make the seal jump with spacebar', async ({ page }) => {
-        // Start the game
-        await page.waitForTimeout(2000);
-        await focusCanvas(page);
-        await pressKey(page, 'Space');
-        
-        // Wait for scene to be in GameScene
-        await page.waitForFunction(() => {
-            if (!window.game || !window.game.scene) return false;
-            const activeScenes = window.game.scene.scenes.filter(scene => scene.scene.isActive());
-            const gameScene = activeScenes.find(scene => scene.scene.key === 'GameScene');
-            return gameScene && gameScene.player && gameScene.player.sprite;
-        }, { timeout: 5000 });
-        
-        await page.waitForTimeout(1000); // Additional wait for physics to settle
+        // Start the game and handle info overlay
+        await startGameWithInfoOverlay(page);
         
         // Wait for seal to be on ground before testing jump
         await page.waitForFunction(() => {
@@ -177,11 +139,8 @@ test.describe('Seal of Approval Game Tests', () => {
     });
     
     test('can take canvas-only screenshots', async ({ page }) => {
-        // Start the game
-        await page.waitForTimeout(2000);
-        await focusCanvas(page);
-        await pressKey(page, 'Space');
-        await page.waitForTimeout(2000);
+        // Start the game and handle info overlay
+        await startGameWithInfoOverlay(page);
         
         // Take canvas screenshot
         const canvasScreenshot = await takeCanvasScreenshot(page, 'canvas-test');
@@ -200,13 +159,8 @@ test.describe('Seal of Approval Game Tests', () => {
     });
     
     test('seal sits flush on platforms without floating', async ({ page }) => {
-        // Start the game
-        await page.waitForTimeout(2000);
-        await focusCanvas(page);
-        await pressKey(page, 'Space');
-        
-        // Wait for physics to fully settle
-        await page.waitForTimeout(3000);
+        // Start the game and handle info overlay
+        await startGameWithInfoOverlay(page);
         
         // Wait for seal to be on ground
         await page.waitForFunction(() => {
@@ -275,5 +229,90 @@ test.describe('Seal of Approval Game Tests', () => {
             console.log('Floating distance after movement:', afterMoveState.player.floatingDistance);
             expect(afterMoveState.player.floatingDistance).toBeLessThan(1);
         }
+    });
+    
+    test('shows info overlay on level 1 and can be dismissed', async ({ page }) => {
+        // Wait for menu to be ready
+        await page.waitForTimeout(2000);
+        
+        // Take screenshot of menu
+        const menuScreenshot = await takeScreenshot(page, 'menu-before-start');
+        console.log('Menu screenshot saved:', menuScreenshot);
+        
+        // Focus canvas and press space to start from menu
+        await focusCanvas(page);
+        await pressKey(page, 'Space');
+        
+        // Wait for GameScene to load
+        await page.waitForTimeout(1000);
+        
+        // Wait for scene transition to GameScene
+        await page.waitForFunction(() => {
+            if (!window.game || !window.game.scene) return false;
+            const activeScenes = window.game.scene.scenes.filter(scene => scene.scene.isActive());
+            return activeScenes.some(scene => scene.scene.key === 'GameScene');
+        }, { timeout: 5000 });
+        
+        // Verify info overlay is showing
+        const isInfoShowing = await page.evaluate(() => {
+            const activeScenes = window.game.scene.scenes.filter(scene => scene.scene.isActive());
+            const gameScene = activeScenes.find(scene => scene.scene.key === 'GameScene');
+            return gameScene && gameScene.infoOverlay && gameScene.infoOverlay.isShowing;
+        });
+        
+        expect(isInfoShowing).toBe(true);
+        console.log('Info overlay is showing as expected');
+        
+        // Take screenshot of info overlay
+        const overlayScreenshot = await takeScreenshot(page, 'info-overlay');
+        console.log('Info overlay screenshot saved:', overlayScreenshot);
+        
+        // Verify game is paused while overlay is showing
+        const isPaused = await page.evaluate(() => {
+            const activeScenes = window.game.scene.scenes.filter(scene => scene.scene.isActive());
+            const gameScene = activeScenes.find(scene => scene.scene.key === 'GameScene');
+            return gameScene && !gameScene.isLevelStarted;
+        });
+        
+        expect(isPaused).toBe(true);
+        console.log('Game is paused while info overlay is showing');
+        
+        // Wait a bit for overlay to be fully visible
+        await page.waitForTimeout(500);
+        
+        // Press space to dismiss the overlay
+        await pressKey(page, 'Space');
+        
+        // Wait for overlay to fade out
+        await page.waitForTimeout(500);
+        
+        // Verify overlay is now hidden
+        const isInfoHidden = await page.evaluate(() => {
+            const activeScenes = window.game.scene.scenes.filter(scene => scene.scene.isActive());
+            const gameScene = activeScenes.find(scene => scene.scene.key === 'GameScene');
+            return gameScene && gameScene.infoOverlay && !gameScene.infoOverlay.isShowing;
+        });
+        
+        expect(isInfoHidden).toBe(true);
+        console.log('Info overlay has been dismissed');
+        
+        // Verify game has started
+        const isStarted = await page.evaluate(() => {
+            const activeScenes = window.game.scene.scenes.filter(scene => scene.scene.isActive());
+            const gameScene = activeScenes.find(scene => scene.scene.key === 'GameScene');
+            return gameScene && gameScene.isLevelStarted;
+        });
+        
+        expect(isStarted).toBe(true);
+        console.log('Game has started after dismissing overlay');
+        
+        // Verify player is ready and game is playable
+        const gameState = await getGameState(page);
+        expect(gameState.player).toBeTruthy();
+        expect(gameState.activeScenes).toContain('GameScene');
+        
+        // Take screenshot to verify game is running
+        const gameScreenshot = await takeScreenshot(page, 'game-after-overlay');
+        console.log('Game screenshot after overlay dismissal:', gameScreenshot);
     });
 });
