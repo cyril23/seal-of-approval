@@ -1,13 +1,14 @@
 import Phaser from 'phaser';
 
 export default class Collectible extends Phaser.Physics.Arcade.Sprite {
-    constructor(scene, x, y, type) {
+    constructor(scene, x, y, type, theme) {
         super(scene, x, y, type);
         
         scene.add.existing(this);
         scene.physics.add.existing(this);
         
         this.type = type;
+        this.theme = theme;
         this.setData('collectibleData', { type: type });
         
         this.setBounce(0.4);
@@ -33,6 +34,22 @@ export default class Collectible extends Phaser.Physics.Arcade.Sprite {
             // Make fish physics body slightly larger for better collision
             if (this.body) {
                 this.body.setSize(this.width * 1.2, this.height * 1.2);
+            }
+            
+            // Add vertical bobbing animation only for ocean theme
+            if (this.theme && this.theme.name === 'ocean') {
+                // Delay animation start to allow gravity to be set first
+                this.scene.time.delayedCall(50, () => {
+                    const originalY = this.y;
+                    this.scene.tweens.add({
+                        targets: this,
+                        y: originalY - 8,
+                        duration: 2000,
+                        ease: 'Sine.inOut',
+                        yoyo: true,
+                        repeat: -1
+                    });
+                });
             }
         }
         

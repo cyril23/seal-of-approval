@@ -408,64 +408,69 @@ export default class LevelGenerator {
         
         let collectiblesSpawned = 0;
         
-        // First pass: Try to distribute collectibles evenly across the level
-        const spacing = LEVEL_WIDTH / (count + 1);
-        
-        for (let i = 0; i < count; i++) {
-            const targetX = spacing * (i + 1);
-            
-            // Find nearest platform to this X position
-            let nearestPlatform = platforms[0];
-            let minDistance = Math.abs(platforms[0].x - targetX);
-            
-            for (const platform of platforms) {
-                const distance = Math.abs(platform.x - targetX);
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    nearestPlatform = platform;
+        // Ocean theme: spawn fish at various heights in the water
+        if (theme.name === 'ocean') {
+            // Spawn fish throughout the ocean at various heights
+            for (let i = 0; i < count; i++) {
+                const targetX = Phaser.Math.Between(300, LEVEL.GOAL_POSITION - 300);
+                const targetY = Phaser.Math.Between(100, GAME_HEIGHT - 150);
+                
+                const type = i < count * 0.6 ? 'fish' : Phaser.Utils.Array.GetRandom(collectibleTypes);
+                
+                // Check if position is valid
+                if (this.spawnManager.isPositionValid(targetX, targetY, type)) {
+                    const collectible = new Collectible(this.scene, targetX, targetY, type, theme);
+                    
+                    // Ocean fish float in water
+                    if (type === 'fish') {
+                        collectible.body.setAllowGravity(false);
+                    }
+                    
+                    this.scene.collectibles.add(collectible);
+                    this.spawnManager.registerPosition(targetX, targetY, type);
+                    collectiblesSpawned++;
                 }
             }
+        } else {
+            // Non-ocean themes: spawn collectibles above platforms
+            const spacing = LEVEL_WIDTH / (count + 1);
             
-            const type = i < count * 0.6 ? 'fish' : Phaser.Utils.Array.GetRandom(collectibleTypes);
-            
-            // Find valid spawn position using SpawnManager
-            const position = this.spawnManager.findValidSpawnPosition(
-                nearestPlatform,
-                type,
-                -50 // Y offset for collectibles
-            );
-            
-            if (position) {
-                const collectible = new Collectible(this.scene, position.x, position.y, type);
-                this.scene.collectibles.add(collectible);
+            for (let i = 0; i < count; i++) {
+                const targetX = spacing * (i + 1);
                 
-                // Register position to prevent overlaps
-                this.spawnManager.registerPosition(position.x, position.y, type);
-                collectiblesSpawned++;
+                // Find nearest platform to this X position
+                let nearestPlatform = platforms[0];
+                let minDistance = Math.abs(platforms[0].x - targetX);
+                
+                for (const platform of platforms) {
+                    const distance = Math.abs(platform.x - targetX);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        nearestPlatform = platform;
+                    }
+                }
+                
+                const type = i < count * 0.6 ? 'fish' : Phaser.Utils.Array.GetRandom(collectibleTypes);
+                
+                // Find valid spawn position using SpawnManager
+                const position = this.spawnManager.findValidSpawnPosition(
+                    nearestPlatform,
+                    type,
+                    -50 // Y offset for collectibles
+                );
+                
+                if (position) {
+                    const collectible = new Collectible(this.scene, position.x, position.y, type, theme);
+                    this.scene.collectibles.add(collectible);
+                    
+                    // Register position to prevent overlaps
+                    this.spawnManager.registerPosition(position.x, position.y, type);
+                    collectiblesSpawned++;
+                }
             }
         }
         
-        // Add floating fish in the air (these don't need collision checks as they're in open space)
-        const floatingFishCount = 10;
-        let floatingSpawned = 0;
-        
-        for (let i = 0; i < floatingFishCount * 2 && floatingSpawned < floatingFishCount; i++) {
-            const x = Phaser.Math.Between(500, LEVEL.GOAL_POSITION - 500);
-            const y = Phaser.Math.Between(100, 300);
-            
-            // Check if position is valid (not overlapping with other floating items)
-            if (this.spawnManager.isPositionValid(x, y, 'fish')) {
-                const collectible = new Collectible(this.scene, x, y, 'fish');
-                collectible.body.setAllowGravity(false);
-                this.scene.collectibles.add(collectible);
-                
-                // Register floating fish position
-                this.spawnManager.registerPosition(x, y, 'fish');
-                floatingSpawned++;
-            }
-        }
-        
-        console.log(`Spawned ${collectiblesSpawned}/${count} collectibles and ${floatingSpawned} floating fish`);
+        console.log(`Spawned ${collectiblesSpawned}/${count} collectibles in ${theme.name} theme`);
     }
 
     applyArcticFeatures(platforms) {
