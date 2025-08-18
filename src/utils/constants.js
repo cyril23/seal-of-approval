@@ -30,6 +30,7 @@ export const LEVEL = {
     PLATFORM_HEIGHT_VARIANCE: 200,
     MIN_GAP: 120,  // Reduced for easier jumps
     MAX_GAP: 200,  // Further reduced to ensure all gaps are jumpable
+    MAX_GAP_ARCTIC: 150,  // Even smaller gaps for Arctic theme with polar bears
     GOAL_POSITION: LEVEL_WIDTH - 200
 };
 
@@ -108,9 +109,9 @@ export const ENEMIES = {
     POLARBEAR: {
         PATROL_SPEED: 40,
         CHARGE_SPEED: 240,
-        DETECTION_RANGE_X: 400,  // Increased from 250 for earlier detection
-        DETECTION_RANGE_Y: 250,  // Increased from 150 for better vertical detection
-        ESCAPE_RANGE: 500,       // Increased from 400 to match wider detection
+        DETECTION_RANGE_X: 240,  // Reduced by 40% from 400 for better gameplay balance
+        DETECTION_RANGE_Y: 150,  // Reduced by 40% from 250 for better gameplay balance
+        ESCAPE_RANGE: 300,       // Reduced by 40% from 500 to match reduced detection
         ALERT_DURATION: 1000,
         CHARGE_MAX_DISTANCE: 500,
         COOLDOWN_DURATION: 2000,

@@ -25,7 +25,7 @@ export default class LevelGenerator {
         
         // All themes including ocean need platforms for collectibles
         console.log('Creating', platformCount, 'platforms...');
-        const platforms = this.createSideScrollingPlatforms(platformCount);
+        const platforms = this.createSideScrollingPlatforms(platformCount, theme);
         
         console.log('Validating platform gaps...');
         this.validateAndFixPlatformGaps(platforms);
@@ -49,7 +49,7 @@ export default class LevelGenerator {
     }
     
 
-    createSideScrollingPlatforms(count) {
+    createSideScrollingPlatforms(count, theme) {
         const platforms = [];
         
         // Create ground platform at start
@@ -73,7 +73,9 @@ export default class LevelGenerator {
         // Continue until we actually reach near the goal
         while (currentX < LEVEL.GOAL_POSITION - 600 && actualPlatformsGenerated < count) {
             // Calculate next platform position
-            const gap = Phaser.Math.Between(LEVEL.MIN_GAP, LEVEL.MAX_GAP);
+            // Arctic theme uses reduced max gap for better gameplay with polar bears
+            const maxGap = theme && theme.name === 'arctic' ? LEVEL.MAX_GAP_ARCTIC : LEVEL.MAX_GAP;
+            const gap = Phaser.Math.Between(LEVEL.MIN_GAP, maxGap);
             const platformWidth = Phaser.Math.Between(5, 12) * TILE_SIZE;
             
             currentX += gap;
@@ -653,7 +655,7 @@ export default class LevelGenerator {
                 // Cracking ice - breaks after player stands on it
                 platform.setData('crackingIce', true);
                 platform.setData('crackTimer', 0);
-                platform.setTint(0xE6F3FF); // Lighter tint for cracking ice
+                platform.setTint(0x00BFFF); // Deep sky blue for brittle/cracking ice - vibrant and clearly distinguishable
             } else if (rand < 0.2) {
                 // Floating ice - bobs up and down
                 this.makeFloatingIce(platform);
