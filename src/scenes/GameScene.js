@@ -28,6 +28,9 @@ export default class GameScene extends Phaser.Scene {
     create() {
         console.log('GameScene.create() starting...');
         
+        // Reset goal reached flag when scene starts/restarts
+        this.goalReached = false;
+        
         // Reset time remaining when scene starts/restarts
         this.timeRemaining = LEVEL.TIME_LIMIT;
         console.log('Starting level with time:', this.timeRemaining);
