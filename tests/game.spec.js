@@ -1,19 +1,13 @@
 const { test, expect } = require('@playwright/test');
 const path = require('path');
 const { takeScreenshot, takeCanvasScreenshot } = require('./utils/screenshot');
-const { focusCanvas, pressKey, holdKey, waitForGameLoad, getGameState, startGameWithInfoOverlay } = require('./utils/gameHelpers');
+const { focusCanvas, pressKey, holdKey, initializeGame, getGameState, startGameWithInfoOverlay } = require('./utils/gameHelpers');
 const { findEmoji, analyzeGameState } = require('./utils/imageAnalysis');
 
 test.describe('Seal of Approval Game Tests', () => {
     test.beforeEach(async ({ page }) => {
-        // Navigate to the game
-        await page.goto('http://localhost:3000', { 
-            waitUntil: 'networkidle',
-            timeout: 10000 
-        });
-        
-        // Wait for game to load
-        await waitForGameLoad(page);
+        // Initialize the game
+        await initializeGame(page);
     });
     
     test('can start the game and find the seal', async ({ page }) => {

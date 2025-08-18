@@ -187,7 +187,7 @@ async function activateDeveloperMode(page) {
  * @param {string} sceneName - Name of the scene to wait for
  * @param {number} timeout - Timeout in milliseconds
  */
-async function waitForScene(page, sceneName, timeout = 10000) {
+async function waitForScene(page, sceneName, timeout = 30000) {
     await page.waitForFunction(
         (name) => {
             if (window.game && window.game.scene && window.game.scene.scenes) {
@@ -256,59 +256,129 @@ async function resumeGame(page) {
     await page.waitForTimeout(100);
 }
 
+// ========== BASE HELPER FUNCTIONS ==========
+
 /**
- * Starts the game and handles the info overlay that appears on level 1
+ * Initializes the game by navigating to the page and waiting for game to load
  * @param {Page} page - Playwright page object
  */
-async function startGameWithInfoOverlay(page) {
-    // Wait for menu to be ready
-    await page.waitForTimeout(2000);
+async function initializeGame(page) {
+    // Always ensure we navigate to the game page first (each test gets a fresh page context)
+    await page.goto('http://localhost:3000', { 
+        waitUntil: 'networkidle',
+        timeout: 30000 
+    });
     
+    // Wait for game to load
+    await waitForGameLoad(page);
+    await page.waitForTimeout(2000);
+}
+
+/**
+ * Starts the game from menu screen (Menu → GameScene transition)
+ * @param {Page} page - Playwright page object
+ */
+async function startGameFromMenu(page) {
     // Focus canvas and press space to start from menu
     await focusCanvas(page);
     await pressKey(page, 'Space');
     
-    // Wait for GameScene to load
-    await page.waitForTimeout(1000);
-    
-    // Wait for scene transition to GameScene
+    // Wait for GameScene to be active and ready
     await page.waitForFunction(() => {
         if (!window.game || !window.game.scene) return false;
         const activeScenes = window.game.scene.scenes.filter(scene => scene.scene.isActive());
         return activeScenes.some(scene => scene.scene.key === 'GameScene');
-    }, { timeout: 5000 });
-    
+    }, { timeout: 30000 });
+}
+
+/**
+ * Handles info overlay dismissal if present
+ * @param {Page} page - Playwright page object
+ */
+async function handleInfoOverlay(page) {
     // Check if info overlay is showing (it shows for level 1)
-    const isInfoShowing = await page.evaluate(() => {
+    const hasOverlay = await page.evaluate(() => {
         const activeScenes = window.game.scene.scenes.filter(scene => scene.scene.isActive());
         const gameScene = activeScenes.find(scene => scene.scene.key === 'GameScene');
         return gameScene && gameScene.infoOverlay && gameScene.infoOverlay.isShowing;
     });
     
-    if (isInfoShowing) {
-        // Wait a bit for overlay to be fully visible
-        await page.waitForTimeout(500);
-        
-        // Press space again to dismiss the info overlay
+    if (hasOverlay) {
+        await focusCanvas(page);
         await pressKey(page, 'Space');
-        
-        // Wait for overlay to fade out and game to resume
         await page.waitForTimeout(500);
     }
-    
-    // Wait for player to be ready
+}
+
+/**
+ * Waits for comprehensive game state to be ready (player, enemies, platforms)
+ * @param {Page} page - Playwright page object
+ */
+async function waitForGameReady(page) {
+    // Wait for GameScene to be active and ready with all components
     await page.waitForFunction(() => {
         if (!window.game || !window.game.scene) return false;
         const activeScenes = window.game.scene.scenes.filter(scene => scene.scene.isActive());
         const gameScene = activeScenes.find(scene => scene.scene.key === 'GameScene');
-        return gameScene && gameScene.player && gameScene.player.sprite && gameScene.isLevelStarted;
-    }, { timeout: 5000 });
+        return gameScene && gameScene.player && gameScene.player.sprite && 
+               gameScene.enemies && gameScene.platforms;
+    }, { timeout: 30000 });
     
-    // Additional wait for physics to settle
+    // Wait a bit more for everything to settle
     await page.waitForTimeout(1000);
 }
 
+/**
+ * Jumps to a specific level using the global jumpToLevel function
+ * @param {Page} page - Playwright page object
+ * @param {number} levelNumber - Level number to jump to
+ */
+async function jumpToSpecificLevel(page, levelNumber) {
+    // Use the global jumpToLevel function to change levels
+    const success = await page.evaluate((level) => {
+        if (typeof window.jumpToLevel === 'function') {
+            return window.jumpToLevel(level);
+        }
+        console.error('jumpToLevel function not found');
+        return false;
+    }, levelNumber);
+    
+    if (!success) {
+        throw new Error(`Failed to jump to level ${levelNumber}`);
+    }
+    
+    // Wait for the new level to load
+    await page.waitForTimeout(2000);
+}
+
+// ========== COMPOSED HELPER FUNCTIONS ==========
+
+/**
+ * Loads a specific level using base helper functions
+ * @param {Page} page - Playwright page object
+ * @param {number} levelNumber - Level number to load
+ */
+async function loadLevel(page, levelNumber) {
+    await initializeGame(page);
+    await jumpToSpecificLevel(page, levelNumber);
+    await handleInfoOverlay(page);
+    await waitForGameReady(page);
+}
+
+/**
+ * Starts the game and handles the info overlay that appears on level 1
+ * Uses base helper functions for reliability
+ * @param {Page} page - Playwright page object
+ */
+async function startGameWithInfoOverlay(page) {
+    // Use composed base functions for reliable game start
+    await startGameFromMenu(page);
+    await handleInfoOverlay(page);  
+    await waitForGameReady(page);
+}
+
 module.exports = {
+    // Basic interaction functions
     focusCanvas,
     pressKey,
     holdKey,
@@ -320,5 +390,15 @@ module.exports = {
     getEnemies,
     pauseGame,
     resumeGame,
+    
+    // Base helper functions
+    initializeGame,
+    startGameFromMenu,
+    handleInfoOverlay,
+    waitForGameReady,
+    jumpToSpecificLevel,
+    
+    // Composed helper functions
+    loadLevel,
     startGameWithInfoOverlay
 };

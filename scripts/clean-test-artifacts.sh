@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Clean Test Artifacts Script
-# This script removes old test screenshots and artifacts, keeping only recent ones for debugging
+# Clean Test Artifacts Script  
+# This script removes all test screenshots, logs, and artifacts for complete cleanup
 
 # Colors for output
 RED='\033[0;31m'
@@ -24,24 +24,11 @@ clean_screenshots() {
         
         if [ "$total_count" -gt 0 ]; then
             echo -e "${YELLOW}Found $total_count screenshot(s) in $screenshot_dir${NC}"
+            echo "Removing all screenshots..."
             
-            # Keep only the 5 most recent screenshots
-            if [ "$total_count" -gt 5 ]; then
-                echo "Keeping the 5 most recent screenshots, removing older ones..."
-                # Find all screenshots, sort by modification time, keep 5 newest, delete the rest
-                find "$screenshot_dir" -name "*.png" -type f -printf '%T@ %p\n' | \
-                    sort -n | \
-                    head -n -5 | \
-                    cut -d' ' -f2- | \
-                    while read -r file; do
-                        rm -f "$file"
-                        echo "  Removed: $(basename "$file")"
-                    done
-                removed_count=$((total_count - 5))
-                echo -e "${GREEN}Removed $removed_count old screenshot(s)${NC}"
-            else
-                echo "Only $total_count screenshot(s) found, keeping all (threshold is 5)"
-            fi
+            # Remove all screenshots
+            find "$screenshot_dir" -name "*.png" -type f -delete
+            echo -e "${GREEN}Removed all $total_count screenshot(s)${NC}"
         else
             echo "No screenshots found in $screenshot_dir"
         fi
@@ -76,7 +63,7 @@ clean_playwright_report() {
     fi
 }
 
-# Function to clean log files in logs directory (keep recent ones)
+# Function to clean log files in logs directory 
 clean_logs() {
     local logs_dir="logs"
     
@@ -86,23 +73,13 @@ clean_logs() {
         
         if [ "$log_count" -gt 0 ]; then
             echo -e "${YELLOW}Found $log_count log file(s) in $logs_dir${NC}"
+            echo "Removing all log files..."
             
-            # Keep only the 3 most recent log files
-            if [ "$log_count" -gt 3 ]; then
-                echo "Keeping the 3 most recent log files, removing older ones..."
-                find "$logs_dir" -name "*.log" -type f -printf '%T@ %p\n' | \
-                    sort -n | \
-                    head -n -3 | \
-                    cut -d' ' -f2- | \
-                    while read -r file; do
-                        rm -f "$file"
-                        echo "  Removed: $(basename "$file")"
-                    done
-                removed_count=$((log_count - 3))
-                echo -e "${GREEN}Removed $removed_count old log file(s)${NC}"
-            else
-                echo "Only $log_count log file(s) found, keeping all (threshold is 3)"
-            fi
+            # Remove all log files
+            find "$logs_dir" -name "*.log" -type f -delete
+            echo -e "${GREEN}Removed all $log_count log file(s)${NC}"
+        else
+            echo "No log files found in $logs_dir"
         fi
         
         # Also clean old screenshots in logs directory
@@ -135,4 +112,4 @@ echo "  - tests/screenshots/"
 echo "  - test-results/"
 echo "  - playwright-report/"
 echo ""
-echo "Run this script periodically to keep test artifacts under control."
+echo "Run this script when you want to completely clean all test artifacts."

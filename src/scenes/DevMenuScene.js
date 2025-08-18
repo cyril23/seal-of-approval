@@ -436,15 +436,12 @@ export default class DevMenuScene extends Phaser.Scene {
     
     jumpToLevel() {
         console.log(`Jumping to level ${this.selectedLevel}`);
-        
-        // Stop the parent scene completely
-        this.scene.stop('GameScene');
-        
-        // Close this menu
-        this.scene.stop();
-        
-        // Restart game scene with the selected level
-        this.scene.start('GameScene', { level: this.selectedLevel });
+        // Use the global jumpToLevel function for consistency
+        if (window.jumpToLevel) {
+            window.jumpToLevel(this.selectedLevel);
+        } else {
+            console.error('Global jumpToLevel function not found');
+        }
     }
     
     closeMenu() {

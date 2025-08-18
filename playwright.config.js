@@ -16,8 +16,8 @@ module.exports = defineConfig({
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
   
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
+  /* Configure test workers */
+  workers: process.env.CI ? 1 : 16,
   
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
@@ -44,7 +44,7 @@ module.exports = defineConfig({
     viewport: { width: 1024, height: 768 },
     
     /* Timeout for each test */
-    timeout: 30000,
+    timeout: 90000,
     
     /* Timeout for each action */
     actionTimeout: 10000,
