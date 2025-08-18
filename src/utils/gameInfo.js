@@ -58,18 +58,24 @@ export const LEVEL_INFO = {
     // Level 3 - Ocean theme
     3: {
         environment: [
-            'Deep ocean waters',
-            'Ships visible in the distance',
-            'Wave patterns in the background'
+            'Underwater ocean environment - the seal swims!',
+            'Use arrow keys to swim in ALL directions',
+            'Swimming has momentum - smooth turns with inertia',
+            'Underwater platforms hold collectibles',
+            'Swim over platforms to collect items'
         ],
         creatures: [
             {
                 emoji: '🐋',
                 name: 'ORCA',
                 behaviors: [
-                    'Jumps periodically from the water',
-                    'Unpredictable jump directions',
-                    'Multiple orcas patrol the waters'
+                    'Swims faster than hawks fly',
+                    'Detects seal within huge radius (750px)',
+                    'Ascends slowly before diving attack',
+                    'Lightning-fast dive at 350 speed',
+                    'LETHAL - touching or stomping kills the seal',
+                    'Rests with 💤 after attacking',
+                    'Wakes up after 3 seconds to hunt again'
                 ]
             }
         ]
@@ -178,11 +184,14 @@ function getThemeInfo(theme, level) {
 
         case 'ocean':
             info.environment = [
-                'Open ocean with rolling waves',
-                'Distant ships on the horizon'
+                'Underwater ocean environment',
+                'Arrow keys control swimming in ALL directions',
+                'Momentum-based movement - smooth turns',
+                'Underwater platforms hold collectibles',
+                'Orcas swim freely throughout the water'
             ];
             info.creatures = [
-                { emoji: '🐋', name: 'ORCA', behaviors: ['Periodic jumping', 'Random directions', 'Multiple orcas patrol'] }
+                { emoji: '🐋', name: 'ORCA', behaviors: ['Fast swimmer with huge detection range', 'Lightning-fast diving attacks', 'LETHAL to touch - kills the seal', 'Rest period after diving'] }
             ];
             break;
 

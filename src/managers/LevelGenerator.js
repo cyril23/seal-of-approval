@@ -23,6 +23,7 @@ export default class LevelGenerator {
         
         const collectibleCount = LEVEL.MIN_COLLECTIBLES + Math.floor(Math.random() * (LEVEL.MAX_COLLECTIBLES - LEVEL.MIN_COLLECTIBLES));
         
+        // All themes including ocean need platforms for collectibles
         console.log('Creating', platformCount, 'platforms...');
         const platforms = this.createSideScrollingPlatforms(platformCount);
         
@@ -46,6 +47,7 @@ export default class LevelGenerator {
         
         console.log('Level generation complete!');
     }
+    
 
     createSideScrollingPlatforms(count) {
         const platforms = [];
@@ -319,6 +321,37 @@ export default class LevelGenerator {
 
     spawnEnemies(theme, count) {
         const enemyTypes = theme.enemies;
+        
+        // Ocean theme - spawn swimming enemies in open water
+        if (theme.name === 'ocean') {
+            console.log(`Spawning ${count} swimming enemies in open water`);
+            
+            // Calculate evenly distributed X positions
+            const minX = 400;
+            const maxX = LEVEL.GOAL_POSITION - 400;
+            const spawnRange = maxX - minX;
+            
+            console.log(`Ocean enemy spawn range: X:${minX} to X:${maxX} (${spawnRange}px wide)`);
+            
+            for (let i = 0; i < count; i++) {
+                // Proper even distribution from 0% to 100% of spawn range
+                const progress = count === 1 ? 0.5 : i / (count - 1);
+                const targetX = minX + (spawnRange * progress);
+                
+                // Random Y position in the swimming area (avoid floor and ceiling)
+                const targetY = Phaser.Math.Between(100, GAME_HEIGHT - 100);
+                
+                const enemyType = Phaser.Math.RND.pick(enemyTypes);
+                const enemy = new Enemy(this.scene, targetX, targetY, enemyType);
+                this.scene.enemies.add(enemy);
+                
+                const percentPosition = (targetX / LEVEL.GOAL_POSITION * 100).toFixed(1);
+                console.log(`Spawned swimming ${enemyType} at (${targetX.toFixed(0)}, ${targetY.toFixed(0)}) - ${percentPosition}% of level`);
+            }
+            return; // Exit early for ocean theme
+        }
+        
+        // Normal platform-based spawning for other themes
         const platforms = this.scene.platforms.children.entries;
         
         // Get spawnable platforms (excludes first and last)

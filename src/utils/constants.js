@@ -84,7 +84,7 @@ export const ENEMIES = {
         SPEED: 60,
         DIVE_SPEED: 250,
         HOVER_HEIGHT: 100,
-        DETECTION_RANGE: 350,
+        DETECTION_RANGE: 500,  // Increased from 350
         DIVE_TRIGGER_RANGE: 150,
         FLY_RADIUS: 250,
         PATROL_SPEED: 50,
@@ -93,7 +93,10 @@ export const ENEMIES = {
         TYPE: 'hawk'
     },
     ORCA: {
-        JUMP_HEIGHT: 150,
+        PATROL_SPEED: 80,  // Faster than hawk (50)
+        DIVE_SPEED: 350,   // Much faster dive than hawk (250)
+        DETECTION_RANGE: 750,  // 1.5x hawk's range (500)
+        DIVE_COOLDOWN: 1000,
         POINTS: 400,
         TYPE: 'orca'
     },

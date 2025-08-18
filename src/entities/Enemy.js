@@ -45,7 +45,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
                 this.setupFlying();
                 break;
             case 'orca':
-                this.setupJumping();
+                this.setupSwimming();
                 break;
             case 'crab':
                 this.setupSideways();
@@ -65,7 +65,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         this.body.setAllowGravity(false);
         this.patrolSpeed = this.config.PATROL_SPEED;
         this.diveSpeed = this.config.DIVE_SPEED;
-        this.detectionRange = this.config.DETECTION_RANGE;
+        this.detectionRange = this.config.DETECTION_RANGE;  // Now 500 from constants
         this.diveCooldown = this.config.DIVE_COOLDOWN;
         
         this.hoverHeight = this.y;
@@ -97,9 +97,41 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         this.setVelocityX(this.patrolSpeed * this.direction);
     }
 
-    setupJumping() {
-        this.jumpTimer = 0;
-        this.jumpInterval = 180;
+    setupSwimming() {
+        // Orca swims exactly like hawk flies
+        this.body.setAllowGravity(false);
+        this.patrolSpeed = this.config.PATROL_SPEED;
+        this.diveSpeed = this.config.DIVE_SPEED;
+        this.detectionRange = this.config.DETECTION_RANGE;
+        this.diveCooldown = this.config.DIVE_COOLDOWN;
+        
+        this.hoverHeight = this.y;
+        this.startX = this.x;
+        this.isCharging = false;
+        this.canCharge = true;
+        this.isTired = false; // Orca becomes tired after attack like hawk
+        this.sleepIndicator = null; // Zzz indicator
+        this.direction = 1;
+        
+        // Two-phase attack properties (same as hawk)
+        this.isAscending = false;
+        this.ascendTimer = 0;
+        this.targetX = 0;
+        this.targetY = 0;
+        this.ascendHeight = 150;
+        this.ascendSpeed = 60;
+        this.ascendDuration = 800;
+        this.ascendVelocityX = 0;
+        this.ascendVelocityY = 0;
+        this.restTimer = 0;
+        this.restDuration = 3000; // Rest for 3 seconds like hawk
+        
+        console.log(`🐋 ORCA: Setup complete - patrol speed=${this.patrolSpeed}, dive speed=${this.diveSpeed}`);
+        console.log(`  Detection range=${this.detectionRange}, ascend speed=${this.ascendSpeed}, ascend duration=${this.ascendDuration}ms`);
+        console.log(`  Starting pos: (${this.x.toFixed(0)}, ${this.y.toFixed(0)})`);
+        
+        // Start swimming patrol
+        this.setVelocityX(this.patrolSpeed * this.direction);
     }
 
     setupSideways() {
@@ -144,7 +176,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
                 this.updateFlying(player);
                 break;
             case 'orca':
-                this.updateJumping();
+                this.updateSwimming(player);
                 break;
             case 'crab':
                 this.updateSideways();
@@ -400,18 +432,205 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         });
     }
 
-    updateJumping() {
-        this.jumpTimer++;
-        
-        if (this.jumpTimer >= this.jumpInterval && this.body.touching.down) {
-            this.setVelocityY(-400);
-            this.jumpTimer = 0;
+    updateSwimming(player) {
+        // Orca swims and hunts exactly like hawk
+        // If tired, orca rests and then wakes up
+        if (this.isTired) {
+            this.restTimer += this.scene.game.loop.delta;
             
-            const randomDirection = Phaser.Math.Between(-1, 1);
-            if (randomDirection !== 0) {
-                this.setVelocityX(50 * randomDirection);
+            // Log rest progress every second
+            if (Math.floor(this.restTimer / 1000) !== Math.floor((this.restTimer - this.scene.game.loop.delta) / 1000)) {
+                console.log(`🐋 ORCA: Resting - ${(this.restTimer / 1000).toFixed(0)}s / ${(this.restDuration / 1000).toFixed(0)}s`);
+            }
+            
+            // Wake up after rest duration
+            if (this.restTimer >= this.restDuration) {
+                this.wakeUpOrca();
+            }
+            return;
+        }
+        
+        if (!this.isCharging) {
+            // Simple horizontal patrol
+            if (Math.abs(this.x - this.startX) > 200) {
+                this.direction *= -1;
+                this.setVelocityX(this.patrolSpeed * this.direction);
+                this.setFlipX(this.direction < 0);
+                console.log(`🐋 ORCA: Patrol turn - direction=${this.direction}, pos=(${this.x.toFixed(0)}, ${this.y.toFixed(0)})`);
+            }
+            
+            // Check for charge opportunity
+            const distance = Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y);
+            if (distance < this.detectionRange && this.canCharge) {
+                console.log(`🐋 ORCA: Detected player - distance=${distance.toFixed(0)}, detectionRange=${this.detectionRange}`);
+                console.log(`  Orca pos: (${this.x.toFixed(0)}, ${this.y.toFixed(0)})`);
+                console.log(`  Seal pos: (${player.x.toFixed(0)}, ${player.y.toFixed(0)})`);
+                this.startOrcaCharge(player);
+            }
+        } else if (this.isAscending) {
+            // Ascend phase - move up slowly
+            this.ascendTimer += this.scene.game.loop.delta;
+            
+            // Continuously apply ascend velocity to maintain upward movement
+            this.setVelocityX(this.ascendVelocityX);
+            this.setVelocityY(this.ascendVelocityY);
+            
+            // Log ascend progress every 200ms
+            if (Math.floor(this.ascendTimer / 200) !== Math.floor((this.ascendTimer - this.scene.game.loop.delta) / 200)) {
+                console.log(`🐋 ORCA: ASCENDING - timer=${this.ascendTimer.toFixed(0)}ms/${this.ascendDuration}ms`);
+                console.log(`  Position: (${this.x.toFixed(0)}, ${this.y.toFixed(0)})`);
+                console.log(`  Velocity: (${this.body.velocity.x.toFixed(0)}, ${this.body.velocity.y.toFixed(0)})`);
+            }
+            
+            // Continue ascending for the specified duration
+            if (this.ascendTimer >= this.ascendDuration) {
+                console.log(`🐋 ORCA: Ascend complete - transitioning to dive`);
+                console.log(`  Final ascend position: (${this.x.toFixed(0)}, ${this.y.toFixed(0)})`);
+                // Transition to dive phase
+                this.startOrcaDive();
+            }
+        } else {
+            // Dive phase - check if charge should end
+            this.chargeTimer += this.scene.game.loop.delta;
+            
+            // Log dive progress every 200ms
+            if (Math.floor(this.chargeTimer / 200) !== Math.floor((this.chargeTimer - this.scene.game.loop.delta) / 200)) {
+                console.log(`🐋 ORCA: DIVING - timer=${this.chargeTimer.toFixed(0)}ms`);
+                console.log(`  Position: (${this.x.toFixed(0)}, ${this.y.toFixed(0)})`);
+                console.log(`  Velocity: (${this.body.velocity.x.toFixed(0)}, ${this.body.velocity.y.toFixed(0)})`);
+                console.log(`  Target was: (${this.targetX.toFixed(0)}, ${this.targetY.toFixed(0)})`);
+            }
+            
+            // End charge if: timeout or traveled too far
+            if (this.chargeTimer > 2000 || 
+                this.y > this.hoverHeight + 400 || 
+                this.y < this.hoverHeight - 400) {
+                console.log(`🐋 ORCA: Ending dive - reason: ${this.chargeTimer > 2000 ? 'timeout' : 'too far'}`);
+                this.endOrcaCharge();
             }
         }
+    }
+    
+    startOrcaCharge(player) {
+        console.log(`🐋 ORCA: STARTING CHARGE SEQUENCE`);
+        console.log(`  Initial state - isCharging=${this.isCharging}, canCharge=${this.canCharge}, isTired=${this.isTired}`);
+        
+        this.isCharging = true;
+        this.canCharge = false;
+        this.isAscending = true;
+        this.ascendTimer = 0;
+        this.chargeTimer = 0;
+        
+        // Store target position (where the seal currently is)
+        this.targetX = player.x;
+        this.targetY = player.y;
+        
+        console.log(`🐋 ORCA: Entering ASCEND phase`);
+        console.log(`  Orca pos: (${this.x.toFixed(0)}, ${this.y.toFixed(0)})`);
+        console.log(`  Target stored: (${this.targetX.toFixed(0)}, ${this.targetY.toFixed(0)})`);
+        console.log(`  Ascend speed: ${this.ascendSpeed}, duration: ${this.ascendDuration}ms`);
+        
+        // Face the player
+        const horizontalDirection = player.x > this.x ? 1 : -1;
+        this.setFlipX(horizontalDirection < 0);
+        
+        // Ensure physics body can move
+        this.body.moves = true;
+        this.body.setAllowGravity(false); // Make sure gravity stays off
+        
+        // Store ascend velocity to reapply each frame
+        this.ascendVelocityX = 0;
+        this.ascendVelocityY = -this.ascendSpeed;
+        
+        // Start ascending - move up slowly
+        this.setVelocityX(this.ascendVelocityX);
+        this.setVelocityY(this.ascendVelocityY);
+        
+        console.log(`🐋 ORCA: Physics setup - body.moves=${this.body.moves}, gravity=${this.body.allowGravity}`);
+        console.log(`🐋 ORCA: Velocities set - VX=${this.body.velocity.x}, VY=${this.body.velocity.y}`);
+    }
+    
+    startOrcaDive() {
+        console.log(`🐋 ORCA: STARTING DIVE PHASE`);
+        console.log(`  Current pos: (${this.x.toFixed(0)}, ${this.y.toFixed(0)})`);
+        console.log(`  Target pos: (${this.targetX.toFixed(0)}, ${this.targetY.toFixed(0)})`);
+        
+        // Transition from ascend to dive phase
+        this.isAscending = false;
+        
+        // Calculate straight-line vector to target
+        const dx = this.targetX - this.x;
+        const dy = this.targetY - this.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        console.log(`🐋 ORCA: Dive calculation - dx=${dx.toFixed(0)}, dy=${dy.toFixed(0)}, distance=${distance.toFixed(0)}`);
+        
+        // Normalize and apply dive speed
+        if (distance > 0) {
+            const vx = (dx / distance) * this.diveSpeed;
+            const vy = (dy / distance) * this.diveSpeed;
+            
+            this.setVelocityX(vx);
+            this.setVelocityY(vy);
+            
+            console.log(`🐋 ORCA: Dive velocity set - VX=${vx.toFixed(0)}, VY=${vy.toFixed(0)}, speed=${this.diveSpeed}`);
+        } else {
+            // Fallback if target is at same position
+            this.setVelocityY(this.diveSpeed);
+            console.log(`🐋 ORCA: Fallback dive - straight down at speed=${this.diveSpeed}`);
+        }
+    }
+    
+    endOrcaCharge() {
+        console.log(`🐋 ORCA: ENDING CHARGE - Becoming tired`);
+        console.log(`  Final pos: (${this.x.toFixed(0)}, ${this.y.toFixed(0)})`);
+        console.log(`  Was ascending: ${this.isAscending}, charge timer: ${this.chargeTimer.toFixed(0)}ms`);
+        
+        this.isCharging = false;
+        this.isAscending = false; // Make sure to clear ascend state
+        
+        // Orca becomes tired after attack - completely stop all movement
+        this.isTired = true;
+        this.restTimer = 0; // Start rest timer
+        
+        // Completely disable physics to prevent any motion
+        this.setVelocityX(0);
+        this.setVelocityY(0);
+        this.setAcceleration(0, 0);
+        this.body.setAllowGravity(false);
+        this.body.moves = false; // Disable physics body movement
+        this.setBounce(0);
+        
+        console.log(`🐋 ORCA: Physics disabled - isTired=${this.isTired}, body.moves=${this.body.moves}`);
+        console.log(`  Starting ${(this.restDuration / 1000).toFixed(0)} second rest period`);
+        
+        // Show sleep indicator (reuse hawk's method)
+        this.showSleepIndicator();
+    }
+    
+    wakeUpOrca() {
+        console.log(`🐋 ORCA: WAKING UP - Resuming patrol`);
+        console.log(`  Position: (${this.x.toFixed(0)}, ${this.y.toFixed(0)})`);
+        
+        // Remove sleep indicator
+        if (this.sleepIndicator) {
+            this.sleepIndicator.destroy();
+            this.sleepIndicator = null;
+        }
+        
+        // Reset tired state
+        this.isTired = false;
+        this.canCharge = true; // Can attack again
+        this.restTimer = 0;
+        
+        // Re-enable physics
+        this.body.moves = true;
+        this.body.setAllowGravity(false); // Keep gravity off for swimming
+        
+        // Resume patrol
+        this.setVelocityX(this.patrolSpeed * this.direction);
+        
+        console.log(`🐋 ORCA: Resumed patrol - direction=${this.direction}, velocity=${this.body.velocity.x}`);
     }
 
     updateSideways() {

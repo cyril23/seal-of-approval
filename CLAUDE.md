@@ -206,7 +206,7 @@ Activated by pressing **DD** (double-tap D quickly) to open the main developer m
 #### Hawk Enemy
 The hawk enemy features a sophisticated two-phase attack system:
 - **Patrol**: Flies horizontally at speed 50, turning every 200px
-- **Detection**: Scans for player within 350px radius
+- **Detection**: Scans for player within 500px radius
 - **Attack Sequence**:
   1. **Ascend Phase**: Rises slowly (60 speed) for 800ms when detecting player
   2. **Dive Phase**: Calculates straight-line trajectory to player's stored position, dives at 250 speed
@@ -216,6 +216,24 @@ The hawk enemy features a sophisticated two-phase attack system:
   - Automatically wakes up and resumes hunting after 3 seconds
 - **Death Cleanup**: Sleep indicator properly removed when hawk is destroyed
 
+#### Orca Enemy (Ocean Theme)
+The orca enemy swims freely in ocean levels with enhanced capabilities:
+- **Swimming**: Moves through water without gravity, patrol speed 80 (faster than hawk's 50)
+- **Detection**: Huge detection radius of 750px (1.5x hawk's range)
+- **Attack Pattern**: Identical to hawk - ascend then dive, but with 350 dive speed
+- **LETHAL**: Cannot be stomped - any contact kills the seal (like polar bears)
+- **Rest Cycle**: Same as hawk with 💤 indicator and 3-second recovery
+- **Spawning**: Distributed evenly throughout the water, not restricted to platforms
+
+#### Ocean Theme Features
+The Ocean theme features underwater gameplay with swimming mechanics:
+- **Swimming Physics**: Seal swims freely with momentum-based movement
+  - Arrow keys control movement in ALL directions (up/down/left/right)
+  - Smooth inertia with 0.92 water drag and 0.15 acceleration factor
+  - No gravity underwater, bubble particle effects while swimming
+- **Level Design**: Underwater platforms for collectibles, open water for swimming
+- **Orca Enemies**: Swim freely throughout the water (see Orca Enemy section above)
+
 #### Arctic Theme Features
 The Arctic theme (appears every 5 levels) includes special gameplay mechanics:
 - **Polarbear Enemy**: Intelligent AI with 4-state behavior system
@@ -223,6 +241,7 @@ The Arctic theme (appears every 5 levels) includes special gameplay mechanics:
   - ALERT: Detects player within 400x250px range, shows exclamation mark
   - CHARGING: Rushes at 240 speed with visual effects, stops at edges
   - COOLDOWN: Recovery period with breathing animation
+  - **LETHAL**: Cannot be stomped - any contact kills the seal
 - **Ice Physics**: Slippery platforms with reduced friction (0.15)
 - **Cracking Ice**: Some platforms break after 2 seconds of standing
 - **Floating Ice**: Platforms that bob up and down

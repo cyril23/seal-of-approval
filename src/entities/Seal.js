@@ -17,6 +17,9 @@ export default class Seal {
         this.speedBoost = false;
         this.hasMagnet = false;
         this.developerMode = false;  // Developer mode flag
+        this.isSwimming = false;  // Swimming mode for ocean theme
+        this.swimVelocityX = 0;  // Swimming velocity with inertia
+        this.swimVelocityY = 0;
         
         this.jumpTimer = 0;
         this.isJumping = false;
@@ -29,6 +32,12 @@ export default class Seal {
     }
 
     update(cursors, spaceKey) {
+        // Check if swimming in ocean theme
+        const isOceanTheme = this.scene.currentTheme && this.scene.currentTheme.name === 'ocean';
+        if (isOceanTheme !== this.isSwimming) {
+            this.setSwimmingMode(isOceanTheme);
+        }
+        
         // Check if on ice platform
         const onIce = this.isOnIcePlatform();
         
@@ -50,14 +59,23 @@ export default class Seal {
             this.sprite.setVelocityY(0);
         }
         
-        // Developer mode bottom boundary - keep seal within screen
-        if (this.developerMode) {
+        // Developer mode or swimming bottom boundary - keep seal within screen
+        if (this.developerMode || this.isSwimming) {
             // Keep seal 10 pixels inside bottom boundary to avoid edge issues
             const bottomBoundary = GAME_HEIGHT - this.sprite.height / 2 - 10;
             if (this.sprite.y > bottomBoundary) {
                 this.sprite.y = bottomBoundary;
                 this.sprite.setVelocityY(0);
+                if (this.isSwimming) {
+                    this.swimVelocityY = 0;
+                }
             }
+        }
+        
+        // Handle swimming movement with inertia
+        if (this.isSwimming) {
+            this.updateSwimming(cursors);
+            return; // Skip normal movement logic
         }
         
         // Apply ice physics if on ice
@@ -422,5 +440,108 @@ export default class Seal {
                 this.devModeParticles = null;
             }
         }
+    }
+    
+    setSwimmingMode(enabled) {
+        this.isSwimming = enabled;
+        
+        if (enabled) {
+            console.log('Seal: Swimming mode ENABLED (Ocean theme)');
+            // Disable gravity for swimming
+            this.sprite.body.setAllowGravity(false);
+            // Initialize swimming velocities
+            this.swimVelocityX = this.sprite.body.velocity.x;
+            this.swimVelocityY = this.sprite.body.velocity.y;
+            // Create bubble effect
+            this.createBubbleEffect();
+        } else {
+            console.log('Seal: Swimming mode DISABLED');
+            // Re-enable gravity
+            this.sprite.body.setAllowGravity(true);
+            // Clean up bubble effect
+            if (this.bubbleEmitter) {
+                this.bubbleEmitter.stop();
+                this.bubbleEmitter = null;
+            }
+        }
+    }
+    
+    updateSwimming(cursors) {
+        // Swimming physics with inertia
+        const baseSpeed = this.speedBoost ? PHYSICS.MOVE_SPEED * 2 : PHYSICS.MOVE_SPEED;
+        const speed = this.developerMode ? baseSpeed * 5 : baseSpeed;
+        
+        // Water has more drag than air
+        const waterDrag = 0.92;
+        const acceleration = 0.15; // Smooth acceleration
+        
+        // Target velocities based on input
+        let targetVelX = 0;
+        let targetVelY = 0;
+        
+        if (cursors.left.isDown) {
+            targetVelX = -speed;
+            this.sprite.setFlipX(false);
+        } else if (cursors.right.isDown) {
+            targetVelX = speed;
+            this.sprite.setFlipX(true);
+        }
+        
+        if (cursors.up.isDown) {
+            targetVelY = -speed;
+        } else if (cursors.down.isDown) {
+            targetVelY = speed;
+        }
+        
+        // Apply acceleration toward target velocity (inertia)
+        this.swimVelocityX += (targetVelX - this.swimVelocityX) * acceleration;
+        this.swimVelocityY += (targetVelY - this.swimVelocityY) * acceleration;
+        
+        // Apply water drag when no input
+        if (targetVelX === 0) {
+            this.swimVelocityX *= waterDrag;
+        }
+        if (targetVelY === 0) {
+            this.swimVelocityY *= waterDrag;
+        }
+        
+        // Apply velocities
+        this.sprite.setVelocityX(this.swimVelocityX);
+        this.sprite.setVelocityY(this.swimVelocityY);
+        
+        // Add slight rotation based on movement direction for visual effect
+        const angle = Math.atan2(this.swimVelocityY, Math.abs(this.swimVelocityX));
+        this.sprite.setRotation(angle * 0.2);
+        
+        // Update bubble emission based on speed
+        if (this.bubbleEmitter) {
+            const speed = Math.sqrt(this.swimVelocityX * this.swimVelocityX + this.swimVelocityY * this.swimVelocityY);
+            this.bubbleEmitter.frequency = Math.max(100 - speed / 2, 50);
+        }
+    }
+    
+    createBubbleEffect() {
+        if (this.bubbleEmitter) return;
+        
+        // Create circle texture for bubbles if it doesn't exist
+        if (!this.scene.textures.exists('bubble')) {
+            const graphics = this.scene.add.graphics();
+            graphics.fillStyle(0xffffff, 0.3);
+            graphics.fillCircle(4, 4, 4);
+            graphics.generateTexture('bubble', 8, 8);
+            graphics.destroy();
+        }
+        
+        // Create bubble particle emitter
+        this.bubbleEmitter = this.scene.add.particles(0, 0, 'bubble', {
+            follow: this.sprite,
+            scale: { start: 0.3, end: 0.8 },
+            alpha: { start: 0.6, end: 0 },
+            speed: { min: 20, max: 60 },
+            lifespan: 1500,
+            frequency: 100,
+            angle: { min: -110, max: -70 },
+            quantity: 1
+        });
     }
 }
