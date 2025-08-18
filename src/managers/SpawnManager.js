@@ -39,7 +39,7 @@ export default class SpawnManager {
         this.occupiedPositions.push({ x, y, type });
     }
 
-    getPlatformZones(platform) {
+    getPlatformZones(platform, entityType = 'default') {
         const zones = [];
         const platformWidth = platform.displayWidth;
         const platformX = platform.x;
@@ -49,7 +49,10 @@ export default class SpawnManager {
         const tileCount = Math.floor(platformWidth / TILE_SIZE);
         let numZones;
         
-        if (tileCount < 8) {
+        // For polar bears on wide platforms, create more zones
+        if (entityType === 'polarbear' && tileCount >= 12) {
+            numZones = 4; // Very large platform - more zones for multiple polar bears
+        } else if (tileCount < 8) {
             numZones = 1; // Small platform - center only
         } else if (tileCount <= 12) {
             numZones = 2; // Medium platform - left and right
@@ -74,7 +77,7 @@ export default class SpawnManager {
     }
 
     findValidSpawnPosition(platform, entityType = 'default', yOffset = -30) {
-        const zones = this.getPlatformZones(platform);
+        const zones = this.getPlatformZones(platform, entityType);
         
         // Shuffle zones for random placement
         const shuffledZones = [...zones].sort(() => Math.random() - 0.5);
@@ -107,8 +110,8 @@ export default class SpawnManager {
             return true;
         }
         
-        // Skip very small platforms for polar bears
-        if (platform.displayWidth < 10 * TILE_SIZE) {
+        // Skip very small platforms for polar bears (reduced from 10 to 8 tiles)
+        if (platform.displayWidth < 8 * TILE_SIZE) {
             return true; // Too small for polar bear patrol
         }
         

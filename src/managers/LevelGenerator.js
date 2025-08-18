@@ -17,7 +17,14 @@ export default class LevelGenerator {
         
         const difficulty = Math.min(levelNumber, 10);
         const platformCount = LEVEL.MIN_PLATFORMS + Math.floor(Math.random() * (LEVEL.MAX_PLATFORMS - LEVEL.MIN_PLATFORMS));
-        const enemyCount = Math.min(LEVEL.MIN_ENEMIES + difficulty, LEVEL.MAX_ENEMIES);
+        let enemyCount = Math.min(LEVEL.MIN_ENEMIES + difficulty, LEVEL.MAX_ENEMIES);
+        
+        // Arctic levels get more enemies (polar bears)
+        if (theme.name === 'arctic') {
+            enemyCount = Math.floor(enemyCount * LEVEL.ARCTIC_ENEMY_MULTIPLIER);
+            console.log(`Arctic level: increasing enemy count to ${enemyCount}`);
+        }
+        
         const collectibleCount = LEVEL.MIN_COLLECTIBLES + Math.floor(Math.random() * (LEVEL.MAX_COLLECTIBLES - LEVEL.MIN_COLLECTIBLES));
         
         console.log('Creating', platformCount, 'platforms...');
@@ -321,15 +328,37 @@ export default class LevelGenerator {
         // Get spawnable platforms based on theme
         const spawnablePlatforms = this.spawnManager.getSpawnablePlatforms(platforms, theme);
         
-        // Shuffle platforms for random distribution
-        const shuffledPlatforms = [...spawnablePlatforms].sort(() => Math.random() - 0.5);
+        // For arctic theme, prioritize longer platforms for polar bears
+        let sortedPlatforms;
+        if (theme.name === 'arctic') {
+            // Sort by width (descending) to prioritize longer platforms
+            sortedPlatforms = [...spawnablePlatforms].sort((a, b) => b.displayWidth - a.displayWidth);
+            console.log('Arctic level: prioritizing longer platforms for polar bears');
+        } else {
+            // Shuffle platforms for random distribution
+            sortedPlatforms = [...spawnablePlatforms].sort(() => Math.random() - 0.5);
+        }
         
         let enemiesSpawned = 0;
+        const polarBearsByPlatform = new Map(); // Track polar bears per platform
         
-        for (const platform of shuffledPlatforms) {
+        for (const platform of sortedPlatforms) {
             if (enemiesSpawned >= count) break;
             
             const enemyType = Phaser.Utils.Array.GetRandom(enemyTypes);
+            
+            // For arctic levels, allow multiple polar bears on very wide platforms
+            if (theme.name === 'arctic') {
+                const platformTileWidth = Math.floor(platform.displayWidth / TILE_SIZE);
+                const bearsOnPlatform = polarBearsByPlatform.get(platform) || 0;
+                
+                // Allow 2 polar bears on 12+ tile platforms
+                if (platformTileWidth >= 12 && bearsOnPlatform >= 2) {
+                    continue; // Skip this platform, already has max bears
+                } else if (platformTileWidth < 12 && bearsOnPlatform >= 1) {
+                    continue; // Normal platforms get only 1 bear
+                }
+            }
             
             // Find valid spawn position using SpawnManager
             const position = this.spawnManager.findValidSpawnPosition(
@@ -346,12 +375,17 @@ export default class LevelGenerator {
                 this.spawnManager.registerPosition(position.x, position.y, enemyType);
                 enemiesSpawned++;
                 
-                // For polar bears, skip nearby platforms to give them space
+                // Track polar bears per platform
                 if (enemyType === 'polarbear') {
-                    // Remove next platform from consideration
-                    const currentIndex = shuffledPlatforms.indexOf(platform);
-                    if (currentIndex < shuffledPlatforms.length - 1) {
-                        shuffledPlatforms.splice(currentIndex + 1, 1);
+                    polarBearsByPlatform.set(platform, (polarBearsByPlatform.get(platform) || 0) + 1);
+                    
+                    // For smaller platforms, skip nearby platforms to give them space
+                    const platformTileWidth = Math.floor(platform.displayWidth / TILE_SIZE);
+                    if (platformTileWidth < 12) {
+                        const currentIndex = sortedPlatforms.indexOf(platform);
+                        if (currentIndex < sortedPlatforms.length - 1) {
+                            sortedPlatforms.splice(currentIndex + 1, 1);
+                        }
                     }
                 }
             }
