@@ -2,9 +2,9 @@ import Phaser from 'phaser';
 import { PHYSICS, PLAYER, GAME_HEIGHT } from '../utils/constants.js';
 
 export default class Seal {
-    constructor(scene, x, y) {
+    constructor(scene, x, y, lives = null) {
         // Version tracking for cache verification
-        console.log('Seal.js Version: 1.4 - Removed Arctic theme and polar bear enemy');
+        console.log('Seal.js Version: 1.5 - Lives accumulate across levels');
         
         this.scene = scene;
         this.sprite = scene.physics.add.sprite(x, y, 'seal');
@@ -12,7 +12,8 @@ export default class Seal {
         this.sprite.setCollideWorldBounds(false);
         this.sprite.setBounce(0);
         
-        this.lives = PLAYER.INITIAL_LIVES;
+        // Use provided lives or default to initial lives for level 1
+        this.lives = lives !== null ? lives : PLAYER.INITIAL_LIVES;
         this.invincible = false;
         this.speedBoost = false;
         this.hasMagnet = false;

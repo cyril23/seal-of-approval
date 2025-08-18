@@ -23,8 +23,9 @@ export default class GameScene extends Phaser.Scene {
         // Receive level from scene restart or start fresh
         this.currentLevel = data?.level || 1;
         this.initialScore = data?.score || 0;
+        this.initialLives = data?.lives || null;  // Lives from previous level, or null for level 1
         this.currentLevelInfo = null;  // Reset cached level info for new level
-        console.log('GameScene.init() - Starting level:', this.currentLevel, 'with score:', this.initialScore);
+        console.log('GameScene.init() - Starting level:', this.currentLevel, 'with score:', this.initialScore, 'and lives:', this.initialLives);
     }
 
     create() {
@@ -66,7 +67,8 @@ export default class GameScene extends Phaser.Scene {
         
         console.log('Creating player...');
         // Start player at left side of level
-        this.player = new Seal(this, 200, GAME_HEIGHT - 200);
+        // Pass lives from previous level, or null for default (level 1)
+        this.player = new Seal(this, 200, GAME_HEIGHT - 200, this.initialLives);
         // Set player depth to be above platforms but below UI
         this.player.sprite.setDepth(5);
         
@@ -80,6 +82,7 @@ export default class GameScene extends Phaser.Scene {
         this.setupControls();
         console.log('Creating UI...');
         this.createUI();
+        this.updateUI(); // Initialize UI with correct values immediately
         console.log('Starting timer...');
         this.startTimer();
         
@@ -616,7 +619,12 @@ export default class GameScene extends Phaser.Scene {
         this.time.delayedCall(2000, () => {
             // Stop background music before restarting scene to prevent overlap
             this.audioManager.stopBackgroundMusic();
-            this.scene.restart({ level: this.currentLevel, score: this.scoreManager.score });
+            // Pass current lives to the next level
+            this.scene.restart({ 
+                level: this.currentLevel, 
+                score: this.scoreManager.score,
+                lives: this.player.lives 
+            });
         });
     }
 
