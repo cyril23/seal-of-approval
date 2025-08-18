@@ -68,11 +68,22 @@ Located in `LevelGenerator.js`:
 - Procedurally places 15-25 platforms with gap constraints (120-200px)
 - Validates all gaps are jumpable with stepped platforms for vertical gaps, wider bridge platforms (10 tiles) for reliability
 - 15% of platforms are animated (moving vertically)
-- Enemy placement based on platform positions
+- Safety ground platforms every 2000px as fallback
+
+#### Enemy Spawning System
+- **Even X-axis distribution**: Enemies spawn evenly across the level width, preventing clustering
+- **Platform-based placement**: Each enemy is placed on the nearest valid platform to its target X position
+- **First/last platform exclusion**: Start and end platforms never have enemies for safe spawn/goal areas
+- **Difficulty scaling**:
+  - Base formula: `MIN_ENEMIES (8) + levelNumber`
+  - MAX_ENEMIES: 1000 (no artificial cap)
+  - Examples: Level 1 = 9 enemies, Level 6 = 14 enemies, Level 101 = 109 enemies (limited by platforms)
+- **Theme consistency**: All themes have the same enemy count for predictable difficulty
+
+#### Collectible Spawning
 - Collectible spawning is theme-dependent:
   - **Ocean theme**: Fish spawn at various heights throughout the water (Y: 100-600px) with gravity disabled, creating an underwater environment
   - **Non-ocean themes**: Collectibles spawn above platforms and fall naturally with gravity
-- Safety ground platforms every 2000px as fallback
 
 #### Powerup Spawn Distribution
 Controlled powerup spawning implemented in `spawnSpecialPowerups()` method (src/managers/LevelGenerator.js:480-539):
@@ -333,3 +344,20 @@ await page.waitForFunction(() => {
   - Empirical testing is crucial - what looks right visually may differ from calculations
   - Test expectations must match visual reality, not theoretical calculations
   - Platform detection in tests should look for platforms within 25px of expected position to account for physics variations
+
+### Testing Helpers
+
+#### Global Functions (available in browser console and tests)
+- **`window.jumpToLevel(levelNumber)`**: Jump directly to any level without using menus
+  - Stops any active GameScene and DevMenuScene
+  - Restarts with specified level number
+  - Returns true on success, false if game not initialized
+  - Example: `window.jumpToLevel(101)` jumps to level 101
+
+#### Test Utility Functions (from tests/utils/gameHelpers.js)
+- **`startGameWithInfoOverlay(page)`**: Starts game from menu and handles info overlay
+  - Waits for menu to load
+  - Focuses canvas and presses Space to start
+  - Waits for GameScene transition
+  - Automatically dismisses info overlay if present (appears on level 1)
+  - Used in most test files for consistent game startup
