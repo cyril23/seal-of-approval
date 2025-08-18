@@ -15,21 +15,11 @@ export default class LevelGenerator {
         // Reset spawn manager for new level
         this.spawnManager.reset();
         
-        const difficulty = Math.min(levelNumber, 10);
+        const difficulty = levelNumber;
         const platformCount = LEVEL.MIN_PLATFORMS + Math.floor(Math.random() * (LEVEL.MAX_PLATFORMS - LEVEL.MIN_PLATFORMS));
         let enemyCount = Math.min(LEVEL.MIN_ENEMIES + difficulty, LEVEL.MAX_ENEMIES);
         
-        // Arctic levels get more enemies (polar bears)
-        if (theme.name === 'arctic') {
-            enemyCount = Math.floor(enemyCount * LEVEL.ARCTIC_ENEMY_MULTIPLIER);
-            console.log(`Arctic level: increasing enemy count to ${enemyCount}`);
-        }
-        
-        // Ocean levels get more enemies (orcas)
-        if (theme.name === 'ocean') {
-            enemyCount = Math.floor(enemyCount * 1.5); // 50% more orcas
-            console.log(`Ocean level: increasing enemy count to ${enemyCount} orcas`);
-        }
+        // Enemy count is consistent across all themes for simplicity
         
         const collectibleCount = LEVEL.MIN_COLLECTIBLES + Math.floor(Math.random() * (LEVEL.MAX_COLLECTIBLES - LEVEL.MIN_COLLECTIBLES));
         
@@ -331,46 +321,80 @@ export default class LevelGenerator {
         const enemyTypes = theme.enemies;
         const platforms = this.scene.platforms.children.entries;
         
-        // Get spawnable platforms based on theme
+        // Get spawnable platforms (excludes first and last)
         const spawnablePlatforms = this.spawnManager.getSpawnablePlatforms(platforms, theme);
         
-        // For arctic theme, prioritize longer platforms for polar bears
-        let sortedPlatforms;
-        if (theme.name === 'arctic') {
-            // Sort by width (descending) to prioritize longer platforms
-            sortedPlatforms = [...spawnablePlatforms].sort((a, b) => b.displayWidth - a.displayWidth);
-            console.log('Arctic level: prioritizing longer platforms for polar bears');
-        } else {
-            // Shuffle platforms for random distribution
-            sortedPlatforms = [...spawnablePlatforms].sort(() => Math.random() - 0.5);
+        // Sort platforms by X position for even distribution
+        const sortedPlatforms = [...spawnablePlatforms].sort((a, b) => a.x - b.x);
+        
+        if (sortedPlatforms.length === 0) {
+            console.warn('No spawnable platforms available for enemies');
+            return;
         }
         
-        // Note: Ocean theme now only has orcas, which will spawn across all platforms
+        // Calculate the level range for enemy spawning
+        const minX = sortedPlatforms[0].x;
+        const maxX = sortedPlatforms[sortedPlatforms.length - 1].x;
+        const spawnRange = maxX - minX;
+        
+        console.log(`Enemy spawn range: X:${minX.toFixed(0)} to X:${maxX.toFixed(0)} (${spawnRange.toFixed(0)}px wide)`);
+        console.log(`Spawning ${count} enemies with even distribution`);
+        
+        // Calculate target X positions for even distribution
+        const targetPositions = [];
+        for (let i = 0; i < count; i++) {
+            // Distribute enemies evenly across the spawn range
+            const progress = count === 1 ? 0.5 : i / (count - 1);
+            const targetX = minX + (spawnRange * progress);
+            targetPositions.push(targetX);
+        }
         
         let enemiesSpawned = 0;
-        const polarBearsByPlatform = new Map(); // Track polar bears per platform
+        const usedPlatforms = new Set();
+        const polarBearsByPlatform = new Map();
         
-        for (const platform of sortedPlatforms) {
-            if (enemiesSpawned >= count) break;
+        // For each target position, find the nearest valid platform
+        for (const targetX of targetPositions) {
+            // Find the nearest platform to this target X position
+            let nearestPlatform = null;
+            let minDistance = Infinity;
             
-            const enemyType = Phaser.Utils.Array.GetRandom(enemyTypes);
-            
-            // For arctic levels, allow multiple polar bears on very wide platforms
-            if (theme.name === 'arctic') {
-                const platformTileWidth = Math.floor(platform.displayWidth / TILE_SIZE);
-                const bearsOnPlatform = polarBearsByPlatform.get(platform) || 0;
+            for (const platform of sortedPlatforms) {
+                // Skip already heavily used platforms (unless Arctic with wide platforms)
+                if (theme.name === 'arctic') {
+                    const platformTileWidth = Math.floor(platform.displayWidth / TILE_SIZE);
+                    const bearsOnPlatform = polarBearsByPlatform.get(platform) || 0;
+                    
+                    if (platformTileWidth >= 12 && bearsOnPlatform >= 2) {
+                        continue; // Max 2 bears on wide platforms
+                    } else if (platformTileWidth < 12 && bearsOnPlatform >= 1) {
+                        continue; // Max 1 bear on normal platforms
+                    }
+                } else if (usedPlatforms.has(platform)) {
+                    // For non-Arctic themes, try to use each platform only once if possible
+                    if (sortedPlatforms.length > count) {
+                        continue;
+                    }
+                }
                 
-                // Allow 2 polar bears on 12+ tile platforms
-                if (platformTileWidth >= 12 && bearsOnPlatform >= 2) {
-                    continue; // Skip this platform, already has max bears
-                } else if (platformTileWidth < 12 && bearsOnPlatform >= 1) {
-                    continue; // Normal platforms get only 1 bear
+                const distance = Math.abs(platform.x - targetX);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestPlatform = platform;
                 }
             }
             
-            // Find valid spawn position using SpawnManager
+            if (!nearestPlatform) {
+                console.warn(`No valid platform found for target X:${targetX.toFixed(0)}`);
+                continue;
+            }
+            
+            // Select enemy type
+            const enemyType = Phaser.Utils.Array.GetRandom(enemyTypes);
+            
+            // Find valid spawn position on the platform
             const position = this.spawnManager.findValidSpawnPosition(
-                platform, 
+                nearestPlatform,
                 enemyType,
                 -30 // Y offset for enemies
             );
@@ -382,24 +406,23 @@ export default class LevelGenerator {
                 // Register position to prevent overlaps
                 this.spawnManager.registerPosition(position.x, position.y, enemyType);
                 enemiesSpawned++;
+                usedPlatforms.add(nearestPlatform);
                 
                 // Track polar bears per platform
                 if (enemyType === 'polarbear') {
-                    polarBearsByPlatform.set(platform, (polarBearsByPlatform.get(platform) || 0) + 1);
-                    
-                    // For smaller platforms, skip nearby platforms to give them space
-                    const platformTileWidth = Math.floor(platform.displayWidth / TILE_SIZE);
-                    if (platformTileWidth < 12) {
-                        const currentIndex = sortedPlatforms.indexOf(platform);
-                        if (currentIndex < sortedPlatforms.length - 1) {
-                            sortedPlatforms.splice(currentIndex + 1, 1);
-                        }
-                    }
+                    polarBearsByPlatform.set(nearestPlatform, (polarBearsByPlatform.get(nearestPlatform) || 0) + 1);
                 }
+                
+                // Log spawn for debugging
+                const actualPercent = ((position.x / LEVEL_WIDTH) * 100).toFixed(1);
+                const targetPercent = ((targetX / LEVEL_WIDTH) * 100).toFixed(1);
+                console.log(`Enemy ${enemiesSpawned}/${count}: ${enemyType} at X:${position.x.toFixed(0)} (${actualPercent}%, target was ${targetPercent}%)`);
+            } else {
+                console.warn(`Failed to find valid spawn position on platform at X:${nearestPlatform.x}`);
             }
         }
         
-        console.log(`Spawned ${enemiesSpawned}/${count} enemies`);
+        console.log(`Successfully spawned ${enemiesSpawned}/${count} enemies with even distribution`);
     }
 
     spawnCollectibles(count, theme) {

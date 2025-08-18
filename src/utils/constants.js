@@ -24,8 +24,7 @@ export const LEVEL = {
     MIN_PLATFORMS: 15,  // Increased for better coverage
     MAX_PLATFORMS: 25,  // Increased for more platforms
     MIN_ENEMIES: 8,
-    MAX_ENEMIES: 15,
-    ARCTIC_ENEMY_MULTIPLIER: 1.5,  // Arctic levels get 50% more enemies
+    MAX_ENEMIES: 1000,
     MIN_COLLECTIBLES: 20,
     MAX_COLLECTIBLES: 40,
     PLATFORM_HEIGHT_VARIANCE: 200,
