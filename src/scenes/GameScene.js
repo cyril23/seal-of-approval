@@ -385,6 +385,8 @@ export default class GameScene extends Phaser.Scene {
                 enemy.destroy();
                 this.player.sprite.setVelocityY(-300);
                 this.audioManager.playSound('enemyDefeat');
+                // Brief invincibility to handle overlapping enemies
+                this.player.setInvincible(200);
             }
         } else {
             this.player.takeDamage();
