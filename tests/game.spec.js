@@ -60,10 +60,13 @@ test.describe('Seal of Approval Game Tests', () => {
         await page.waitForTimeout(2000);
         await focusCanvas(page);
         await pressKey(page, 'Space');
-        await page.waitForTimeout(2000);
+        await page.waitForTimeout(3000); // Increased wait for scene to fully load
         
         // Get initial state
         const initialState = await getGameState(page);
+        
+        // Verify player exists before accessing properties
+        expect(initialState.player).toBeTruthy();
         const initialX = initialState.player.x;
         
         // Take initial screenshot
@@ -94,10 +97,22 @@ test.describe('Seal of Approval Game Tests', () => {
         await page.waitForTimeout(2000);
         await focusCanvas(page);
         await pressKey(page, 'Space');
-        await page.waitForTimeout(2000);
+        
+        // Wait for scene to be in GameScene
+        await page.waitForFunction(() => {
+            if (!window.game || !window.game.scene) return false;
+            const activeScenes = window.game.scene.scenes.filter(scene => scene.scene.isActive());
+            const gameScene = activeScenes.find(scene => scene.scene.key === 'GameScene');
+            return gameScene && gameScene.player && gameScene.player.sprite;
+        }, { timeout: 5000 });
+        
+        await page.waitForTimeout(1000); // Additional wait for physics to settle
         
         // Get initial state
         const initialState = await getGameState(page);
+        
+        // Verify player exists before accessing properties
+        expect(initialState.player).toBeTruthy();
         const initialY = initialState.player.y;
         
         // Take initial screenshot
@@ -166,9 +181,20 @@ test.describe('Seal of Approval Game Tests', () => {
         // Wait for physics to fully settle
         await page.waitForTimeout(3000);
         
+        // Wait for seal to be on ground
+        await page.waitForFunction(() => {
+            if (!window.game || !window.game.scene) return false;
+            const activeScenes = window.game.scene.scenes.filter(scene => scene.scene.isActive());
+            const gameScene = activeScenes.find(scene => scene.scene.key === 'GameScene');
+            if (!gameScene || !gameScene.player || !gameScene.player.sprite || !gameScene.player.sprite.body) {
+                return false;
+            }
+            // Check if seal is on ground (blocked.down means standing on something)
+            return gameScene.player.sprite.body.blocked.down;
+        }, { timeout: 5000 });
+        
         // Get detailed game state including platform info
         const gameState = await getGameState(page);
-        console.log('Detailed game state:', JSON.stringify(gameState, null, 2));
         
         // Verify player and platform data exists
         expect(gameState.player).toBeTruthy();

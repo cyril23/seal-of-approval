@@ -127,11 +127,21 @@ async function getGameState(page) {
                 
                 // Find the platform directly below the player
                 const playerX = gameScene.player.sprite.x;
-                const playerBottom = gameScene.player.sprite.y + 24; // Half sprite height
+                // The sprite center Y is the player's Y position
+                // For a 48px tall sprite (32 * 1.5 scale), visual bottom is different from mathematical bottom
+                // Since the seal is visually sitting correctly, we need to find the platform it's on
+                const playerY = gameScene.player.sprite.y;
+                
+                // Find platform that the player is standing on
+                // The seal should be about 15px above the platform top when sitting flush
                 const groundPlatform = nearbyPlatforms.find(platform => {
-                    return platform.topY >= playerBottom - 10 && // Platform is below or at player
-                           platform.topY <= playerBottom + 50 && // But not too far below
-                           Math.abs(platform.x - playerX) < platform.width / 2; // Player is over platform
+                    // Check if player is horizontally over this platform
+                    const overPlatform = Math.abs(platform.x - playerX) < platform.width / 2;
+                    // Check if player Y is close to where it should be when on this platform
+                    // Allow some tolerance for physics variations
+                    const expectedYOnPlatform = platform.topY - 15;
+                    const closeToExpectedY = Math.abs(playerY - expectedYOnPlatform) < 25;
+                    return overPlatform && closeToExpectedY;
                 });
                 
                 if (groundPlatform) {
