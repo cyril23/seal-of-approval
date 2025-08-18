@@ -34,7 +34,7 @@ The game uses Phaser's scene system with four main scenes:
 All game entities extend Phaser's physics sprites:
 - **Seal** (player): Mario-style physics with variable jump height, double jump mechanic, power-up states. Physics body scaled to 75% width and 50% height of sprite, with offsetY=2 for perfect visual alignment
 - **Enemy**: Base class with four enemy types (human, hawk, orca, crab), each with unique AI behaviors
-- **Collectible**: Power-ups and fish with magnetic attraction system, physics bodies update during animations for reliable collision
+- **Collectible**: Power-ups and fish with theme-specific behavior. Fish in ocean levels float with no gravity and gentle vertical bobbing animation. Fish in non-ocean levels fall with gravity to platforms. Star and magnet power-ups rotate continuously
 
 #### Manager Classes
 - **LevelGenerator**: Procedurally generates side-scrolling levels with intelligent gap validation, adds stepped bridge platforms for vertical gaps, skips overlapping platforms, ensures all jumps are possible within double jump distance (220px horizontal, 150px up, 250px down)
@@ -68,8 +68,18 @@ Located in `LevelGenerator.js`:
 - Procedurally places 15-25 platforms with gap constraints (120-200px)
 - Validates all gaps are jumpable with stepped platforms for vertical gaps, wider bridge platforms (10 tiles) for reliability
 - 15% of platforms are animated (moving vertically)
-- Enemy and collectible placement based on platform positions
+- Enemy placement based on platform positions
+- Collectible spawning is theme-dependent:
+  - **Ocean theme**: Fish spawn at various heights throughout the water (Y: 100-600px) with gravity disabled, creating an underwater environment
+  - **Non-ocean themes**: Collectibles spawn above platforms and fall naturally with gravity
 - Safety ground platforms every 2000px as fallback
+
+#### Collectible Animations
+Theme-specific animations for collectibles:
+- **Ocean fish**: Gentle vertical bobbing (8px amplitude, 2 second period, Sine.inOut easing)
+- **Non-ocean fish**: No animation, natural physics-based movement
+- **Star/Magnet power-ups**: Continuous 360° rotation (3 second period)
+- **Other power-ups**: Static, no animation
 
 #### Power-up System
 Power-ups modify player state temporarily:
