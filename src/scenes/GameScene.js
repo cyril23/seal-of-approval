@@ -248,6 +248,10 @@ export default class GameScene extends Phaser.Scene {
         this.livesText = this.add.text(20, 50, 'LIVES: 3', uiStyle);
         this.livesText.setScrollFactor(0);
         
+        // Size indicator
+        this.sizeText = this.add.text(20, 80, 'SIZE: ●○○', uiStyle);
+        this.sizeText.setScrollFactor(0);
+        
         this.timeText = this.add.text(GAME_WIDTH - 20, 20, 'TIME: 180', uiStyle);
         this.timeText.setOrigin(1, 0);
         this.timeText.setScrollFactor(0);
@@ -325,11 +329,14 @@ export default class GameScene extends Phaser.Scene {
         console.log(`Player on ground before: ${this.player.sprite.body.blocked.down || this.player.sprite.body.touching.down}`);
         
         if (data.type === 'fish') {
+            // Grow the seal when eating fish
+            this.player.growSize();
+            
             const points = 100;
             this.scoreManager.addScore(points);
             this.showScorePopup(collectible.x, collectible.y, `+${points} FISH!`, 0x00ff00);
             this.audioManager.playSound('eat');
-            console.log(`Fish eaten! Score: +${points}`);
+            console.log(`Fish eaten! Score: +${points}, Size: ${this.player.currentSize}`);
         } else if (data.type === 'star') {
             this.player.setInvincible(10000);
             this.showScorePopup(collectible.x, collectible.y, 'INVINCIBLE!', 0xffff00);
@@ -473,6 +480,9 @@ export default class GameScene extends Phaser.Scene {
         this.player.sprite.setPosition(200, GAME_HEIGHT - 200);
         this.player.sprite.setVelocity(0, 0);
         
+        // Reset to size 1 after death
+        this.player.resetSize();
+        
         // Give temporary invincibility
         this.player.setInvincible(3000);
         
@@ -516,10 +526,23 @@ export default class GameScene extends Phaser.Scene {
         this.livesText.setText(`LIVES: ${this.player.lives}`);
         this.timeText.setText(`TIME: ${this.timeRemaining}`);
         
+        // Update size indicator
+        const sizeIndicator = this.getSizeIndicator(this.player.currentSize);
+        this.sizeText.setText(`SIZE: ${sizeIndicator}`);
+        
         // Update progress percentage toward goal
         const progress = Math.floor((this.player.sprite.x / LEVEL.GOAL_POSITION) * 100);
         this.progressText.setText(`PROGRESS: ${Math.min(progress, 100)}%`);   
         
+    }
+    
+    getSizeIndicator(size) {
+        switch(size) {
+            case 1: return '●○○';
+            case 2: return '●●○';
+            case 3: return '●●●';
+            default: return '●○○';
+        }
     }
 
     togglePause() {

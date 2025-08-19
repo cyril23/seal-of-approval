@@ -23,6 +23,9 @@ export default class AudioManager {
             warning: () => this.playTone(300, 0.3, 'square'),
             gameOver: () => this.playArpeggio([400, 300, 200, 100], 0.3),
             levelComplete: () => this.playArpeggio([400, 500, 600, 800], 0.2),
+            // Size change sounds
+            grow: () => this.playArpeggio([400, 500, 600, 700], 0.15),
+            shrink: () => this.playArpeggio([600, 500, 400, 300], 0.15),
             // Arctic theme sounds
             roar: () => this.playRoar(),
             charge: () => this.playCharge(),

@@ -11,12 +11,15 @@ export default class DevMenuScene extends Phaser.Scene {
         this.parentScene = data.parentScene;
         
         // Menu state management
-        this.menuState = 'main'; // 'main' or 'levelSelect'
+        this.menuState = 'main'; // 'main', 'levelSelect', or 'physicsDebug'
         this.mainMenuIndex = 0;
         this.selectedLevel = this.currentLevel;
         
         // Check if developer mode is currently active
         this.isGodModeActive = this.parentScene?.player?.developerMode || false;
+        
+        // Check if physics debug is currently active
+        this.isPhysicsDebugActive = this.parentScene?.player?.physicsDebugEnabled || false;
     }
 
     create() {
@@ -41,9 +44,14 @@ export default class DevMenuScene extends Phaser.Scene {
         this.levelMenuContainer = this.add.container(0, 0);
         this.levelMenuContainer.setVisible(false);
         
-        // Create both menus
+        // Create container for physics debug submenu
+        this.physicsDebugContainer = this.add.container(0, 0);
+        this.physicsDebugContainer.setVisible(false);
+        
+        // Create all menus
         this.createMainMenu();
         this.createLevelMenu();
+        this.createPhysicsDebugMenu();
         
         // Setup controls
         this.setupControls();
@@ -85,8 +93,14 @@ export default class DevMenuScene extends Phaser.Scene {
             'Change Level', menuStyle);
         this.changeLevelText.setOrigin(0.5);
         
-        // Option 3: Reset High Score
-        this.resetScoreText = this.add.text(GAME_WIDTH / 2, menuY + optionSpacing * 2, 
+        // Option 3: Physics Debug Settings
+        const physicsDebugStatus = this.isPhysicsDebugActive ? '[ON]' : '[OFF]';
+        this.physicsDebugText = this.add.text(GAME_WIDTH / 2, menuY + optionSpacing * 2, 
+            `Physics Debug Settings ${physicsDebugStatus}`, menuStyle);
+        this.physicsDebugText.setOrigin(0.5);
+        
+        // Option 4: Reset High Score
+        this.resetScoreText = this.add.text(GAME_WIDTH / 2, menuY + optionSpacing * 3, 
             `Reset High Score (${highScore})`, menuStyle);
         this.resetScoreText.setOrigin(0.5);
         
@@ -118,6 +132,7 @@ export default class DevMenuScene extends Phaser.Scene {
         this.mainMenuContainer.add([
             this.godModeText,
             this.changeLevelText,
+            this.physicsDebugText,
             this.resetScoreText,
             this.mainSelectionIndicator,
             this.mainInstructions,
@@ -128,6 +143,7 @@ export default class DevMenuScene extends Phaser.Scene {
         this.mainMenuOptions = [
             this.godModeText,
             this.changeLevelText,
+            this.physicsDebugText,
             this.resetScoreText
         ];
     }
@@ -167,6 +183,128 @@ export default class DevMenuScene extends Phaser.Scene {
             this.levelInstructions,
             this.levelListContainer
         ]);
+    }
+    
+    createPhysicsDebugMenu() {
+        const menuStyle = {
+            fontSize: '20px',
+            fontFamily: '"Press Start 2P", monospace',
+            color: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 2
+        };
+        
+        const descStyle = {
+            fontSize: '12px',
+            fontFamily: '"Press Start 2P", monospace',
+            color: '#aaaaaa',
+            align: 'center'
+        };
+        
+        const instructionStyle = {
+            fontSize: '14px',
+            fontFamily: '"Press Start 2P", monospace',
+            color: '#aaaaaa'
+        };
+        
+        // Subtitle
+        this.physicsSubtitle = this.add.text(GAME_WIDTH / 2, 100, 'PHYSICS DEBUG SETTINGS', {
+            fontSize: '24px',
+            fontFamily: '"Press Start 2P", monospace',
+            color: '#00ffff',
+            stroke: '#000000',
+            strokeThickness: 2
+        });
+        this.physicsSubtitle.setOrigin(0.5);
+        
+        // Toggle option
+        const toggleY = 200;
+        const physicsStatus = this.isPhysicsDebugActive ? '[ON]' : '[OFF]';
+        this.physicsToggleText = this.add.text(GAME_WIDTH / 2, toggleY, 
+            `Physics Debug Overlay ${physicsStatus}`, menuStyle);
+        this.physicsToggleText.setOrigin(0.5);
+        
+        // Selection indicator
+        this.physicsSelectionIndicator = this.add.text(GAME_WIDTH / 2 - 250, toggleY, 
+            '>', {
+            fontSize: '20px',
+            fontFamily: '"Press Start 2P", monospace',
+            color: '#ffff00'
+        });
+        
+        // Description text
+        const descY = 300;
+        const lineHeight = 25;
+        
+        this.physicsDesc1 = this.add.text(GAME_WIDTH / 2, descY, 
+            'When enabled, visualizes collision boundaries:', descStyle);
+        this.physicsDesc1.setOrigin(0.5);
+        
+        this.physicsDesc2 = this.add.text(GAME_WIDTH / 2, descY + lineHeight * 1.5, 
+            'GREEN RECTANGLE = Physics body collision box', {
+            ...descStyle,
+            color: '#00ff00'
+        });
+        this.physicsDesc2.setOrigin(0.5);
+        
+        this.physicsDesc3 = this.add.text(GAME_WIDTH / 2, descY + lineHeight * 2.5, 
+            'GREEN DOT = Center point of physics body', {
+            ...descStyle,
+            color: '#00ff00'
+        });
+        this.physicsDesc3.setOrigin(0.5);
+        
+        this.physicsDesc4 = this.add.text(GAME_WIDTH / 2, descY + lineHeight * 3.5, 
+            'BLUE RECTANGLE = Visual sprite bounds', {
+            ...descStyle,
+            color: '#0088ff'
+        });
+        this.physicsDesc4.setOrigin(0.5);
+        
+        // Instructions
+        this.physicsInstructions = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 100, 
+            'ENTER TO TOGGLE   ESC TO GO BACK', 
+            instructionStyle);
+        this.physicsInstructions.setOrigin(0.5);
+        
+        // Add all to physics debug container
+        this.physicsDebugContainer.add([
+            this.physicsSubtitle,
+            this.physicsToggleText,
+            this.physicsSelectionIndicator,
+            this.physicsDesc1,
+            this.physicsDesc2,
+            this.physicsDesc3,
+            this.physicsDesc4,
+            this.physicsInstructions
+        ]);
+    }
+    
+    showPhysicsDebugMenu() {
+        this.menuState = 'physicsDebug';
+        this.mainMenuContainer.setVisible(false);
+        this.levelMenuContainer.setVisible(false);
+        this.physicsDebugContainer.setVisible(true);
+        this.titleText.setText('DEVELOPER MENU');
+    }
+    
+    togglePhysicsDebug() {
+        if (!this.parentScene || !this.parentScene.player) return;
+        
+        // Toggle the physics debug
+        this.isPhysicsDebugActive = !this.isPhysicsDebugActive;
+        this.parentScene.player.setPhysicsDebugEnabled(this.isPhysicsDebugActive);
+        
+        // Update display
+        const physicsStatus = this.isPhysicsDebugActive ? '[ON]' : '[OFF]';
+        this.physicsToggleText.setText(`Physics Debug Overlay ${physicsStatus}`);
+        
+        // Update main menu text too
+        this.physicsDebugText.setText(`Physics Debug Settings ${physicsStatus}`);
+        
+        // Show confirmation
+        const status = this.isPhysicsDebugActive ? 'ENABLED' : 'DISABLED';
+        this.showConfirmation(`Physics Debug ${status}`, 0x00ff00);
     }
     
     createLevelList() {
@@ -278,12 +416,14 @@ export default class DevMenuScene extends Phaser.Scene {
                 this.activateMainMenuOption();
             } else if (this.menuState === 'levelSelect') {
                 this.jumpToLevel();
+            } else if (this.menuState === 'physicsDebug') {
+                this.togglePhysicsDebug();
             }
         });
         
         // ESC key behavior
         this.input.keyboard.on('keydown-ESC', () => {
-            if (this.menuState === 'levelSelect') {
+            if (this.menuState === 'levelSelect' || this.menuState === 'physicsDebug') {
                 // Go back to main menu
                 this.showMainMenu();
             } else {
@@ -294,7 +434,7 @@ export default class DevMenuScene extends Phaser.Scene {
     }
     
     navigateMainMenu(direction) {
-        this.mainMenuIndex = Math.max(0, Math.min(2, this.mainMenuIndex + direction));
+        this.mainMenuIndex = Math.max(0, Math.min(3, this.mainMenuIndex + direction));
         this.updateMainMenuSelection();
     }
     
@@ -323,7 +463,10 @@ export default class DevMenuScene extends Phaser.Scene {
             case 1: // Change Level
                 this.showLevelMenu();
                 break;
-            case 2: // Reset High Score
+            case 2: // Physics Debug Settings
+                this.showPhysicsDebugMenu();
+                break;
+            case 3: // Reset High Score
                 this.resetHighScore();
                 break;
         }
@@ -378,6 +521,7 @@ export default class DevMenuScene extends Phaser.Scene {
         this.menuState = 'main';
         this.mainMenuContainer.setVisible(true);
         this.levelMenuContainer.setVisible(false);
+        this.physicsDebugContainer.setVisible(false);
         this.titleText.setText('DEVELOPER MENU');
         this.updateMainMenuSelection();
     }

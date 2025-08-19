@@ -1,35 +1,42 @@
 import Phaser from 'phaser';
-import { PHYSICS, PLAYER, GAME_HEIGHT } from '../utils/constants.js';
+import { PHYSICS, PLAYER, GAME_HEIGHT, SIZE_SYSTEM } from '../utils/constants.js';
 
 export default class Seal {
     constructor(scene, x, y, lives = null) {
         // Version tracking for cache verification
-        console.log('Seal.js Version: 1.5 - Lives accumulate across levels');
-        
+        console.log('Seal.js Version: 2.0 - Size growth system');
+
         this.scene = scene;
         this.sprite = scene.physics.add.sprite(x, y, 'seal');
         // Don't use world bounds for bottom edge to allow falling
         this.sprite.setCollideWorldBounds(false);
         this.sprite.setBounce(0);
-        
+
         // Use provided lives or default to initial lives for level 1
         this.lives = lives !== null ? lives : PLAYER.INITIAL_LIVES;
+
+        // Size system properties
+        this.currentSize = SIZE_SYSTEM.DEFAULT_SIZE;
+        this.maxSize = SIZE_SYSTEM.MAX_SIZE;
+        this.sizeScales = SIZE_SYSTEM.SIZE_SCALES;
+
         this.invincible = false;
         this.speedBoost = false;
         this.hasMagnet = false;
         this.developerMode = false;  // Developer mode flag
+        this.physicsDebugEnabled = false;  // Physics debug graphics flag (separate from dev mode)
         this.isSwimming = false;  // Swimming mode for ocean theme
         this.swimVelocityX = 0;  // Swimming velocity with inertia
         this.swimVelocityY = 0;
-        
+
         this.jumpTimer = 0;
         this.isJumping = false;
         this.canJump = true;
         this.doubleJumpAvailable = false;
         this.hasDoubleJumped = false;
         this.wasOnGround = false; // For debugging ground state changes
-        
-        this.updateSize();
+
+        this.updateSizeScale();
     }
 
     update(cursors, spaceKey) {
@@ -38,15 +45,15 @@ export default class Seal {
         if (isOceanTheme !== this.isSwimming) {
             this.setSwimmingMode(isOceanTheme);
         }
-        
+
         // Check if on ice platform and get slipperiness level
         const iceInfo = this.isOnIcePlatform();
         const onIce = iceInfo.onIce;
-        
+
         // Calculate speed with developer mode multiplier
         const baseSpeed = this.speedBoost ? PHYSICS.MOVE_SPEED * 2 : PHYSICS.MOVE_SPEED;
         const speed = this.developerMode ? baseSpeed * 5 : baseSpeed;
-        
+
         // Manual bounds checking for left, right, and top
         if (this.sprite.x < this.sprite.width / 2) {
             this.sprite.x = this.sprite.width / 2;
@@ -60,7 +67,7 @@ export default class Seal {
             this.sprite.y = 0;
             this.sprite.setVelocityY(0);
         }
-        
+
         // Developer mode or swimming bottom boundary - keep seal within screen
         if (this.developerMode || this.isSwimming) {
             // Keep seal 10 pixels inside bottom boundary to avoid edge issues
@@ -73,13 +80,13 @@ export default class Seal {
                 }
             }
         }
-        
+
         // Handle swimming movement with inertia
         if (this.isSwimming) {
             this.updateSwimming(cursors);
             return; // Skip normal movement logic
         }
-        
+
         // Apply ice physics based on slipperiness level
         let acceleration, drag;
         if (iceInfo.slipperiness === 'extreme') {
@@ -92,7 +99,7 @@ export default class Seal {
             acceleration = 1.0;  // Normal ground
             drag = PHYSICS.DRAG; // Normal friction
         }
-        
+
         if (cursors.left.isDown) {
             if (onIce) {
                 // Gradual acceleration on ice
@@ -118,7 +125,7 @@ export default class Seal {
         } else {
             this.sprite.setVelocityX(this.sprite.body.velocity.x * drag);
         }
-        
+
         // Developer mode vertical flight controls
         if (this.developerMode) {
             if (cursors.up.isDown) {
@@ -130,16 +137,16 @@ export default class Seal {
                 this.sprite.setVelocityY(this.sprite.body.velocity.y * 0.9);
             }
         }
-        
+
         // Better ground detection using blocked.down to prevent falling through platforms
         const onGround = this.sprite.body.blocked.down || this.sprite.body.touching.down;
-        
+
         // Log collision state changes for debugging
         if (this.wasOnGround !== onGround) {
             console.log(`Ground state changed: ${this.wasOnGround} -> ${onGround} at Y: ${this.sprite.y.toFixed(0)}`);
             this.wasOnGround = onGround;
         }
-        
+
         if (onGround) {
             this.canJump = true;
             this.isJumping = false;
@@ -147,7 +154,7 @@ export default class Seal {
             this.doubleJumpAvailable = true;
             this.hasDoubleJumped = false;
         }
-        
+
         // Handle jump input with double jump (skip in developer mode - use arrow keys instead)
         if (Phaser.Input.Keyboard.JustDown(spaceKey) && !this.developerMode) {
             if (onGround) {
@@ -162,12 +169,12 @@ export default class Seal {
                 this.doubleJumpAvailable = false;
                 this.hasDoubleJumped = true;
                 this.scene.audioManager.playSound('doubleJump');
-                
+
                 // Add visual effect for double jump
                 this.createDoubleJumpEffect();
             }
         }
-        
+
         // Variable jump height (hold for higher jump) - only for first jump (skip in dev mode)
         if (spaceKey.isDown && this.isJumping && !this.hasDoubleJumped && !this.developerMode) {
             if (this.jumpTimer < 15 && this.sprite.body.velocity.y < 0) {
@@ -175,14 +182,14 @@ export default class Seal {
                 this.jumpTimer++;
             }
         }
-        
+
         if (spaceKey.isUp && !this.developerMode) {
             if (this.isJumping && this.sprite.body.velocity.y < 0 && !this.hasDoubleJumped) {
                 this.sprite.setVelocityY(this.sprite.body.velocity.y * 0.5);
             }
             this.jumpTimer = 15;
         }
-        
+
         // Handle invincibility visual effects (but not alpha in dev mode)
         if (this.invincible && !this.developerMode) {
             const time = this.scene.time.now;
@@ -191,35 +198,105 @@ export default class Seal {
     }
 
 
-    updateSize() {
-        // Fixed scale at medium size (1.5)
-        const scale = 1.5;
+    updateSizeScale() {
+        // Scale based on current size
+        const scale = this.sizeScales[this.currentSize - 1];
         this.sprite.setScale(scale);
-        
+
         // Update physics body to match the scaled sprite
         // Base sprite is 32x32, but emojis have padding/transparent areas
         const baseWidth = 32;
         const baseHeight = 32;
+
+        // *** EMPIRICALLY TUNED VALUES - DO NOT CHANGE WITHOUT VISUAL TESTING ***
+        // These values were carefully tuned using the Physics Debug overlay system
+        // Mathematical formulas fail due to emoji sprites having irregular transparent padding
         
-        // Use 75% width, but only 50% height - small box at bottom for "feet"
-        const bodyWidth = baseWidth * scale * 0.75;
-        const bodyHeight = baseHeight * scale * 0.5;  // Half height for bottom collision only
+        // Physics body dimensions: Dramatically smaller for larger sizes
+        // This compensates for emoji visual weight being concentrated in center
+        const bodyWidthMultipliers = [0.65, 0.43, 0.275];  // Size 1: 65% → Size 3: 27.5%
+        const bodyHeightMultipliers = [0.45, 0.35, 0.22];  // Size 1: 45% → Size 3: 22%
+
+        const bodyWidth = baseWidth * scale * bodyWidthMultipliers[this.currentSize - 1];
+        const bodyHeight = baseHeight * scale * bodyHeightMultipliers[this.currentSize - 1];
+
+        // Physics body positioning: Custom offsets for perfect visual alignment
+        // These values create pixel-perfect collision detection at all sizes
+        // Note: Size 1 uses NEGATIVE X offset due to emoji left-side weighting
         
+        const sizeOffsetsX = [-1, 2, 3];  // Horizontal: Accounts for emoji asymmetric padding
+        const sizeOffsetsY = [4, 3, 5];   // Vertical: Ensures perfect ground contact
+
         // Set the physics body size
-        this.sprite.body.setSize(bodyWidth, bodyHeight);
-        
-        // Center horizontally
-        const offsetX = (baseWidth * scale - bodyWidth) / 2;
-        // Position physics body to align sprite bottom with platform
-        // IMPORTANT: Due to emoji sprite padding and visual characteristics, the "correct" visual
-        // alignment doesn't match mathematical expectations. Testing results:
-        // - offsetY = 0-1: Seal appears slightly underground/embedded in platform
-        // - offsetY = 2: BEST - Seal sits visually flush on platform (Y=689, 9px below mathematical center)
-        // - offsetY = 3+: Seal begins to float visibly above platform
-        // The 9px difference from expected Y=680 is due to emoji padding and visual weight distribution
-        const offsetY = 2; // Empirically determined for best visual alignment
-        
+        // Pass false to prevent auto-centering and maintain full control over offset
+        this.sprite.body.setSize(bodyWidth, bodyHeight, false);
+
+        // Use size-specific offsets for both X and Y alignment
+        const offsetX = sizeOffsetsX[this.currentSize - 1];
+        const offsetY = sizeOffsetsY[this.currentSize - 1];
+
         this.sprite.body.setOffset(offsetX, offsetY);
+
+        // Enhanced debugging output for offset tuning
+        const mathCenterX = (baseWidth * scale - bodyWidth) / 2;
+        console.log(`Size ${this.currentSize}: scale=${scale}`);
+        console.log(`  Body: ${bodyWidth.toFixed(1)}x${bodyHeight.toFixed(1)}, Offsets: X=${offsetX} Y=${offsetY}`);
+        console.log(`  Math center would be X=${mathCenterX.toFixed(1)}, using visual center X=${offsetX}`);
+
+        // Refresh physics body visualizer if active (in dev mode)
+        if (this.physicsDebugGraphics) {
+            // Force immediate redraw
+            this.physicsDebugGraphics.clear();
+        }
+    }
+
+    growSize() {
+        if (this.currentSize < this.maxSize) {
+            // Store the physics body's bottom position before growing
+            const bodyBottomBefore = this.sprite.body.bottom;
+
+            this.currentSize++;
+            // Remove animation effects for now - focus on mechanics
+            // this.createGrowthEffect();
+            this.updateSizeScale();
+
+            // Restore the body's bottom to the same position to prevent falling
+            this.sprite.y = bodyBottomBefore - this.sprite.body.height - this.sprite.body.offset.y;
+
+            // Play growth sound
+            if (this.scene.audioManager) {
+                this.scene.audioManager.playSound('grow');
+            }
+
+            console.log(`Seal grew to size ${this.currentSize}, Y adjusted to maintain ground contact`);
+        }
+    }
+
+    shrinkSize() {
+        if (this.currentSize > 1) {
+            // Store the physics body's bottom position before shrinking
+            const bodyBottomBefore = this.sprite.body.bottom;
+
+            this.currentSize--;
+            // Remove animation effects for now - focus on mechanics
+            // this.createShrinkEffect();
+            this.updateSizeScale();
+
+            // Restore the body's bottom to the same position
+            this.sprite.y = bodyBottomBefore - this.sprite.body.height - this.sprite.body.offset.y;
+
+            // Play shrink sound
+            if (this.scene.audioManager) {
+                this.scene.audioManager.playSound('shrink');
+            }
+
+            console.log(`Seal shrunk to size ${this.currentSize}, Y adjusted to maintain ground contact`);
+        }
+    }
+
+    resetSize() {
+        this.currentSize = SIZE_SYSTEM.DEFAULT_SIZE;
+        this.updateSizeScale();
     }
 
     takeDamage() {
@@ -227,26 +304,33 @@ export default class Seal {
         if (this.developerMode) {
             return;
         }
-        
+
         if (!this.invincible) {
-            this.lives--;
-            this.setInvincible(PLAYER.INVINCIBLE_TIME);
-            
-            this.scene.tweens.add({
-                targets: this.sprite,
-                x: this.sprite.x - 20,
-                duration: 50,
-                yoyo: true,
-                repeat: 3,
-                ease: 'Power2'
-            });
+            if (this.currentSize > 1) {
+                // Shrink instead of losing life
+                this.shrinkSize();
+                this.setInvincible(PLAYER.INVINCIBLE_TIME);
+            } else {
+                // At size 1, lose a life
+                this.lives--;
+                this.setInvincible(PLAYER.INVINCIBLE_TIME);
+
+                this.scene.tweens.add({
+                    targets: this.sprite,
+                    x: this.sprite.x - 20,
+                    duration: 50,
+                    yoyo: true,
+                    repeat: 3,
+                    ease: 'Power2'
+                });
+            }
         }
     }
 
     setInvincible(duration) {
         this.invincible = true;
         this.sprite.setTint(0xffff00);
-        
+
         this.scene.time.delayedCall(duration, () => {
             this.invincible = false;
             this.sprite.clearTint();
@@ -256,7 +340,7 @@ export default class Seal {
 
     setSpeedBoost(duration) {
         this.speedBoost = true;
-        
+
         const particles = this.scene.add.particles(0, 0, 'speed', {
             follow: this.sprite,
             scale: { start: 0.5, end: 0 },
@@ -264,7 +348,7 @@ export default class Seal {
             lifespan: 500,
             frequency: 50
         });
-        
+
         this.scene.time.delayedCall(duration, () => {
             this.speedBoost = false;
             particles.destroy();
@@ -273,10 +357,10 @@ export default class Seal {
 
     setMagnet(duration) {
         this.hasMagnet = true;
-        
+
         const magnetField = this.scene.add.circle(this.sprite.x, this.sprite.y, 100, 0x00ffff, 0.2);
         magnetField.setStrokeStyle(2, 0x00ffff, 0.5);
-        
+
         const updateMagnet = this.scene.time.addEvent({
             delay: 16,
             callback: () => {
@@ -285,19 +369,19 @@ export default class Seal {
             },
             loop: true
         });
-        
+
         this.scene.time.delayedCall(duration, () => {
             this.hasMagnet = false;
             magnetField.destroy();
             updateMagnet.destroy();
         });
     }
-    
+
     createDoubleJumpEffect() {
         // Create a visual ring effect for double jump
         const ring = this.scene.add.circle(this.sprite.x, this.sprite.y, 20, 0x00ffff, 0.5);
         ring.setStrokeStyle(3, 0x00ffff);
-        
+
         this.scene.tweens.add({
             targets: ring,
             scaleX: 2,
@@ -310,29 +394,29 @@ export default class Seal {
             }
         });
     }
-    
+
     isOnIcePlatform() {
         // Check if the seal is on an ice platform and determine slipperiness
         if (!this.scene.platforms) return { onIce: false, slipperiness: 'normal' };
-        
+
         const sealBounds = this.sprite.getBounds();
         let iceInfo = { onIce: false, slipperiness: 'normal' };
-        
+
         this.scene.platforms.children.entries.forEach(platform => {
             if (platform.getData('isIce')) {
                 const platformBounds = platform.getBounds();
-                
+
                 // Check if seal is standing on this platform
-                if (this.sprite.body.touching.down && 
+                if (this.sprite.body.touching.down &&
                     sealBounds.bottom >= platformBounds.top - 5 &&
                     sealBounds.bottom <= platformBounds.top + 10 &&
                     sealBounds.right > platformBounds.left &&
                     sealBounds.left < platformBounds.right) {
                     iceInfo.onIce = true;
-                    
+
                     // Get platform type for variable slipperiness
                     const platformType = platform.getData('platformType');
-                    
+
                     // Most slippery - floating and cracking ice
                     if (platformType === 'floatingIce' || platformType === 'crackingIce') {
                         iceInfo.slipperiness = 'extreme';
@@ -341,7 +425,7 @@ export default class Seal {
                     else {
                         iceInfo.slipperiness = 'standard';
                     }
-                    
+
                     // Handle cracking ice
                     if (platform.getData('crackingIce')) {
                         this.handleCrackingIce(platform);
@@ -349,16 +433,16 @@ export default class Seal {
                 }
             }
         });
-        
+
         return iceInfo;
     }
-    
+
     handleCrackingIce(platform) {
         // Increment crack timer
         let crackTimer = platform.getData('crackTimer') || 0;
         crackTimer += this.scene.game.loop.delta;
         platform.setData('crackTimer', crackTimer);
-        
+
         // Show cracks after 1 second
         if (crackTimer > 1000 && crackTimer < 2000) {
             platform.setTint(0xCCCCCC); // Grayer tint for cracking
@@ -374,11 +458,11 @@ export default class Seal {
                 });
             }
         }
-        
+
         // Break after 2 seconds
         if (crackTimer > 2000 && !platform.getData('broken')) {
             platform.setData('broken', true);
-            
+
             // Create breaking effect
             for (let i = 0; i < 5; i++) {
                 const shard = this.scene.add.rectangle(
@@ -387,7 +471,7 @@ export default class Seal {
                     10, 10,
                     0xCCE5FF
                 );
-                
+
                 this.scene.tweens.add({
                     targets: shard,
                     y: platform.y + 100,
@@ -397,39 +481,39 @@ export default class Seal {
                     onComplete: () => shard.destroy()
                 });
             }
-            
+
             // Play ice break sound if audio manager exists
             if (this.scene.audioManager) {
                 this.scene.audioManager.playSound('iceBreak');
             }
-            
+
             // Destroy the platform
             platform.destroy();
         }
     }
-    
+
     setDeveloperMode(enabled) {
         this.developerMode = enabled;
-        
+
         if (enabled) {
             // Enable developer mode
             console.log('Seal: Developer mode ENABLED');
-            
+
             // Disable gravity for flying
             this.sprite.body.setAllowGravity(false);
-            
+
             // Set permanent invincibility
             this.invincible = true;
-            
+
             // Apply special purple tint
             this.sprite.setTint(0xFF00FF);
-            
+
             // Ensure full alpha
             this.sprite.setAlpha(1);
-            
+
             // Reset velocity for clean flight
             this.sprite.setVelocity(0, 0);
-            
+
             // Create particle effect for super speed
             if (!this.devModeParticles) {
                 this.devModeParticles = this.scene.add.particles(0, 0, 'star', {
@@ -441,33 +525,112 @@ export default class Seal {
                     tint: 0xFF00FF
                 });
             }
+
+            // Note: Physics debug is now separate - use setPhysicsDebugEnabled() to toggle
         } else {
             // Disable developer mode
             console.log('Seal: Developer mode DISABLED');
-            
+
             // Re-enable gravity
             this.sprite.body.setAllowGravity(true);
-            
+
             // Remove invincibility (unless it was already active)
             this.invincible = false;
-            
+
             // Clear tint
             this.sprite.clearTint();
-            
+
             // Reset alpha
             this.sprite.setAlpha(1);
-            
+
             // Remove particle effect
             if (this.devModeParticles) {
                 this.devModeParticles.destroy();
                 this.devModeParticles = null;
             }
+
+            // Note: Physics debug is now separate - use setPhysicsDebugEnabled() to toggle
         }
     }
-    
+
+    createPhysicsBodyVisualizer() {
+        // Create graphics object for drawing physics body outline
+        if (!this.physicsDebugGraphics) {
+            this.physicsDebugGraphics = this.scene.add.graphics();
+            // Set depth to render above everything
+            this.physicsDebugGraphics.setDepth(1000);
+        }
+
+        // Create update event to redraw the outline every frame
+        this.physicsDebugEvent = this.scene.time.addEvent({
+            delay: 16, // ~60fps
+            callback: () => {
+                if (this.physicsDebugGraphics && this.sprite.body) {
+                    // Clear previous drawing
+                    this.physicsDebugGraphics.clear();
+
+                    // Set line style - bright green for visibility
+                    this.physicsDebugGraphics.lineStyle(2, 0x00ff00, 1);
+
+                    // Draw rectangle around physics body
+                    const body = this.sprite.body;
+                    this.physicsDebugGraphics.strokeRect(
+                        body.x,
+                        body.y,
+                        body.width,
+                        body.height
+                    );
+
+                    // Draw center point (green for consistency)
+                    this.physicsDebugGraphics.fillStyle(0x00ff00, 1);
+                    this.physicsDebugGraphics.fillCircle(
+                        body.x + body.width / 2,
+                        body.y + body.height / 2,
+                        3
+                    );
+
+                    // Draw sprite bounds for comparison (in blue)
+                    this.physicsDebugGraphics.lineStyle(1, 0x0088ff, 0.5);
+                    const spriteBounds = this.sprite.getBounds();
+                    this.physicsDebugGraphics.strokeRect(
+                        spriteBounds.x,
+                        spriteBounds.y,
+                        spriteBounds.width,
+                        spriteBounds.height
+                    );
+                }
+            },
+            loop: true
+        });
+    }
+
+    removePhysicsBodyVisualizer() {
+        if (this.physicsDebugGraphics) {
+            this.physicsDebugGraphics.destroy();
+            this.physicsDebugGraphics = null;
+        }
+
+        if (this.physicsDebugEvent) {
+            this.physicsDebugEvent.destroy();
+            this.physicsDebugEvent = null;
+        }
+    }
+
+    setPhysicsDebugEnabled(enabled) {
+        this.physicsDebugEnabled = enabled;
+
+        if (enabled) {
+            console.log('Seal: Physics debug ENABLED');
+            this.createPhysicsBodyVisualizer();
+        } else {
+            console.log('Seal: Physics debug DISABLED');
+            this.removePhysicsBodyVisualizer();
+        }
+    }
+
     setSwimmingMode(enabled) {
         this.isSwimming = enabled;
-        
+
         if (enabled) {
             console.log('Seal: Swimming mode ENABLED (Ocean theme)');
             // Disable gravity for swimming
@@ -488,20 +651,20 @@ export default class Seal {
             }
         }
     }
-    
+
     updateSwimming(cursors) {
         // Swimming physics with inertia
         const baseSpeed = this.speedBoost ? PHYSICS.MOVE_SPEED * 2 : PHYSICS.MOVE_SPEED;
         const speed = this.developerMode ? baseSpeed * 5 : baseSpeed;
-        
+
         // Water has more drag than air
         const waterDrag = 0.92;
         const acceleration = 0.15; // Smooth acceleration
-        
+
         // Target velocities based on input
         let targetVelX = 0;
         let targetVelY = 0;
-        
+
         if (cursors.left.isDown) {
             targetVelX = -speed;
             this.sprite.setFlipX(false);
@@ -509,17 +672,17 @@ export default class Seal {
             targetVelX = speed;
             this.sprite.setFlipX(true);
         }
-        
+
         if (cursors.up.isDown) {
             targetVelY = -speed;
         } else if (cursors.down.isDown) {
             targetVelY = speed;
         }
-        
+
         // Apply acceleration toward target velocity (inertia)
         this.swimVelocityX += (targetVelX - this.swimVelocityX) * acceleration;
         this.swimVelocityY += (targetVelY - this.swimVelocityY) * acceleration;
-        
+
         // Apply water drag when no input
         if (targetVelX === 0) {
             this.swimVelocityX *= waterDrag;
@@ -527,25 +690,25 @@ export default class Seal {
         if (targetVelY === 0) {
             this.swimVelocityY *= waterDrag;
         }
-        
+
         // Apply velocities
         this.sprite.setVelocityX(this.swimVelocityX);
         this.sprite.setVelocityY(this.swimVelocityY);
-        
+
         // Add slight rotation based on movement direction for visual effect
         const angle = Math.atan2(this.swimVelocityY, Math.abs(this.swimVelocityX));
         this.sprite.setRotation(angle * 0.2);
-        
+
         // Update bubble emission based on speed
         if (this.bubbleEmitter) {
             const speed = Math.sqrt(this.swimVelocityX * this.swimVelocityX + this.swimVelocityY * this.swimVelocityY);
             this.bubbleEmitter.frequency = Math.max(100 - speed / 2, 50);
         }
     }
-    
+
     createBubbleEffect() {
         if (this.bubbleEmitter) return;
-        
+
         // Create circle texture for bubbles if it doesn't exist
         if (!this.scene.textures.exists('bubble')) {
             const graphics = this.scene.add.graphics();
@@ -554,7 +717,7 @@ export default class Seal {
             graphics.generateTexture('bubble', 8, 8);
             graphics.destroy();
         }
-        
+
         // Create bubble particle emitter
         this.bubbleEmitter = this.scene.add.particles(0, 0, 'bubble', {
             follow: this.sprite,
@@ -565,6 +728,55 @@ export default class Seal {
             frequency: 100,
             angle: { min: -110, max: -70 },
             quantity: 1
+        });
+    }
+
+    createGrowthEffect() {
+        // White flash for growth
+        this.sprite.setTint(0xffffff);
+
+        // Scale tween
+        this.scene.tweens.add({
+            targets: this.sprite,
+            scaleX: this.sizeScales[this.currentSize - 1] * 1.2,
+            scaleY: this.sizeScales[this.currentSize - 1] * 1.2,
+            duration: 200,
+            yoyo: true,
+            ease: 'Power2',
+            onComplete: () => {
+                this.sprite.clearTint();
+            }
+        });
+
+        // Green sparkle particles
+        const particles = this.scene.add.particles(this.sprite.x, this.sprite.y, 'star', {
+            scale: { start: 0.4, end: 0 },
+            speed: { min: 100, max: 200 },
+            lifespan: 500,
+            quantity: 10,
+            tint: 0x00ff00
+        });
+
+        this.scene.time.delayedCall(500, () => {
+            particles.destroy();
+        });
+    }
+
+    createShrinkEffect() {
+        // Red flash for shrinking
+        this.sprite.setTint(0xff0000);
+
+        // Scale down tween
+        this.scene.tweens.add({
+            targets: this.sprite,
+            scaleX: this.sizeScales[this.currentSize - 1] * 0.8,
+            scaleY: this.sizeScales[this.currentSize - 1] * 0.8,
+            duration: 200,
+            yoyo: true,
+            ease: 'Power2',
+            onComplete: () => {
+                this.sprite.clearTint();
+            }
         });
     }
 }

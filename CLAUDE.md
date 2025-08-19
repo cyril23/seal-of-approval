@@ -92,7 +92,13 @@ The game uses Phaser's scene system with four main scenes:
 
 #### Entity System
 All game entities extend Phaser's physics sprites:
-- **Seal** (player): Mario-style physics with variable jump height, double jump mechanic, power-up states. Physics body scaled to 75% width and 50% height of sprite, with offsetY=2 for perfect visual alignment
+- **Seal** (player): Mario-style physics with variable jump height, double jump mechanic, power-up states, and 3-size growth system
+  - **Size System**: Seal grows when eating fish (sizes 1-3), shrinks when taking damage, resets to size 1 per level
+  - **Physics Body Tuning**: Complex empirically-tuned collision boxes for each size due to emoji sprite irregularities:
+    - Size 1 (scale 1.5): 65%×45% body, offsets [-1,4] - negative X due to emoji asymmetry
+    - Size 2 (scale 2.0): 43%×35% body, offsets [2,3] - proportionally smaller collision
+    - Size 3 (scale 3.0): 27.5%×22% body, offsets [3,5] - dramatically reduced for visual accuracy
+  - **Critical**: These values are empirically tuned using Physics Debug overlay - do not change without visual testing
 - **Enemy**: Base class with four enemy types (human, hawk, orca, crab), each with unique AI behaviors
 - **Collectible**: Power-ups and fish with theme-specific behavior. Fish in ocean levels float with no gravity and gentle vertical bobbing animation. Fish in non-ocean levels fall with gravity to platforms. Star and magnet power-ups rotate continuously
 
@@ -243,7 +249,15 @@ Activated by pressing **DD** (double-tap D quickly) to open the main developer m
    - **Theme Rotation**: Themes cycle deterministically: Beach → City → Ocean → Harbor
    - **Level Display**: Shows 20 levels before and after current level
 
-3. **Reset High Score**: Resets the high score to 0
+3. **Physics Debug Settings**: Toggle collision box visualization (separate from God Mode)
+   - **Physics Debug Overlay**: Shows real-time collision boundaries
+   - **Green Rectangle**: Physics body collision box (actual hitbox)
+   - **Green Dot**: Center point of physics body
+   - **Blue Rectangle**: Visual sprite bounds (for comparison)
+   - **Purpose**: Critical for tuning size system collision boxes at all sizes
+   - **Benefit**: Test normal jumping/gravity while seeing collision boundaries
+
+4. **Reset High Score**: Resets the high score to 0
    - Shows current high score value
    - Displays confirmation when reset
 
@@ -257,7 +271,7 @@ Activated by pressing **DD** (double-tap D quickly) to open the main developer m
 - **ALWAYS advise user to restart the webserver** after modifying source files (especially src/main.js)
 - Game resolution is 1024x768 (fixed, no scaling)
 - All platforms are guaranteed jumpable through gap validation
-- Seal physics body: 75% width, 50% height, offsetY=2 for perfect visual alignment (seal sits at Y=689 on platform at Y=704)
+- Seal physics body: **Size-specific tuned values** - Size 1: 65%×45%, Size 2: 43%×35%, Size 3: 27.5%×22% with custom offsets for perfect visual alignment
 - Time is properly reset when scene restarts to prevent negative time values
 - `window.game` is exposed globally for testing purposes (set in src/main.js)
 - **Game Info Descriptions** (src/utils/gameInfo.js): Keep descriptions qualitative, not quantitative. Avoid specific metrics like "2 seconds", "400px range", or exact speeds. Use descriptive terms like "quickly", "after standing", "from far away" instead

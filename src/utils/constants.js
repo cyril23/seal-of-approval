@@ -175,6 +175,14 @@ export const EMOJIS = {
     GOAL: '🏁'
 };
 
+export const SIZE_SYSTEM = {
+    MAX_SIZE: 3,
+    DEFAULT_SIZE: 1,
+    SIZE_SCALES: [1.5, 2.0, 3.0], // Scale multipliers for each size (size 3 now bigger!)
+    GROWTH_ANIMATION_DURATION: 400,
+    SHRINK_ANIMATION_DURATION: 300
+};
+
 export const PLATFORM_COLORS = {
     default: {
         normal: 0x4A5859,      // Dark gray (original)
