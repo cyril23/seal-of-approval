@@ -183,6 +183,30 @@ export const SIZE_SYSTEM = {
     SHRINK_ANIMATION_DURATION: 300
 };
 
+// Visual effects configuration for size transitions
+export const SIZE_EFFECTS = {
+    GROWTH: {
+        SCREEN_FLASH_ALPHA: 0.3,
+        SCREEN_FLASH_DURATION: 150,
+        SCALE_POP_MULTIPLIER: 1.3,
+        TINT_COLOR: 0xffd700, // Golden
+        NOM_TEXT: 'NOM NOM!',
+        NOM_FLOAT_DISTANCE: 50,
+        NOM_DURATION: 1000,
+        NOM_DELAY: 200
+    },
+    SHRINK: {
+        SCREEN_SHAKE_DURATION: 200,
+        SCREEN_SHAKE_INTENSITY: 0.01,
+        SCREEN_FLASH_ALPHA: 0.2,
+        SCREEN_FLASH_DURATION: 250,
+        SMOKE_PUFFS: 8,
+        COMPRESSION_SCALE: 0.6,
+        SQUASH_SCALE: 1.2,
+        TINT_COLOR: 0xff3333 // Bright red
+    }
+};
+
 export const PLATFORM_COLORS = {
     default: {
         normal: 0x4A5859,      // Dark gray (original)

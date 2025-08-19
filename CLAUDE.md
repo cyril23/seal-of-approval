@@ -198,6 +198,12 @@ All game configuration in `src/utils/constants.js`:
 
 ### Gameplay Features
 
+#### Size System Visual Effects
+The seal growth/shrink system includes polished visual feedback:
+- **Growth**: Golden flash, "NOM NOM!" text, and bouncy scale animation
+- **Shrink**: Red flash with camera shake, smoke puffs, and compression animation
+- Effects are purely visual and don't interfere with physics calculations
+
 #### Controls
 - **Arrow Keys**: Move left/right (all directions in Developer Mode)
 - **Spacebar**: Jump (hold for higher), press again for double jump

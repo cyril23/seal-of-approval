@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { PHYSICS, PLAYER, GAME_HEIGHT, SIZE_SYSTEM } from '../utils/constants.js';
+import { PHYSICS, PLAYER, GAME_HEIGHT, SIZE_SYSTEM, SIZE_EFFECTS } from '../utils/constants.js';
 
 export default class Seal {
     constructor(scene, x, y, lives = null) {
@@ -256,8 +256,8 @@ export default class Seal {
             const bodyBottomBefore = this.sprite.body.bottom;
 
             this.currentSize++;
-            // Remove animation effects for now - focus on mechanics
-            // this.createGrowthEffect();
+            // Enhanced visual effects now enabled!
+            this.createGrowthEffect();
             this.updateSizeScale();
 
             // Restore the body's bottom to the same position to prevent falling
@@ -278,8 +278,8 @@ export default class Seal {
             const bodyBottomBefore = this.sprite.body.bottom;
 
             this.currentSize--;
-            // Remove animation effects for now - focus on mechanics
-            // this.createShrinkEffect();
+            // Enhanced visual effects now enabled!
+            this.createShrinkEffect();
             this.updateSizeScale();
 
             // Restore the body's bottom to the same position
@@ -732,51 +732,172 @@ export default class Seal {
     }
 
     createGrowthEffect() {
-        // White flash for growth
-        this.sprite.setTint(0xffffff);
+        // === LAYER 1: IMMEDIATE IMPACT ===
+        // Golden light burst flash
+        this.sprite.setTint(0xffd700); // Golden tint instead of white
+        
+        // Brief screen flash for impact
+        const screenFlash = this.scene.add.rectangle(
+            this.scene.cameras.main.centerX,
+            this.scene.cameras.main.centerY,
+            this.scene.cameras.main.width,
+            this.scene.cameras.main.height,
+            0xffffff, 0.3
+        );
+        screenFlash.setScrollFactor(0); // Fixed to camera
+        screenFlash.setDepth(999);
+        
+        this.scene.tweens.add({
+            targets: screenFlash,
+            alpha: 0,
+            duration: 150,
+            onComplete: () => screenFlash.destroy()
+        });
 
-        // Scale tween
+        // === LAYER 2: NOM NOM TEXT ===
+        // Fun eating text that floats up
+        const nomText = this.scene.add.text(
+            this.sprite.x, 
+            this.sprite.y - 30,
+            'NOM NOM!',
+            {
+                fontSize: '24px',
+                fontFamily: '"Press Start 2P", monospace',
+                color: '#ffff00',
+                stroke: '#000000',
+                strokeThickness: 4
+            }
+        );
+        nomText.setOrigin(0.5);
+        nomText.setDepth(200);
+        
+        // Animate the text floating up and fading (with delay for better visibility)
+        this.scene.tweens.add({
+            targets: nomText,
+            y: nomText.y - 50,
+            alpha: 0,
+            scale: 1.5,
+            duration: 1000,
+            delay: 200,  // Let it be visible for 200ms before starting to fade
+            ease: 'Power2',
+            onComplete: () => nomText.destroy()
+        });
+
+        // === LAYER 3: SCALE POP ANIMATION ===
+        // Enhanced scale animation with bounce
+        const targetScale = this.sizeScales[this.currentSize - 1];
         this.scene.tweens.add({
             targets: this.sprite,
-            scaleX: this.sizeScales[this.currentSize - 1] * 1.2,
-            scaleY: this.sizeScales[this.currentSize - 1] * 1.2,
+            scaleX: targetScale * 1.3, // Bigger pop
+            scaleY: targetScale * 1.3,
             duration: 200,
+            ease: 'Back.easeOut', // Bounce effect
             yoyo: true,
-            ease: 'Power2',
             onComplete: () => {
-                this.sprite.clearTint();
+                // Clear tint gradually
+                this.scene.tweens.add({
+                    targets: this.sprite,
+                    tint: 0xffffff,
+                    duration: 300,
+                    onComplete: () => {
+                        this.sprite.clearTint();
+                    }
+                });
             }
         });
 
-        // Green sparkle particles
-        const particles = this.scene.add.particles(this.sprite.x, this.sprite.y, 'star', {
-            scale: { start: 0.4, end: 0 },
-            speed: { min: 100, max: 200 },
-            lifespan: 500,
-            quantity: 10,
-            tint: 0x00ff00
-        });
-
-        this.scene.time.delayedCall(500, () => {
-            particles.destroy();
-        });
+        console.log('🌟 Enhanced growth effect played!');
     }
 
     createShrinkEffect() {
-        // Red flash for shrinking
-        this.sprite.setTint(0xff0000);
+        // === LAYER 1: DAMAGE IMPACT ===
+        // Intense red flash
+        this.sprite.setTint(0xff3333); // Bright red tint
+        
+        // Screen shake effect
+        this.scene.cameras.main.shake(200, 0.01);
+        
+        // Brief red screen flash
+        const screenFlash = this.scene.add.rectangle(
+            this.scene.cameras.main.centerX,
+            this.scene.cameras.main.centerY,
+            this.scene.cameras.main.width,
+            this.scene.cameras.main.height,
+            0xff0000, 0.2
+        );
+        screenFlash.setScrollFactor(0);
+        screenFlash.setDepth(999);
+        
+        this.scene.tweens.add({
+            targets: screenFlash,
+            alpha: 0,
+            duration: 250,
+            onComplete: () => screenFlash.destroy()
+        });
 
-        // Scale down tween
+        // === LAYER 2: SMOKE DISPERSAL ===
+        // Create small puffs of gray "smoke" dispersing
+        const smokePuffs = [];
+        for (let i = 0; i < 8; i++) {
+            const angle = (i / 8) * Math.PI * 2;
+            const puff = this.scene.add.circle(
+                this.sprite.x + Math.cos(angle) * 15,
+                this.sprite.y + Math.sin(angle) * 15,
+                3, 0x666666, 0.6
+            );
+            puff.setDepth(40);
+            smokePuffs.push(puff);
+            
+            // Animate puffs dispersing
+            this.scene.tweens.add({
+                targets: puff,
+                x: puff.x + Math.cos(angle) * 40,
+                y: puff.y + Math.sin(angle) * 40 - 20, // Slight upward drift
+                scaleX: 2,
+                scaleY: 2,
+                alpha: 0,
+                duration: 800,
+                ease: 'Power2',
+                onComplete: () => puff.destroy()
+            });
+        }
+
+        // === LAYER 3: COMPRESSION ANIMATION ===
+        // Dramatic inward squeeze before settling to new size
+        const targetScale = this.sizeScales[this.currentSize - 1];
+        
+        // First compress inward dramatically
         this.scene.tweens.add({
             targets: this.sprite,
-            scaleX: this.sizeScales[this.currentSize - 1] * 0.8,
-            scaleY: this.sizeScales[this.currentSize - 1] * 0.8,
-            duration: 200,
-            yoyo: true,
-            ease: 'Power2',
+            scaleX: targetScale * 0.6, // Squeeze inward
+            scaleY: targetScale * 1.2, // Squash effect
+            duration: 150,
+            ease: 'Power2.easeIn',
             onComplete: () => {
-                this.sprite.clearTint();
+                // Then bounce back to target size
+                this.scene.tweens.add({
+                    targets: this.sprite,
+                    scaleX: targetScale,
+                    scaleY: targetScale,
+                    duration: 250,
+                    ease: 'Back.easeOut'
+                });
             }
         });
+
+        // === TINT CLEANUP ===
+        // Gradually clear the red tint
+        this.scene.time.delayedCall(300, () => {
+            this.scene.tweens.add({
+                targets: this.sprite,
+                tint: 0xffffff,
+                duration: 400,
+                onComplete: () => {
+                    this.sprite.clearTint();
+                }
+            });
+        });
+
+        console.log('💥 Enhanced shrink effect played!');
     }
 }
