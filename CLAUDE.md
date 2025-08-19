@@ -92,7 +92,7 @@ The game uses Phaser's scene system with four main scenes:
 
 #### Entity System
 All game entities extend Phaser's physics sprites:
-- **Seal** (player): Mario-style physics with variable jump height, double jump mechanic, power-up states, and 3-size growth system
+- **Seal** (player): Mario-style physics with variable jump height, double jump mechanic (with fart-like visual effect), power-up states, and 3-size growth system
   - **Size System**: Seal grows when eating fish (sizes 1-3), shrinks when taking damage, resets to size 1 per level
   - **Physics Body Tuning**: Complex empirically-tuned collision boxes for each size due to emoji sprite irregularities:
     - Size 1 (scale 1.5): 65%×45% body, offsets [-1,4] - negative X due to emoji asymmetry

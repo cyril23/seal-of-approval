@@ -385,19 +385,73 @@ export default class Seal {
     }
 
     createDoubleJumpEffect() {
-        // Create a visual ring effect for double jump
-        const ring = this.scene.add.circle(this.sprite.x, this.sprite.y, 20, 0x00ffff, 0.5);
-        ring.setStrokeStyle(3, 0x00ffff);
-
+        // Create a funny fart-like effect with brown puffs
+        const brownColors = [0x8B4513, 0xA0522D, 0xCD853F, 0x964B00]; // Various brown shades
+        const puffCount = 6; // Multiple small puffs for a cloud effect
+        
+        for (let i = 0; i < puffCount; i++) {
+            // Create puffs in a downward cone pattern
+            const angle = Math.PI * 0.5 + (Math.PI * 0.3) * ((i / puffCount) - 0.5); // Downward spread
+            const startDistance = 10;
+            const randomOffset = Math.random() * 5;
+            
+            // Each puff is a brown circle
+            const puff = this.scene.add.circle(
+                this.sprite.x + Math.cos(angle) * (startDistance + randomOffset),
+                this.sprite.y + this.sprite.height * 0.3 + Math.sin(angle) * startDistance, // Start below seal
+                4 + Math.random() * 3, // Varying sizes
+                Phaser.Utils.Array.GetRandom(brownColors), // Random brown shade
+                0.6 + Math.random() * 0.3 // Varying opacity
+            );
+            
+            // Set depth so it appears behind the seal
+            puff.setDepth(this.sprite.depth - 1);
+            
+            // Animate each puff dispersing downward and outward
+            this.scene.tweens.add({
+                targets: puff,
+                x: puff.x + Math.cos(angle) * (30 + Math.random() * 20), // Spread outward
+                y: puff.y + Math.sin(angle) * 40 + 15, // Move downward with gravity
+                scaleX: 2 + Math.random(), // Expand
+                scaleY: 2 + Math.random(),
+                alpha: 0, // Fade out
+                duration: 400 + Math.random() * 200, // Varying durations
+                ease: 'Power2.Out',
+                onComplete: () => {
+                    puff.destroy();
+                }
+            });
+            
+            // Add a slight wobble for comedic effect
+            this.scene.tweens.add({
+                targets: puff,
+                angle: Math.random() * 30 - 15, // Slight rotation
+                duration: 200,
+                yoyo: true,
+                repeat: 1
+            });
+        }
+        
+        // Add one larger central puff for emphasis
+        const mainPuff = this.scene.add.circle(
+            this.sprite.x,
+            this.sprite.y + this.sprite.height * 0.3,
+            8,
+            0x8B4513, // Saddle brown
+            0.4
+        );
+        mainPuff.setDepth(this.sprite.depth - 1);
+        
         this.scene.tweens.add({
-            targets: ring,
-            scaleX: 2,
-            scaleY: 2,
+            targets: mainPuff,
+            y: mainPuff.y + 50, // Fall downward
+            scaleX: 3,
+            scaleY: 2.5, // Oval shape
             alpha: 0,
-            duration: 300,
-            ease: 'Power2',
+            duration: 500,
+            ease: 'Power2.Out',
             onComplete: () => {
-                ring.destroy();
+                mainPuff.destroy();
             }
         });
     }
