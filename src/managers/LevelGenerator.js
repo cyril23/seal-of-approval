@@ -1,12 +1,14 @@
 import Enemy from '../entities/Enemy.js';
 import Collectible from '../entities/Collectible.js';
 import SpawnManager from './SpawnManager.js';
+import PlatformColorManager from './PlatformColorManager.js';
 import { LEVEL_WIDTH, GAME_HEIGHT, LEVEL, TILE_SIZE } from '../utils/constants.js';
 
 export default class LevelGenerator {
     constructor(scene) {
         this.scene = scene;
         this.spawnManager = new SpawnManager(scene);
+        this.platformManager = new PlatformColorManager();
     }
 
     generateLevel(theme, levelNumber) {
@@ -28,7 +30,7 @@ export default class LevelGenerator {
         const platforms = this.createSideScrollingPlatforms(platformCount, theme);
         
         console.log('Validating platform gaps...');
-        this.validateAndFixPlatformGaps(platforms);
+        this.validateAndFixPlatformGaps(platforms, theme);
         
         // Apply arctic theme modifications if needed
         if (theme.name === 'arctic') {
@@ -53,15 +55,19 @@ export default class LevelGenerator {
         const platforms = [];
         
         // Create ground platform at start
-        const startPlatform = this.scene.platforms.create(300, GAME_HEIGHT - 40, 'platform');
+        const startTexture = this.platformManager.getTextureKey(theme.name, 'start');
+        const startPlatform = this.scene.platforms.create(300, GAME_HEIGHT - 40, startTexture);
         startPlatform.setScale(40, 3);
         startPlatform.refreshBody();
+        startPlatform.setData('platformType', 'start');
         platforms.push(startPlatform);
         
         // Create ground platform at end for goal
-        const endPlatform = this.scene.platforms.create(LEVEL.GOAL_POSITION, GAME_HEIGHT - 40, 'platform');
+        const endTexture = this.platformManager.getTextureKey(theme.name, 'end');
+        const endPlatform = this.scene.platforms.create(LEVEL.GOAL_POSITION, GAME_HEIGHT - 40, endTexture);
         endPlatform.setScale(20, 3);
         endPlatform.refreshBody();
+        endPlatform.setData('platformType', 'end');
         platforms.push(endPlatform);
         
         // Generate platforms along the level
@@ -102,14 +108,16 @@ export default class LevelGenerator {
             newY = Phaser.Math.Clamp(newY, 150, GAME_HEIGHT - 100);
             
             // Create the platform
-            const platform = this.scene.platforms.create(currentX, newY, 'platform');
+            const normalTexture = this.platformManager.getTextureKey(theme.name, 'normal');
+            const platform = this.scene.platforms.create(currentX, newY, normalTexture);
             platform.setScale(platformWidth / TILE_SIZE, 1);
             platform.refreshBody();
+            platform.setData('platformType', 'normal');
             platforms.push(platform);
             
             // Occasionally add a moving platform
             if (Math.random() < 0.15 && actualPlatformsGenerated > 2) { // Reduced frequency slightly
-                this.createMovingPlatform(currentX + platformWidth + 100, newY);
+                this.createMovingPlatform(currentX + platformWidth + 100, newY, theme);
             }
             
             currentX += platformWidth;
@@ -122,9 +130,11 @@ export default class LevelGenerator {
         // Add more frequent ground platforms throughout the level for safety
         // Version 9.4: Increased frequency from 1500 to 1000 for better coverage
         for (let x = 1000; x < LEVEL.GOAL_POSITION - 100; x += 1000) {
-            const groundPlatform = this.scene.platforms.create(x, GAME_HEIGHT - 40, 'platform');
+            const safetyTexture = this.platformManager.getTextureKey(theme.name, 'normal');
+            const groundPlatform = this.scene.platforms.create(x, GAME_HEIGHT - 40, safetyTexture);
             groundPlatform.setScale(20, 3);
             groundPlatform.refreshBody();
+            groundPlatform.setData('platformType', 'normal');
             platforms.push(groundPlatform);
         }
         
@@ -163,9 +173,11 @@ export default class LevelGenerator {
                         progress
                     );
                     
-                    const bridgePlatform = this.scene.platforms.create(bridgeX, bridgeY, 'platform');
+                    const bridgeTexture = this.platformManager.getTextureKey(theme.name, 'normal');
+                    const bridgePlatform = this.scene.platforms.create(bridgeX, bridgeY, bridgeTexture);
                     bridgePlatform.setScale(10, 1);
                     bridgePlatform.refreshBody();
+                    bridgePlatform.setData('platformType', 'normal');
                     platforms.push(bridgePlatform);
                     console.log(`Added bridge platform ${i}/${numBridges} at X:${bridgeX.toFixed(0)}, Y:${bridgeY.toFixed(0)}`);
                 }
@@ -193,10 +205,12 @@ export default class LevelGenerator {
         return platforms;
     }
 
-    createMovingPlatform(x, y) {
-        const platform = this.scene.platforms.create(x, y, 'platform');
+    createMovingPlatform(x, y, theme) {
+        const movingTexture = this.platformManager.getTextureKey(theme.name, 'moving');
+        const platform = this.scene.platforms.create(x, y, movingTexture);
         platform.setScale(6, 1);
         platform.refreshBody();
+        platform.setData('platformType', 'moving');
         
         const moveDistance = 100;
         const duration = 3000;
@@ -214,7 +228,7 @@ export default class LevelGenerator {
         });
     }
     
-    validateAndFixPlatformGaps(platforms) {
+    validateAndFixPlatformGaps(platforms, theme) {
         // Maximum horizontal distance a player can jump with double jump
         const MAX_JUMP_DISTANCE = 220; // Conservative estimate for double jump
         const MAX_VERTICAL_JUMP_UP = 150; // Maximum height player can jump up
@@ -278,9 +292,11 @@ export default class LevelGenerator {
                     bridgeY = current.y + (Math.random() - 0.5) * 50;
                 }
                 
-                const bridgePlatform = this.scene.platforms.create(bridgeX, bridgeY, 'platform');
+                const bridgeTexture = this.platformManager.getTextureKey(theme.name, 'normal');
+                const bridgePlatform = this.scene.platforms.create(bridgeX, bridgeY, bridgeTexture);
                 bridgePlatform.setScale(10, 1); // Wide enough to land on
                 bridgePlatform.refreshBody();
+                bridgePlatform.setData('platformType', 'normal');
                 
                 // Add to platforms array for further validation
                 platforms.splice(i + 1, 0, bridgePlatform);
@@ -655,16 +671,17 @@ export default class LevelGenerator {
                 // Cracking ice - breaks after player stands on it
                 platform.setData('crackingIce', true);
                 platform.setData('crackTimer', 0);
-                platform.setTint(0x00BFFF); // Deep sky blue for brittle/cracking ice - vibrant and clearly distinguishable
+                platform.setData('platformType', 'crackingIce');
+                
+                // Change texture to cracking ice texture
+                const crackingIceTexture = this.platformManager.getTextureKey('arctic', 'crackingIce');
+                platform.setTexture(crackingIceTexture);
             } else if (rand < 0.2) {
                 // Floating ice - bobs up and down
                 this.makeFloatingIce(platform);
             }
             
-            // Visual ice effect - slightly blue tint
-            if (!platform.getData('crackingIce')) {
-                platform.setTint(0xCCE5FF);
-            }
+            // No tinting needed - colors are baked into textures
         });
         
         // Add some icicle hazards hanging from platforms

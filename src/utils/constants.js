@@ -175,3 +175,44 @@ export const EMOJIS = {
     POLARBEAR: '🐻‍❄️',
     GOAL: '🏁'
 };
+
+export const PLATFORM_COLORS = {
+    default: {
+        normal: 0x4A5859,      // Dark gray (original)
+        start: 0x4A5859,       // Same as normal
+        end: 0x4A5859,         // Same as normal
+        moving: 0x4A5859       // Same as normal
+    },
+    beach: {
+        normal: 0x4A5859,      // Keep default gray for now
+        start: 0x4A5859,
+        end: 0x4A5859,
+        moving: 0x4A5859
+    },
+    city: {
+        normal: 0x4A5859,      // Keep default gray for now
+        start: 0x4A5859,
+        end: 0x4A5859,
+        moving: 0x4A5859
+    },
+    ocean: {
+        normal: 0x4A5859,      // Keep default gray for now
+        start: 0x4A5859,
+        end: 0x4A5859,
+        moving: 0x4A5859
+    },
+    harbor: {
+        normal: 0x4A5859,      // Keep default gray for now
+        start: 0x4A5859,
+        end: 0x4A5859,
+        moving: 0x4A5859
+        // Future: Could use container colors
+    },
+    arctic: {
+        normal: 0x7BA7CC,      // Light ice blue
+        start: 0x7BA7CC,       // Same as normal ice
+        end: 0x7BA7CC,         // Same as normal ice
+        moving: 0x7BA7CC,      // Same as normal ice
+        crackingIce: 0x4FC3F7  // Glacier blue (like real arctic ice)
+    }
+};

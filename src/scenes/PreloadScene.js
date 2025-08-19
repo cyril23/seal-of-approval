@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { EMOJIS } from '../utils/constants.js';
+import PlatformColorManager from '../managers/PlatformColorManager.js';
 
 export default class PreloadScene extends Phaser.Scene {
     constructor() {
@@ -47,15 +48,80 @@ export default class PreloadScene extends Phaser.Scene {
 
     createPlatformTexture() {
         const graphics = this.add.graphics();
-
-        graphics.fillStyle(0x4A5859, 1);
+        const platformManager = new PlatformColorManager();
+        
+        // Create default platform texture (for backward compatibility)
+        const defaultColor = 0x4A5859;
+        const defaultEdges = platformManager.getEdgeColors(defaultColor);
+        
+        graphics.fillStyle(defaultColor, 1);
         graphics.fillRect(0, 0, 16, 16);
-        graphics.fillStyle(0x5A6869, 1);
+        graphics.fillStyle(defaultEdges.top, 1);
         graphics.fillRect(0, 0, 16, 2);
-        graphics.fillStyle(0x3A4849, 1);
+        graphics.fillStyle(defaultEdges.bottom, 1);
         graphics.fillRect(0, 14, 16, 2);
-
+        
         graphics.generateTexture('platform', 16, 16);
+        
+        // Create theme-specific platform textures
+        const themes = ['beach', 'city', 'ocean', 'harbor', 'arctic'];
+        
+        themes.forEach(theme => {
+            const platformTypes = platformManager.getPlatformTypes(theme);
+            
+            platformTypes.forEach(type => {
+                graphics.clear();
+                
+                const baseColor = platformManager.getBaseColor(theme, type);
+                const edgeColors = platformManager.getEdgeColors(baseColor);
+                
+                // Draw platform with base color
+                graphics.fillStyle(baseColor, 1);
+                graphics.fillRect(0, 0, 16, 16);
+                
+                // Draw top edge (lighter)
+                graphics.fillStyle(edgeColors.top, 1);
+                graphics.fillRect(0, 0, 16, 2);
+                
+                // Draw bottom edge (darker)
+                graphics.fillStyle(edgeColors.bottom, 1);
+                graphics.fillRect(0, 14, 16, 2);
+                
+                // Add crack effects for cracking ice platforms
+                if (theme === 'arctic' && type === 'crackingIce') {
+                    // Main cracks - thicker and more visible
+                    graphics.lineStyle(2, 0xFFFFFF, 0.7);  // Thicker white cracks with higher opacity
+                    
+                    // Create angular crack pattern like shattered ice
+                    // Main cracks forming polygonal shapes
+                    graphics.lineBetween(4, 2, 6, 8);
+                    graphics.lineBetween(6, 8, 3, 14);
+                    graphics.lineBetween(6, 8, 11, 10);
+                    graphics.lineBetween(11, 10, 13, 14);
+                    graphics.lineBetween(11, 10, 14, 4);
+                    
+                    // Cross cracks for more detail
+                    graphics.lineBetween(2, 6, 8, 4);
+                    graphics.lineBetween(8, 4, 12, 7);
+                    graphics.lineBetween(5, 12, 10, 13);
+                    
+                    // Thinner detail cracks
+                    graphics.lineStyle(1, 0xFFFFFF, 0.5);
+                    graphics.lineBetween(7, 2, 9, 5);
+                    graphics.lineBetween(3, 10, 7, 11);
+                    
+                    // Add subtle shadow lines for depth
+                    graphics.lineStyle(1, 0x1E5F8E, 0.4);  // Darker blue shadows
+                    graphics.lineBetween(4, 3, 6, 9);
+                    graphics.lineBetween(11, 11, 13, 15);
+                }
+                
+                // Generate texture with unique key
+                const textureKey = platformManager.getTextureKey(theme, type);
+                graphics.generateTexture(textureKey, 16, 16);
+            });
+        });
+        
         graphics.destroy();
     }
 
