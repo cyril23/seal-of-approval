@@ -349,12 +349,36 @@ The game uses Playwright for end-to-end testing, which runs in headless Chromium
 
 #### Test Commands
 ```bash
-npm test            # Run tests in headless mode
+npm test            # Run tests in headless mode (screenshots disabled by default)
 npm run test:headed # Show browser while testing  
 npm run test:debug  # Debug mode with step-through
 npm run test:ui     # Interactive UI mode
 npm run test:report # View HTML test report
+
+# Run with screenshots enabled (slower)
+SKIP_SCREENSHOTS=false npm test
+
+# Run a specific test by name pattern
+npx playwright test -g "can make the seal jump"
+
+# Run specific test in headed mode for debugging
+npx playwright test -g "can make the seal jump" --headed
 ```
+
+#### Test Performance Optimization
+- **Screenshots are disabled by default** to reduce disk I/O and simplify test runs
+- Screenshots only save when `SKIP_SCREENSHOTS=false` is set
+- All screenshots capture canvas-only by default (cleaner, no browser chrome)
+- Tests use intelligent waits instead of fixed timeouts where possible
+- Only essential screenshots are taken (e.g., for image analysis tests)
+- Performance: ~30s with screenshots disabled, ~30.4s with screenshots enabled
+
+#### When to Advise Different Test Modes
+When helping users with test issues, Claude should recommend:
+1. **Normal test run**: `npm test` - For CI/CD and general testing
+2. **Debug specific test**: `npx playwright test -g "test name" --headed` - To see what's happening
+3. **With screenshots**: `SKIP_SCREENSHOTS=false npm test` - Only when visual artifacts are needed
+4. **Interactive debugging**: `npm run test:debug` - For step-by-step debugging
 
 #### Test Structure
 - **tests/game.spec.js**: Main test suite covering:

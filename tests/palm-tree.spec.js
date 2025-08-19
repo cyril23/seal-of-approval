@@ -24,16 +24,14 @@ test('Capture palm tree screenshot - Iteration 1', async ({ page }) => {
     // Wait a bit more for scene to settle completely
     await page.waitForTimeout(2000);
     
-    // Take screenshot of the full game
+    // Take screenshot of the game canvas
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    await takeScreenshot(page, `palm-tree-final-${timestamp}`);
+    const screenshotPath = await takeScreenshot(page, `palm-tree-final-${timestamp}`);
     
-    // Also take a canvas-only screenshot for cleaner analysis
-    const canvas = await page.locator('canvas').first();
-    await canvas.screenshot({ 
-        path: `tests/screenshots/palm-tree-canvas-final-${timestamp}.png` 
-    });
-    
-    console.log('Palm tree screenshot captured successfully');
-    console.log(`Screenshots saved to tests/screenshots/`);
+    if (screenshotPath) {
+        console.log('Palm tree screenshot captured successfully');
+        console.log(`Screenshot saved to tests/screenshots/`);
+    } else {
+        console.log('Screenshots skipped (set SKIP_SCREENSHOTS=false to enable)');
+    }
 });
