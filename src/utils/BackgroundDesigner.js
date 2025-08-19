@@ -505,33 +505,300 @@ export default class BackgroundDesigner {
     }
 
     drawHarborTheme() {
-        // Cranes
-        this.graphics.fillStyle(0xFF6600, 0.8);
-        this.graphics.fillRect(100, this.height - 250, 10, 200);
-        this.graphics.fillRect(100, this.height - 250, 80, 10);
-        this.graphics.lineStyle(2, 0xFF6600, 0.8);
-        this.graphics.lineBetween(100, this.height - 240, 170, this.height - 200);
-        this.graphics.lineBetween(170, this.height - 250, 170, this.height - 200);
+        // Industrial ocean/water background (full width)
+        this.graphics.fillStyle(0x3A5F6F, 0.4);
+        this.graphics.fillRect(0, 200, this.width, this.height - 240);
 
-        // Containers
-        this.graphics.fillStyle(0xCC0000, 0.9);
-        this.graphics.fillRect(300, this.height - 80, 100, 40);
-        this.graphics.fillStyle(0x0066CC, 0.9);
-        this.graphics.fillRect(410, this.height - 80, 100, 40);
-        this.graphics.fillStyle(0x00CC00, 0.9);
-        this.graphics.fillRect(520, this.height - 80, 100, 40);
-        this.graphics.fillStyle(0xFFCC00, 0.9);
-        this.graphics.fillRect(355, this.height - 120, 100, 40);
+        // Larger cargo ship in far background (more detailed)
+        // Ship upper hull (dark grey)
+        this.graphics.fillStyle(0x404040, 0.3);
+        this.graphics.fillRect(400, 250, 280, 25);
+        // Ship lower hull (red/rust colored)
+        this.graphics.fillStyle(0x8B4040, 0.3);
+        this.graphics.fillRect(400, 275, 280, 15);
+        
+        // White superstructure/bridge at stern (right side)
+        this.graphics.fillStyle(0xE0E0E0, 0.3);
+        this.graphics.fillRect(620, 220, 50, 30);
+        this.graphics.fillRect(630, 210, 30, 10);
+        this.graphics.fillRect(635, 200, 20, 10);
+        
+        // Bridge windows
+        this.graphics.fillStyle(0x404040, 0.3);
+        this.graphics.fillRect(625, 225, 8, 5);
+        this.graphics.fillRect(635, 225, 8, 5);
+        this.graphics.fillRect(645, 225, 8, 5);
+        this.graphics.fillRect(655, 225, 8, 5);
+        
+        // Smokestacks on bridge
+        this.graphics.fillStyle(0x505050, 0.3);
+        this.graphics.fillRect(640, 195, 4, 5);
+        this.graphics.fillRect(646, 195, 4, 5);
+        
+        // Container stacks on deck (subtle grey tones)
+        this.graphics.fillStyle(0x606060, 0.25);
+        this.graphics.fillRect(420, 240, 40, 10);
+        this.graphics.fillRect(470, 240, 40, 10);
+        this.graphics.fillRect(520, 240, 40, 10);
+        this.graphics.fillRect(570, 240, 40, 10);
+        this.graphics.fillRect(450, 230, 40, 10);
+        this.graphics.fillRect(500, 230, 40, 10);
+        this.graphics.fillRect(550, 230, 40, 10);
+        
+        // Deck railing line
+        this.graphics.lineStyle(1, 0x808080, 0.2);
+        this.graphics.lineBetween(400, 250, 680, 250);
 
-        // Dock
+        // Smaller cargo ship (side profile, mid-distance)
+        // Ship upper hull (dark grey)
+        this.graphics.fillStyle(0x404040, 0.4);
+        this.graphics.fillRect(750, 240, 160, 20);
+        // Ship lower hull (red/rust colored)
+        this.graphics.fillStyle(0x8B4040, 0.4);
+        this.graphics.fillRect(750, 260, 160, 10);
+        
+        // White bridge/superstructure at stern
+        this.graphics.fillStyle(0xE0E0E0, 0.4);
+        this.graphics.fillRect(860, 215, 40, 25);
+        this.graphics.fillRect(870, 205, 20, 10);
+        
+        // Bridge windows
+        this.graphics.fillStyle(0x404040, 0.4);
+        this.graphics.fillRect(865, 220, 6, 4);
+        this.graphics.fillRect(873, 220, 6, 4);
+        this.graphics.fillRect(881, 220, 6, 4);
+        this.graphics.fillRect(889, 220, 6, 4);
+        
+        // Smokestack
+        this.graphics.fillStyle(0x505050, 0.4);
+        this.graphics.fillRect(877, 200, 3, 5);
+        this.graphics.fillRect(882, 200, 3, 5);
+        
+        // Container stacks (subtle)
+        this.graphics.fillStyle(0x606060, 0.3);
+        this.graphics.fillRect(760, 232, 30, 8);
+        this.graphics.fillRect(795, 232, 30, 8);
+        this.graphics.fillRect(830, 232, 25, 8);
+        this.graphics.fillRect(780, 224, 30, 8);
+        this.graphics.fillRect(815, 224, 30, 8);
+        
+        // Deck railing
+        this.graphics.lineStyle(1, 0x808080, 0.25);
+        this.graphics.lineBetween(750, 240, 910, 240);
+
+        // Background crane (far distance)
+        const bgCraneX = 800;
+        const bgCraneBase = this.height - 50;
+
+        // Background crane base
+        this.graphics.fillStyle(0x505050, 0.4);
+        this.graphics.fillRect(bgCraneX - 12, bgCraneBase - 8, 30, 8);
+
+        // Background crane tower
+        this.graphics.lineStyle(2, 0xFFD700, 0.4);
+        this.graphics.lineBetween(bgCraneX - 6, bgCraneBase - 8, bgCraneX - 4, bgCraneBase - 180);
+        this.graphics.lineBetween(bgCraneX + 6, bgCraneBase - 8, bgCraneX + 4, bgCraneBase - 180);
+        // Cross bracing
+        this.graphics.lineStyle(1, 0xFFD700, 0.3);
+        for (let y = 0; y < 160; y += 25) {
+            this.graphics.lineBetween(bgCraneX - 6 + y/80, bgCraneBase - 8 - y, bgCraneX + 6 - y/80, bgCraneBase - 8 - y);
+        }
+
+        // Background crane cabin
+        this.graphics.fillStyle(0x4682B4, 0.4);
+        this.graphics.fillRect(bgCraneX - 10, bgCraneBase - 195, 20, 18);
+
+        // Background crane jib
+        this.graphics.lineStyle(2, 0xFFD700, 0.4);
+        this.graphics.lineBetween(bgCraneX, bgCraneBase - 180, bgCraneX + 100, bgCraneBase - 165);
+
+        // Background crane cable
+        this.graphics.lineStyle(1, 0x000000, 0.3);
+        this.graphics.lineBetween(bgCraneX + 100, bgCraneBase - 165, bgCraneX + 100, bgCraneBase - 80);
+
+        // Main Harbor Crane (with reduced opacity)
+        const craneX = 100;
+        const craneBase = this.height - 50;
+
+        // Crane base/foundation
+        this.graphics.fillStyle(0x505050, 0.7);
+        this.graphics.fillRect(craneX - 15, craneBase - 10, 40, 10);
+
+        // Crane tower (lattice structure)
+        this.graphics.lineStyle(3, 0xFFD700, 0.7);
+        // Main vertical posts
+        this.graphics.lineBetween(craneX - 8, craneBase - 10, craneX - 5, craneBase - 250);
+        this.graphics.lineBetween(craneX + 8, craneBase - 10, craneX + 5, craneBase - 250);
+        // Cross bracing
+        this.graphics.lineStyle(1, 0xFFD700, 0.6);
+        for (let y = 0; y < 200; y += 20) {
+            this.graphics.lineBetween(craneX - 8 + y/100, craneBase - 10 - y, craneX + 8 - y/100, craneBase - 10 - y);
+            if (y % 40 === 0) {
+                this.graphics.lineBetween(craneX - 8 + y/100, craneBase - 10 - y, craneX + 8 - y/100, craneBase - 30 - y);
+                this.graphics.lineBetween(craneX + 8 - y/100, craneBase - 10 - y, craneX - 8 + y/100, craneBase - 30 - y);
+            }
+        }
+
+        // Operator cabin
+        this.graphics.fillStyle(0x4682B4, 0.7);
+        this.graphics.fillRect(craneX - 15, craneBase - 270, 30, 25);
+        // Cabin window
+        this.graphics.fillStyle(0x87CEEB, 0.7);
+        this.graphics.fillRect(craneX - 12, craneBase - 267, 24, 15);
+
+        // Jib/boom arm
+        this.graphics.lineStyle(3, 0xFFD700, 0.7);
+        this.graphics.lineBetween(craneX, craneBase - 250, craneX + 150, craneBase - 230);
+        // Jib support structure
+        this.graphics.lineStyle(1, 0xFFD700, 0.6);
+        for (let x = 0; x < 150; x += 15) {
+            this.graphics.lineBetween(craneX + x, craneBase - 250 + x/7.5, craneX + x, craneBase - 235 + x/7.5);
+        }
+
+        // Counterweight
+        this.graphics.fillStyle(0x606060, 0.7);
+        this.graphics.fillRect(craneX - 40, craneBase - 260, 25, 30);
+
+        // Cable and hook
+        this.graphics.lineStyle(2, 0x000000, 0.6);
+        this.graphics.lineBetween(craneX + 150, craneBase - 230, craneX + 150, craneBase - 100);
+        // Hook
+        this.graphics.lineStyle(3, 0x808080, 0.7);
+        this.graphics.beginPath();
+        this.graphics.arc(craneX + 150, craneBase - 95, 8, 0, Math.PI);
+        this.graphics.strokePath();
+
+        // Detailed shipping containers with corrugation (more subtle)
+        const drawContainer = (x, y, width, height, color, label) => {
+            // Main container body - reduced opacity
+            this.graphics.fillStyle(color, 0.6);
+            this.graphics.fillRect(x, y, width, height);
+
+            // Corrugation (vertical lines) - very subtle
+            this.graphics.lineStyle(1, 0x000000, 0.1);
+            for (let i = x + 4; i < x + width; i += 6) {
+                this.graphics.lineBetween(i, y + 2, i, y + height - 2);
+            }
+
+            // Container doors
+            this.graphics.fillStyle(0x000000, 0.1);
+            this.graphics.fillRect(x + width - 15, y + 5, 12, height - 10);
+
+            // Door handles/locks
+            this.graphics.fillStyle(0xC0C0C0, 0.6);
+            this.graphics.fillCircle(x + width - 9, y + height/2, 2);
+
+            // Shipping label/number
+            this.graphics.fillStyle(0xFFFFFF, 0.5);
+            this.graphics.fillRect(x + 5, y + 5, 30, 10);
+
+            // Top and bottom rails
+            this.graphics.fillStyle(0x000000, 0.2);
+            this.graphics.fillRect(x, y, width, 3);
+            this.graphics.fillRect(x, y + height - 3, width, 3);
+
+            // Corner posts
+            this.graphics.fillStyle(0x000000, 0.25);
+            this.graphics.fillRect(x, y, 3, height);
+            this.graphics.fillRect(x + width - 3, y, 3, height);
+        };
+
+        // Stack of containers (more realistic placement)
+        drawContainer(280, this.height - 80, 100, 40, 0xCC0000, "MAERSK");
+        drawContainer(385, this.height - 80, 100, 40, 0x0066CC, "COSCO");
+        drawContainer(490, this.height - 80, 100, 40, 0x00CC00, "EVERGREEN");
+
+        // Second layer
+        drawContainer(330, this.height - 120, 100, 40, 0xFFCC00, "MSC");
+        drawContainer(435, this.height - 120, 100, 40, 0xFF6600, "APL");
+
+        // Third layer
+        drawContainer(380, this.height - 160, 100, 40, 0x9932CC, "ONE");
+
+        // Seagulls (pixel-art style based on reference images)
+        // First seagull at x:300, y:120 (the one user likes)
+        this.graphics.fillStyle(0xFFFFFF, 0.7); // White body
+        this.graphics.fillRect(295, 120, 10, 4); // Body
+        // Left wing
+        this.graphics.fillRect(285, 118, 10, 3);
+        this.graphics.fillRect(280, 117, 5, 2);
+        // Right wing
+        this.graphics.fillRect(305, 118, 10, 3);
+        this.graphics.fillRect(315, 117, 5, 2);
+        // Wing tips (dark)
+        this.graphics.fillStyle(0x404040, 0.7);
+        this.graphics.fillRect(278, 116, 3, 2);
+        this.graphics.fillRect(319, 116, 3, 2);
+        // Beak
+        this.graphics.fillStyle(0xFFD700, 0.7);
+        this.graphics.fillRect(293, 121, 2, 1);
+        
+        // Second similar seagull at x:350, y:130 (more transparent, forming triangle)
+        this.graphics.fillStyle(0xFFFFFF, 0.5); // More transparent
+        this.graphics.fillRect(345, 130, 10, 4); // Body
+        // Left wing
+        this.graphics.fillRect(335, 128, 10, 3);
+        this.graphics.fillRect(330, 127, 5, 2);
+        // Right wing
+        this.graphics.fillRect(355, 128, 10, 3);
+        this.graphics.fillRect(365, 127, 5, 2);
+        // Wing tips (dark)
+        this.graphics.fillStyle(0x404040, 0.5);
+        this.graphics.fillRect(328, 126, 3, 2);
+        this.graphics.fillRect(369, 126, 3, 2);
+        // Beak
+        this.graphics.fillStyle(0xFFD700, 0.5);
+        this.graphics.fillRect(343, 131, 2, 1);
+        
+        // Third similar seagull at x:250, y:130 (even more transparent)
+        this.graphics.fillStyle(0xFFFFFF, 0.45); // Even more transparent
+        this.graphics.fillRect(245, 130, 10, 4); // Body
+        // Left wing
+        this.graphics.fillRect(235, 128, 10, 3);
+        this.graphics.fillRect(230, 127, 5, 2);
+        // Right wing
+        this.graphics.fillRect(255, 128, 10, 3);
+        this.graphics.fillRect(265, 127, 5, 2);
+        // Wing tips (dark)
+        this.graphics.fillStyle(0x404040, 0.45);
+        this.graphics.fillRect(228, 126, 3, 2);
+        this.graphics.fillRect(269, 126, 3, 2);
+        // Beak
+        this.graphics.fillStyle(0xFFD700, 0.45);
+        this.graphics.fillRect(243, 131, 2, 1);
+        
+        // Rightmost seagull at x:750, y:140 (with clearer, more spread wings)
+        this.graphics.fillStyle(0xFFFFFF, 0.65);
+        this.graphics.fillRect(746, 140, 12, 4); // Slightly larger body
+        // Left wing - more extended and visible
+        this.graphics.fillRect(730, 138, 16, 4);
+        this.graphics.fillRect(720, 137, 10, 3);
+        this.graphics.fillRect(714, 136, 6, 2);
+        // Right wing - more extended and visible
+        this.graphics.fillRect(758, 138, 16, 4);
+        this.graphics.fillRect(774, 137, 10, 3);
+        this.graphics.fillRect(784, 136, 6, 2);
+        // Wing tips (dark) - more prominent
+        this.graphics.fillStyle(0x404040, 0.65);
+        this.graphics.fillRect(710, 135, 5, 3);
+        this.graphics.fillRect(789, 135, 5, 3);
+        // Beak
+        this.graphics.fillStyle(0xFFD700, 0.65);
+        this.graphics.fillRect(744, 141, 2, 1);
+
+        // Dock with texture
         this.graphics.fillStyle(0x8B7355, 1);
         this.graphics.fillRect(0, this.height - 40, this.width, 40);
 
-        // Water reflections
-        this.graphics.lineStyle(1, 0x4A90E2, 0.4);
-        for (let x = 0; x < this.width; x += 40) {
-            this.graphics.lineBetween(x, this.height - 40, x + 20, this.height - 30);
+        // Dock planks
+        this.graphics.lineStyle(1, 0x6B5D46, 0.5);
+        for (let x = 0; x < this.width; x += 30) {
+            this.graphics.lineBetween(x, this.height - 40, x, this.height);
         }
+
+        // Simple industrial water (no decorative elements)
+        this.graphics.fillStyle(0x4682B4, 0.3);
+        this.graphics.fillRect(0, this.height - 40, this.width, 40);
     }
 
     drawArcticTheme() {
