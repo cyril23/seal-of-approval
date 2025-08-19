@@ -296,6 +296,11 @@ Activated by pressing **DD** (double-tap D quickly) to open the main developer m
 - Time is properly reset when scene restarts to prevent negative time values
 - `window.game` is exposed globally for testing purposes (set in src/main.js)
 - **Game Info Descriptions** (src/utils/gameInfo.js): Keep descriptions qualitative, not quantitative. Avoid specific metrics like "2 seconds", "400px range", or exact speeds. Use descriptive terms like "quickly", "after standing", "from far away" instead
+- **Fall Death System**: Uses Phaser's worldbounds event for detection (GameScene.js:116)
+  - World bounds extended by 200px below screen (GAME_HEIGHT + 200) for visual fall effect
+  - **CRITICAL**: `this.playerFalling = false` must be reset in GameScene.create() to prevent blocking subsequent falls after respawn
+  - Collision disabled with `setCollideWorldBounds(false)` when falling to prevent sprite sticking at boundary
+  - Re-enabled with `setCollideWorldBounds(true)` on respawn for normal physics
 
 ### Fixed Resolution Display
 The game uses a fixed 1024x768 resolution without any dynamic scaling:
