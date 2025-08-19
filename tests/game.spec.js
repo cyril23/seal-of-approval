@@ -20,7 +20,6 @@ test.describe('Seal of Approval Game Tests', () => {
 
         // Get game state to verify seal position
         const gameState = await getGameState(page);
-        console.log('Game state:', gameState);
 
         // Verify we're in the GameScene
         expect(gameState.activeScenes).toContain('GameScene');

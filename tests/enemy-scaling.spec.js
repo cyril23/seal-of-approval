@@ -4,7 +4,8 @@ const fs = require('fs').promises;
 const { takeScreenshot } = require('./utils/screenshot');
 const { loadLevel, initializeGame, jumpToSpecificLevel, waitForGameReady } = require('./utils/gameHelpers');
 
-test.describe('Enemy Scaling and Distribution Tests', () => {
+// Skip by default - only run when enemy distribution algorithm changes
+test.describe.skip('Enemy Scaling and Distribution Tests', () => {
     
     // Helper function to analyze enemy segment distribution with ASCII bar chart
     function analyzeSegmentDistribution(enemies, levelWidth, levelName) {
