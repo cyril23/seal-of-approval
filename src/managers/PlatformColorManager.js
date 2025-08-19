@@ -60,7 +60,7 @@ export default class PlatformColorManager {
      */
     getTextureKey(theme, platformType = 'normal') {
         // For non-arctic themes, use the default platform texture for now
-        if (theme !== 'arctic' && platformType !== 'crackingIce') {
+        if (theme !== 'arctic' && platformType !== 'crackingIce' && platformType !== 'floatingIce') {
             return 'platform';
         }
         return `platform-${theme}-${platformType}`;
@@ -71,7 +71,7 @@ export default class PlatformColorManager {
      */
     getPlatformTypes(theme) {
         if (theme === 'arctic') {
-            return ['normal', 'start', 'end', 'moving', 'crackingIce'];
+            return ['normal', 'start', 'end', 'moving', 'crackingIce', 'floatingIce'];
         }
         return ['normal', 'start', 'end', 'moving'];
     }

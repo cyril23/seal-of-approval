@@ -119,9 +119,10 @@ export const LEVEL_INFO = {
     // Level 5 - Arctic theme (special mechanics)
     5: {
         environment: [
-            'Slippery ice surfaces reduce control',
-            'Some platforms crack and break after standing',
-            'Floating ice platforms bob up and down',
+            'Ice platforms are slippery - momentum carries you forward',
+            'Glacier blue platforms are extra slippery and dangerous',
+            'Cracked ice (with visible cracks) breaks after standing',
+            'Floating glacier ice bobs up and down',
             'Aurora borealis illuminates the sky'
         ],
         creatures: [
@@ -210,9 +211,10 @@ function getThemeInfo(theme, level) {
         case 'arctic':
             // Arctic appears every 5 levels
             info.environment = [
-                'Icy surfaces are slippery',
-                'Some ice cracks under weight',
-                'Floating platforms bob up and down',
+                'Ice platforms have slippery momentum physics',
+                'Glacier blue ice is dangerously slippery',
+                'Cracked ice (visible cracks) breaks after standing',
+                'Floating glacier platforms bob up and down',
                 'Northern lights dance overhead'
             ];
             info.creatures = [

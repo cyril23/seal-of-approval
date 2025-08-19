@@ -200,6 +200,7 @@ Activated by pressing **DD** (double-tap D quickly) to open the main developer m
 - Seal physics body: 75% width, 50% height, offsetY=2 for perfect visual alignment (seal sits at Y=689 on platform at Y=704)
 - Time is properly reset when scene restarts to prevent negative time values
 - `window.game` is exposed globally for testing purposes (set in src/main.js)
+- **Game Info Descriptions** (src/utils/gameInfo.js): Keep descriptions qualitative, not quantitative. Avoid specific metrics like "2 seconds", "400px range", or exact speeds. Use descriptive terms like "quickly", "after standing", "from far away" instead
 
 ### Fixed Resolution Display
 The game uses a fixed 1024x768 resolution without any dynamic scaling:
@@ -253,9 +254,11 @@ The Arctic theme (appears every 5 levels) includes special gameplay mechanics:
   - CHARGING: Rushes at 240 speed with visual effects, stops at edges
   - COOLDOWN: Recovery period with breathing animation
   - **LETHAL**: Cannot be stomped - any contact kills the seal
-- **Ice Physics**: Slippery platforms with reduced friction (0.15)
-- **Cracking Ice**: Some platforms break after 2 seconds of standing
-- **Floating Ice**: Platforms that bob up and down
+- **Ice Physics**: Variable slipperiness based on platform type
+  - Standard ice (light blue): Normal ice physics (acceleration=0.5, drag=0.95)
+  - Glacier ice (bright blue): Extreme slipperiness (acceleration=0.3, drag=0.98)
+- **Cracking Ice**: Glacier blue platforms with visible crack patterns, break after 2 seconds
+- **Floating Ice**: Glacier blue platforms that bob up and down, extremely slippery
 - **Visual Effects**: Aurora borealis, icebergs, snow particles
 - **Audio**: Special roar, charge, and ice break sound effects
 

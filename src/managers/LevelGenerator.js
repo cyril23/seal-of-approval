@@ -690,6 +690,11 @@ export default class LevelGenerator {
 
     makeFloatingIce(platform) {
         platform.setData('floatingIce', true);
+        platform.setData('platformType', 'floatingIce');
+        
+        // Change texture to floating ice texture (same color as crackingIce but no cracks)
+        const floatingIceTexture = this.platformManager.getTextureKey('arctic', 'floatingIce');
+        platform.setTexture(floatingIceTexture);
         
         const originalY = platform.y;
         const bobAmount = 30;

@@ -155,8 +155,7 @@ export const THEMES = {
         background: '#E0F4FF',
         platform: '#A8D5E2',
         enemies: ['polarbear'],
-        tint: 0xE0F4FF,
-        friction: 0.15
+        tint: 0xE0F4FF
     }
 };
 
@@ -213,6 +212,7 @@ export const PLATFORM_COLORS = {
         start: 0x7BA7CC,       // Same as normal ice
         end: 0x7BA7CC,         // Same as normal ice
         moving: 0x7BA7CC,      // Same as normal ice
-        crackingIce: 0x4FC3F7  // Glacier blue (like real arctic ice)
+        crackingIce: 0x4FC3F7, // Glacier blue (like real arctic ice)
+        floatingIce: 0x4FC3F7  // Same glacier blue as crackingIce (no cracks)
     }
 };

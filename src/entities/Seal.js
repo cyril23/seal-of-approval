@@ -39,8 +39,9 @@ export default class Seal {
             this.setSwimmingMode(isOceanTheme);
         }
         
-        // Check if on ice platform
-        const onIce = this.isOnIcePlatform();
+        // Check if on ice platform and get slipperiness level
+        const iceInfo = this.isOnIcePlatform();
+        const onIce = iceInfo.onIce;
         
         // Calculate speed with developer mode multiplier
         const baseSpeed = this.speedBoost ? PHYSICS.MOVE_SPEED * 2 : PHYSICS.MOVE_SPEED;
@@ -79,9 +80,18 @@ export default class Seal {
             return; // Skip normal movement logic
         }
         
-        // Apply ice physics if on ice
-        const acceleration = onIce ? 0.5 : 1.0;  // Slower acceleration on ice
-        const drag = onIce ? 0.95 : PHYSICS.DRAG;  // Less friction on ice
+        // Apply ice physics based on slipperiness level
+        let acceleration, drag;
+        if (iceInfo.slipperiness === 'extreme') {
+            acceleration = 0.3;  // Very slow acceleration for floating/cracking ice
+            drag = 0.98;        // Almost no friction
+        } else if (iceInfo.slipperiness === 'standard') {
+            acceleration = 0.5;  // Standard ice acceleration
+            drag = 0.95;        // Standard ice friction
+        } else {
+            acceleration = 1.0;  // Normal ground
+            drag = PHYSICS.DRAG; // Normal friction
+        }
         
         if (cursors.left.isDown) {
             if (onIce) {
@@ -302,11 +312,11 @@ export default class Seal {
     }
     
     isOnIcePlatform() {
-        // Check if the seal is on an ice platform
-        if (!this.scene.platforms) return false;
+        // Check if the seal is on an ice platform and determine slipperiness
+        if (!this.scene.platforms) return { onIce: false, slipperiness: 'normal' };
         
         const sealBounds = this.sprite.getBounds();
-        let onIce = false;
+        let iceInfo = { onIce: false, slipperiness: 'normal' };
         
         this.scene.platforms.children.entries.forEach(platform => {
             if (platform.getData('isIce')) {
@@ -318,7 +328,19 @@ export default class Seal {
                     sealBounds.bottom <= platformBounds.top + 10 &&
                     sealBounds.right > platformBounds.left &&
                     sealBounds.left < platformBounds.right) {
-                    onIce = true;
+                    iceInfo.onIce = true;
+                    
+                    // Get platform type for variable slipperiness
+                    const platformType = platform.getData('platformType');
+                    
+                    // Most slippery - floating and cracking ice
+                    if (platformType === 'floatingIce' || platformType === 'crackingIce') {
+                        iceInfo.slipperiness = 'extreme';
+                    }
+                    // Normal ice slipperiness - all other Arctic platforms
+                    else {
+                        iceInfo.slipperiness = 'standard';
+                    }
                     
                     // Handle cracking ice
                     if (platform.getData('crackingIce')) {
@@ -328,7 +350,7 @@ export default class Seal {
             }
         });
         
-        return onIce;
+        return iceInfo;
     }
     
     handleCrackingIce(platform) {
