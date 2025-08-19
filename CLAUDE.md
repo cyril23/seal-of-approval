@@ -2,32 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Design Iteration Process
-
-### Working with Visual Assets
-When improving visual elements (sprites, backgrounds, UI), follow this iterative process:
-
-1. **Reference Images**: If the user provides reference images, analyze them carefully for:
-   - Art style (pixel art, hand-drawn, realistic)
-   - Color palettes and gradients
-   - Proportions and scaling
-   - Detail level and texture patterns
-
-2. **Feedback Loop Process**:
-   - Create initial implementation
-   - Generate test screenshot using automated tests
-   - Ask user: "Do you prefer this iteration over the previous one?"
-   - Identify specific elements user likes/dislikes
-   - Make targeted improvements based on feedback
-   - Repeat until satisfied (typically 3-4 iterations max)
-
-3. **Screenshot Testing**:
-   ```javascript
-   // Use Playwright tests to capture visual changes
-   npx playwright test --headed
-   ```
-
-### Phaser Graphics Capabilities & Limitations
+## Phaser Graphics Capabilities & Limitations
 
 **Available Drawing Methods**:
 - `fillRect()`, `strokeRect()` - Rectangles
@@ -55,12 +30,6 @@ for (let i = 0; i <= segments; i++) {
     prevX = x; prevY = y;
 }
 ```
-
-### Best Practices for Retro Graphics
-- **Repeated Backgrounds**: Classic 8-bit games use tiled backgrounds - create a few variations and repeat
-- **Limited Variations**: 2-4 variations of objects (trees, clouds, buildings) is authentic
-- **Consistent Pixel Size**: Maintain consistent "pixel" size across all graphics
-- **Color Palettes**: Use limited, cohesive color palettes per theme
 
 ## Commands
 
@@ -180,50 +149,13 @@ All game configuration in `src/utils/constants.js`:
 
 ### Gameplay Features
 
-#### Size System Visual Effects
-The seal growth/shrink system includes polished visual feedback:
-- **Growth**: Golden flash, "NOM NOM!" text, and bouncy scale animation
-- **Shrink**: Red flash with camera shake, smoke puffs, and compression animation
-- Effects are purely visual and don't interfere with physics calculations
-
-#### Controls
-- **Arrow Keys**: Move left/right (all directions in Developer Mode)
-- **Spacebar**: Jump (hold for higher), press again for double jump
-- **P**: Pause game
-- **M**: Mute audio
-- **R**: Restart current level (with confirmation)
-- **I**: Show info overlay (displays level information again)
-- **S**: Take screenshot (developer tool)
-- **DD** (double-tap D quickly): Open Developer Menu
-- **ESC**: Return to menu
-
-#### Scoring System
-- Fish collection: 100 points
-- Enemy defeat: 200 points (stomp or invincible)
-- Distance traveled: 10 points per 100px
-- Time bonus: Remaining seconds × 10 at level completion
-- Level complete bonus: 1000 points
-- Visual feedback: Floating text popups show point sources
-
-#### Death & Respawn
-- Player starts with 1 life (not 3)
-- Lives accumulate across levels (can collect extra lives)
-- Death occurs from enemy contact or falling below screen (fall death bypasses invincibility)
-- Respawn at level start with 3 seconds invincibility
-- Camera flash and position reset on respawn
-- Seal always resets to size 1 after death
-
-#### Level Restart System
-- Press 'R' to restart current level (shows confirmation dialog)
-- **Checkpoint System**: When entering a new level, the game saves:
-  - Current lives count (checkpoint)
-  - Current score (checkpoint)
-- **On Restart**:
-  - Lives reset to checkpoint value (what you had when entering the level)
-  - Score resets to checkpoint value
-  - Seal always resets to size 1 (regardless of current size)
-- **Strategic Choice**: Players must decide whether to restart (regain lost lives) or continue with fewer lives
-- Example: Enter level 6 with 7 lives → lose 2 lives → restart → back to 7 lives
+#### Critical Mechanics
+- **Seal Size System**: Sizes 1-3, grows with fish, shrinks on damage, resets to size 1 per level/death
+  - **Physics Body Tuning**: Empirically-tuned collision boxes - do not change without visual testing
+- **Double Jump**: 90% strength, triggers fart animation
+- **Fall Death**: Bypasses invincibility, uses worldbounds event
+  - **CRITICAL**: `this.playerFalling = false` must be reset in GameScene.create()
+- **Checkpoint System**: Lives/score saved on level entry, restored on restart
 
 ### State Management
 - Lives tracked in Seal entity (starts with 1 life)
@@ -271,30 +203,10 @@ Swims freely in ocean levels:
 - **Rest Cycle**: Same as hawk with 💤 indicator
 - **Spawning**: Distributed throughout water
 
-#### Beach Theme Features
-Tropical daytime atmosphere with sun (display-once), palm trees, and wave patterns.
-
-#### City Theme Features
-Nighttime urban atmosphere:
-- **3-Layer Building System** with varying opacity for depth
-- **Windows** with varied lighting states
-- **Celestial Objects**: Crescent moon (display-once) and blinking stars
-- **Ground Fog** for atmospheric depth
-
-#### Ocean Theme Features
-Underwater gameplay:
-- **Swimming Physics**: Free movement in all directions with momentum and water drag
-- **Level Design**: Underwater platforms and open water
-- **Orca Enemies**: Swim freely throughout water
-
-#### Arctic Theme Features
-Appears every 5 levels with special mechanics:
-- **Polarbear Enemy**: 4-state AI (PATROL, ALERT, CHARGING, COOLDOWN)
-  - **LETHAL**: Cannot be stomped
+#### Arctic Theme (Every 5 Levels)
+- **Polarbear Enemy**: 4-state AI, LETHAL (cannot stomp)
 - **Ice Physics**: Variable slipperiness by platform type
 - **Cracking Ice**: Breaks after standing on it
-- **Floating Ice**: Bobbing platforms with extreme slipperiness
-- **Visual Effects**: Aurora borealis, icebergs, snow particles
 
 ### Automated Testing
 
@@ -323,16 +235,6 @@ npx playwright test -g "can make the seal jump" --headed
 - Screenshots disabled by default (enable with `SKIP_SCREENSHOTS=false`)
 - Tests use intelligent waits instead of fixed timeouts
 - Performance: ~30s runtime
-
-#### Test Mode Recommendations
-- **Normal**: `npm test`
-- **Debug specific**: `npx playwright test -g "test name" --headed`
-- **With screenshots**: `SKIP_SCREENSHOTS=false npm test`
-- **Interactive**: `npm run test:debug`
-
-#### Test Structure
-- **tests/game.spec.js**: Main test suite covering game startup, movement, jumping, positioning
-- **tests/utils/**: Helper modules - screenshot utilities, game interactions, image analysis
 
 #### Important Test Implementation Details
 - **Canvas Focus**: Must focus canvas before keyboard events using `focusCanvas(page)`
@@ -373,18 +275,6 @@ await page.waitForFunction(() => {
 - Seal must settle on platform before testing (check `body.blocked.down`)
 - Scene transitions and player initialization take time - wait for completion
 - Tests checking game state too early get null player or wrong scene
-
-#### Test Configuration (playwright.config.js)
-- Auto-starts dev server on port 3000
-- Viewport: 1024x768 to match game resolution
-- Screenshots on failure for debugging
-- HTML reports for test results
-- Test timeout: 90 seconds
-- Tests may need 60-90 seconds to complete
-
-#### Test Artifact Management
-- **Cleanup**: Run `./scripts/clean-test-artifacts.sh` to remove all test artifacts
-- **Gitignore**: Test artifacts automatically ignored (screenshots, test-results, playwright-report, logs)
 
 #### Emoji Sprite Positioning Insights
 - **Visual vs Mathematical Center**: Emoji sprites have transparent padding affecting positioning
