@@ -8,8 +8,9 @@ export default class Seal {
 
         this.scene = scene;
         this.sprite = scene.physics.add.sprite(x, y, 'seal');
-        // Don't use world bounds for bottom edge to allow falling
-        this.sprite.setCollideWorldBounds(false);
+        // Enable world bounds collision for fall death detection
+        // The extended bottom boundary (GAME_HEIGHT + 200) allows falling "off-screen"
+        this.sprite.setCollideWorldBounds(true);
         this.sprite.setBounce(0);
 
         // Use provided lives or default to initial lives for level 1
@@ -260,8 +261,11 @@ export default class Seal {
             this.createGrowthEffect();
             this.updateSizeScale();
 
-            // Restore the body's bottom to the same position to prevent falling
-            this.sprite.y = bodyBottomBefore - this.sprite.body.height - this.sprite.body.offset.y;
+            // Only adjust Y if on ground to prevent teleporting while falling
+            if (this.sprite.body.blocked.down || this.sprite.body.touching.down) {
+                // Restore the body's bottom to the same position to prevent falling through platforms
+                this.sprite.y = bodyBottomBefore - this.sprite.body.height - this.sprite.body.offset.y;
+            }
 
             // Play growth sound
             if (this.scene.audioManager) {
@@ -282,8 +286,11 @@ export default class Seal {
             this.createShrinkEffect();
             this.updateSizeScale();
 
-            // Restore the body's bottom to the same position
-            this.sprite.y = bodyBottomBefore - this.sprite.body.height - this.sprite.body.offset.y;
+            // Only adjust Y if on ground to prevent teleporting while falling
+            if (this.sprite.body.blocked.down || this.sprite.body.touching.down) {
+                // Restore the body's bottom to the same position to prevent falling through platforms
+                this.sprite.y = bodyBottomBefore - this.sprite.body.height - this.sprite.body.offset.y;
+            }
 
             // Play shrink sound
             if (this.scene.audioManager) {
@@ -501,6 +508,9 @@ export default class Seal {
 
             // Disable gravity for flying
             this.sprite.body.setAllowGravity(false);
+            
+            // Disable world bounds collision for free flight
+            this.sprite.setCollideWorldBounds(false);
 
             // Set permanent invincibility
             this.invincible = true;
@@ -533,6 +543,9 @@ export default class Seal {
 
             // Re-enable gravity
             this.sprite.body.setAllowGravity(true);
+            
+            // Re-enable world bounds collision for fall death detection
+            this.sprite.setCollideWorldBounds(true);
 
             // Remove invincibility (unless it was already active)
             this.invincible = false;
@@ -800,7 +813,12 @@ export default class Seal {
                     tint: 0xffffff,
                     duration: 300,
                     onComplete: () => {
-                        this.sprite.clearTint();
+                        // Restore purple tint if in developer mode, otherwise clear tint
+                        if (this.developerMode) {
+                            this.sprite.setTint(0xFF00FF);
+                        } else {
+                            this.sprite.clearTint();
+                        }
                     }
                 });
             }
@@ -893,7 +911,12 @@ export default class Seal {
                 tint: 0xffffff,
                 duration: 400,
                 onComplete: () => {
-                    this.sprite.clearTint();
+                    // Restore purple tint if in developer mode, otherwise clear tint
+                    if (this.developerMode) {
+                        this.sprite.setTint(0xFF00FF);
+                    } else {
+                        this.sprite.clearTint();
+                    }
                 }
             });
         });
