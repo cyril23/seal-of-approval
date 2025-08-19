@@ -2,6 +2,66 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Design Iteration Process
+
+### Working with Visual Assets
+When improving visual elements (sprites, backgrounds, UI), follow this iterative process:
+
+1. **Reference Images**: If the user provides reference images, analyze them carefully for:
+   - Art style (pixel art, hand-drawn, realistic)
+   - Color palettes and gradients
+   - Proportions and scaling
+   - Detail level and texture patterns
+
+2. **Feedback Loop Process**:
+   - Create initial implementation
+   - Generate test screenshot using automated tests
+   - Ask user: "Do you prefer this iteration over the previous one?"
+   - Identify specific elements user likes/dislikes
+   - Make targeted improvements based on feedback
+   - Repeat until satisfied (typically 3-4 iterations max)
+
+3. **Screenshot Testing**:
+   ```javascript
+   // Use Playwright tests to capture visual changes
+   npx playwright test tests/palm-tree.spec.js --headed
+   ```
+
+### Phaser Graphics Capabilities & Limitations
+
+**Available Drawing Methods**:
+- `fillRect()`, `strokeRect()` - Rectangles
+- `fillTriangle()`, `strokeTriangle()` - Triangles  
+- `fillCircle()`, `strokeCircle()` - Circles
+- `lineBetween()` - Simple lines
+- `beginPath()`, `moveTo()`, `lineTo()`, `strokePath()` - Path drawing
+- `arc()` - Arc segments
+- `fillStyle()`, `lineStyle()` - Colors and line styles
+
+**NOT Available (Common Mistakes)**:
+- ❌ `quadraticBezierTo()` - Use line segments to approximate curves
+- ❌ `bezierCurveTo()` - Break into multiple `lineTo()` calls
+- ❌ Direct curve drawing - Use `Phaser.Curves` classes with `draw()` method
+
+**Workaround for Curves**:
+```javascript
+// Instead of quadraticBezierTo, use segments:
+const segments = 10;
+for (let i = 0; i <= segments; i++) {
+    const t = i / segments;
+    const x = startX + (endX - startX) * t;
+    const y = startY + (endY - startY) * t + Math.sin(t * Math.PI) * curveHeight;
+    if (i > 0) graphics.lineBetween(prevX, prevY, x, y);
+    prevX = x; prevY = y;
+}
+```
+
+### Best Practices for Retro Graphics
+- **Repeated Backgrounds**: Classic 8-bit games use tiled backgrounds - create a few variations and repeat
+- **Limited Variations**: 2-4 variations of objects (trees, clouds, buildings) is authentic
+- **Consistent Pixel Size**: Maintain consistent "pixel" size across all graphics
+- **Color Palettes**: Use limited, cohesive color palettes per theme
+
 ## Commands
 
 ### Development

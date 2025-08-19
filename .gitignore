@@ -21,3 +21,6 @@ Thumbs.db
 tests/screenshots/
 test-results/
 playwright-report/
+
+# Reference images (avoid copyright issues)
+reference-images/
