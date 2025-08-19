@@ -39,8 +39,4 @@ window.addEventListener('load', () => {
         });
         return true;
     };
-    
-    window.addEventListener('resize', () => {
-        game.scale.refresh();
-    });
 });

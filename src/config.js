@@ -20,7 +20,7 @@ export default {
         }
     },
     scale: {
-        mode: Phaser.Scale.FIT,
+        mode: Phaser.Scale.NONE,
         autoCenter: Phaser.Scale.CENTER_BOTH
     },
     scene: [PreloadScene, MenuScene, GameScene, GameOverScene, DevMenuScene]

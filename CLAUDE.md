@@ -195,11 +195,22 @@ Activated by pressing **DD** (double-tap D quickly) to open the main developer m
 ### Important Notes
 - do not `npm run dev` yourself, but ask the user to do it
 - **ALWAYS advise user to restart the webserver** after modifying source files (especially src/main.js)
-- Game resolution is 1024x768
+- Game resolution is 1024x768 (fixed, no scaling)
 - All platforms are guaranteed jumpable through gap validation
 - Seal physics body: 75% width, 50% height, offsetY=2 for perfect visual alignment (seal sits at Y=689 on platform at Y=704)
 - Time is properly reset when scene restarts to prevent negative time values
 - `window.game` is exposed globally for testing purposes (set in src/main.js)
+
+### Fixed Resolution Display
+The game uses a fixed 1024x768 resolution without any dynamic scaling:
+- **Scale Mode**: Set to `Phaser.Scale.NONE` - no automatic scaling or zooming
+- **Window Requirements**: Users need a browser window of at least 1024x768 pixels to see the full game
+- **No Resize Handling**: Window resize events are not handled - game stays at fixed size
+- **Centering**: Game is centered in the window using `Phaser.Scale.CENTER_BOTH`
+- **Behavior**:
+  - Smaller windows will clip/cut off parts of the game
+  - Larger windows will show black borders around the centered 1024x768 game area
+  - No zoom issues or scaling problems regardless of window resizing
 
 ### Enemy Behaviors
 
