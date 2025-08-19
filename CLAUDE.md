@@ -277,7 +277,7 @@ Activated by pressing **DD** (double-tap D quickly) to open the main developer m
 - **ALWAYS advise user to restart the webserver** after modifying source files (especially src/main.js)
 - Game resolution is 1024x768 (fixed, no scaling)
 - All platforms are guaranteed jumpable through gap validation
-- Seal physics body: **Size-specific tuned values** - Size 1: 65%×45%, Size 2: 43%×35%, Size 3: 27.5%×22% with custom offsets for perfect visual alignment
+- Seal physics body: **Size-specific tuned values** - Size 1: 65%×45% (offsetY=4), Size 2: 43%×35% (offsetY=3), Size 3: 27.5%×22% (offsetY=5) with custom offsets for perfect visual alignment
 - Time is properly reset when scene restarts to prevent negative time values
 - `window.game` is exposed globally for testing purposes (set in src/main.js)
 - **Game Info Descriptions** (src/utils/gameInfo.js): Keep descriptions qualitative, not quantitative. Avoid specific metrics like "2 seconds", "400px range", or exact speeds. Use descriptive terms like "quickly", "after standing", "from far away" instead
@@ -374,7 +374,7 @@ npm run test:report # View HTML test report
 - **Scene Transitions**: Tests wait for scene changes after actions (3+ seconds for physics to settle)
 - **Game State Access**: Tests can inspect internal game state via `page.evaluate()` using `window.game`
 - **Screenshots**: Automatically saved to `tests/screenshots/` with timestamps
-- **Seal Position**: Y=689 when sitting flush on platform (platform top at Y=704)
+- **Seal Position**: Y=689.6 when sitting flush on platform (platform top at Y=704)
 - **Jump Timing**: Use 200ms delay after pressing Space to catch upward motion (not 500ms)
 - **Canvas Dimensions**: May be scaled by browser (1174x880 instead of 1024x768)
 - **Test Completion**: Tests output "Serving HTML report at http://localhost:9323. Press Ctrl+C to quit." when done - need to Ctrl+C to exit
@@ -448,13 +448,13 @@ await page.waitForFunction(() => {
   - Mathematical sprite center would be 24px above platform (half of 48px sprite)
   - Visual center is actually 15px above platform due to emoji padding
   - Physics body: 36px width (75% of 48px), 24px height (50% of 48px)
-  - Physics body offsetY=2 achieves perfect visual alignment
-  - When sitting flush: Seal Y=689, Platform top Y=704, Physics body bottom=704
+  - Physics body offsetY=4 achieves perfect visual alignment (size 1)
+  - When sitting flush: Seal Y=689.6, Platform top Y=704, Physics body bottom=704
 - **Key findings from empirical testing**:
-  - offsetY = 0-1: Seal appears slightly underground/embedded in platform
-  - offsetY = 2: PERFECT - Seal sits visually flush on platform
-  - offsetY = 3+: Seal begins to float visibly above platform
-  - The 9px difference from mathematical expectations (689 vs expected 680) is due to emoji visual weight distribution
+  - Size 1 (scale 1.5): offsetY = 4 - Seal sits visually flush on platform at Y=689.6
+  - Size 2 (scale 2.0): offsetY = 3 - Proportionally adjusted for larger size
+  - Size 3 (scale 3.0): offsetY = 5 - Further adjusted for maximum size
+  - The Y position varies slightly with each size due to empirically tuned offsets
 - **Testing approach**: 
   - Always verify visual appearance with screenshots, not just mathematical calculations
   - Empirical testing is crucial - what looks right visually may differ from calculations

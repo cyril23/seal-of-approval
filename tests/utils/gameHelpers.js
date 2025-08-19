@@ -133,21 +133,21 @@ async function getGameState(page) {
                 const playerY = gameScene.player.sprite.y;
                 
                 // Find platform that the player is standing on
-                // The seal should be about 15px above the platform top when sitting flush
+                // The seal should be about 14.4px above the platform top when sitting flush (size 1 with offsetY=4)
                 const groundPlatform = nearbyPlatforms.find(platform => {
                     // Check if player is horizontally over this platform
                     const overPlatform = Math.abs(platform.x - playerX) < platform.width / 2;
                     // Check if player Y is close to where it should be when on this platform
                     // Allow some tolerance for physics variations
-                    const expectedYOnPlatform = platform.topY - 15;
+                    const expectedYOnPlatform = platform.topY - 14.4;
                     const closeToExpectedY = Math.abs(playerY - expectedYOnPlatform) < 25;
                     return overPlatform && closeToExpectedY;
                 });
                 
                 if (groundPlatform) {
-                    // Due to emoji sprite padding, the visual center is 15px above platform, not 24px
-                    // This accounts for the transparent padding in emoji sprites
-                    playerInfo.expectedY = groundPlatform.topY - 15; // Visual center when sitting flush
+                    // Due to emoji sprite padding and size system offsets, the visual center is 14.4px above platform
+                    // This accounts for the transparent padding in emoji sprites and offsetY=4 for size 1
+                    playerInfo.expectedY = groundPlatform.topY - 14.4; // Visual center when sitting flush (689.6)
                     playerInfo.platformTopY = groundPlatform.topY;
                     playerInfo.floatingDistance = Math.abs(playerInfo.y - playerInfo.expectedY);
                 }
