@@ -545,10 +545,8 @@ export default class GameScene extends Phaser.Scene {
         
         // Visual feedback
         if (newState) {
-            this.cameras.main.flash(100, 255, 0, 255);
             console.log('Developer Mode: ENABLED');
         } else {
-            this.cameras.main.flash(100, 255, 255, 255);
             console.log('Developer Mode: DISABLED');
         }
     }
