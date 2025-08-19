@@ -337,6 +337,31 @@ The orca enemy swims freely in ocean levels with enhanced capabilities:
 - **Rest Cycle**: Same as hawk with 💤 indicator and 3-second recovery
 - **Spawning**: Distributed evenly throughout the water, not restricted to platforms
 
+#### Beach Theme Features
+The Beach theme features a tropical daytime atmosphere:
+- **Visual Elements**:
+  - **Sun**: Display-once at fixed position (x: width-150, y: 150), doesn't repeat with background tiles
+  - **Palm Trees**: Three distinct coconut palms with detailed bark texture and dense fronds
+  - **Wave Patterns**: Horizontal wave lines with sine wave undulation
+
+#### City Theme Features
+The City theme features a nighttime urban atmosphere with layered depth:
+- **Visual Enhancements**:
+  - **Sky Gradient**: Smooth 100-step gradient from dark blue (0x0A1929) to lighter blue (0x2E5266)
+  - **3-Layer Building System**: 
+    - Background buildings at 35% opacity (far distance)
+    - Mid-layer building (3rd building) at 50% opacity with 50% opacity windows
+    - Foreground buildings at 80% opacity (main layer)
+  - **Antennas**: 50px tall on buildings with height ≥ 350, multiple crossbars, no red lights
+  - **Window Variety**: 70% yellow (lit), 20% dark gray (unoccupied), 10% light gray
+  - **Ground Fog**: 25% opacity gradient at bottom 150px for atmospheric depth
+- **Celestial Objects**:
+  - **Crescent Moon**: Display-once at fixed position (x: width-150, y: 100), doesn't repeat
+  - **Blinking Stars**: 15 stars per screen, repeating pattern across entire level
+    - 30% blink with slow sine wave (3-5 second cycles)
+    - Positioned in upper 30% of screen to avoid buildings
+    - White color with 0.5-2px radius variations
+
 #### Ocean Theme Features
 The Ocean theme features underwater gameplay with swimming mechanics:
 - **Swimming Physics**: Seal swims freely with momentum-based movement
