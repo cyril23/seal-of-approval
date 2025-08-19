@@ -352,18 +352,14 @@ export default class BackgroundDesigner {
                        this.height - 450, this.height - 320, this.height - 380][b];
             for (let w = 0; w < 3; w++) {
                 for (let h = 0; h < 8; h++) {
-                    if (Math.random() > 0.3) {
-                        this.graphics.fillRect(bx + 10 + w * 25, by + 20 + h * 35, 15, 20);
+                    const windowY = by + 20 + h * 35;
+                    // Only draw windows if they're not too close to ground
+                    if (windowY < this.height - 100 && Math.random() > 0.3) {
+                        this.graphics.fillRect(bx + 10 + w * 25, windowY, 15, 20);
                     }
                 }
             }
         }
-
-        // Street lights
-        this.graphics.fillStyle(0xFFFFAA, 0.6);
-        this.graphics.fillCircle(100, this.height - 50, 15);
-        this.graphics.fillCircle(400, this.height - 50, 15);
-        this.graphics.fillCircle(700, this.height - 50, 15);
     }
 
     drawOceanTheme() {
