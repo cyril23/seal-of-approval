@@ -17,15 +17,40 @@ export default class GameScene extends Phaser.Scene {
         this.timeRemaining = LEVEL.TIME_LIMIT;
         this.lastDKeyTime = 0;  // For double-D detection
         this.currentLevelInfo = null;  // Store level info for 'I' key
+        this.levelStartLives = null;  // Checkpoint: lives at level start
+        this.levelStartScore = 0;  // Checkpoint: score at level start
+        this.restartConfirmDialog = null;  // Restart confirmation dialog
     }
 
     init(data) {
+        // Reset pause state on scene start/restart
+        this.isPaused = false;
+        
         // Receive level from scene restart or start fresh
         this.currentLevel = data?.level || 1;
         this.initialScore = data?.score || 0;
         this.initialLives = data?.lives || null;  // Lives from previous level, or null for level 1
         this.currentLevelInfo = null;  // Reset cached level info for new level
-        console.log('GameScene.init() - Starting level:', this.currentLevel, 'with score:', this.initialScore, 'and lives:', this.initialLives);
+        
+        // Check if this is a restart or a new level
+        const isRestart = data?.isRestart || false;
+        
+        // Only save checkpoint on NEW level entry, not on restart
+        if (!isRestart) {
+            this.levelStartLives = this.initialLives;
+            this.levelStartScore = this.initialScore;
+            console.log('GameScene.init() - NEW LEVEL - Saved checkpoint:', 
+                'lives:', this.levelStartLives, 'score:', this.levelStartScore);
+        } else {
+            // On restart, use the saved checkpoint values
+            this.initialLives = this.levelStartLives;
+            this.initialScore = this.levelStartScore;
+            console.log('GameScene.init() - RESTART - Restoring checkpoint:', 
+                'lives:', this.levelStartLives, 'score:', this.levelStartScore);
+        }
+        
+        console.log('GameScene.init() - Starting level:', this.currentLevel, 
+            'with score:', this.initialScore, 'and lives:', this.initialLives);
     }
 
     create() {
@@ -114,7 +139,7 @@ export default class GameScene extends Phaser.Scene {
         }
         
         console.log('GameScene.create() complete!');
-        console.log('Developer keys: S = Screenshot, P = Pause, M = Mute, D = Dev Mode');
+        console.log('Game controls: R = Restart Level, P = Pause, M = Mute, I = Info, S = Screenshot, DD = Dev Mode');
     }
 
     createScrollingBackground() {
@@ -201,6 +226,14 @@ export default class GameScene extends Phaser.Scene {
         
         this.input.keyboard.on('keydown-ESC', () => {
             this.scene.start('MenuScene');
+        });
+        
+        // Restart level hotkey
+        this.input.keyboard.on('keydown-R', () => {
+            // Don't show if already showing or if game hasn't started
+            if (!this.restartConfirmDialog && this.isLevelStarted) {
+                this.showRestartConfirmation();
+            }
         });
         
         // Info overlay hotkey
@@ -694,6 +727,148 @@ export default class GameScene extends Phaser.Scene {
         // Resume physics and start the level
         this.physics.resume();
         this.isLevelStarted = true;
+    }
+
+    showRestartConfirmation() {
+        // Pause the game
+        this.isPaused = true;
+        this.physics.pause();
+        
+        // Create semi-transparent background
+        const bg = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.8);
+        bg.setScrollFactor(0);
+        bg.setDepth(100);
+        
+        // Create confirmation dialog
+        const dialogBg = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, 600, 300, 0x222222);
+        dialogBg.setScrollFactor(0);
+        dialogBg.setDepth(101);
+        dialogBg.setStrokeStyle(3, 0xffffff);
+        
+        // Title text
+        const titleText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 80, 
+            `RESTART LEVEL ${this.currentLevel}?`, {
+            fontSize: '24px',
+            fontFamily: '"Press Start 2P", monospace',
+            color: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 3
+        });
+        titleText.setOrigin(0.5);
+        titleText.setScrollFactor(0);
+        titleText.setDepth(102);
+        
+        // Info text about lives reset
+        const livesText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 20,
+            `Lives will reset to: ${this.levelStartLives || 1}`, {
+            fontSize: '16px',
+            fontFamily: '"Press Start 2P", monospace',
+            color: '#ffff00',
+            stroke: '#000000',
+            strokeThickness: 2
+        });
+        livesText.setOrigin(0.5);
+        livesText.setScrollFactor(0);
+        livesText.setDepth(102);
+        
+        // Current lives text
+        const currentLivesText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 20,
+            `Current lives: ${this.player.lives}`, {
+            fontSize: '14px',
+            fontFamily: '"Press Start 2P", monospace',
+            color: '#aaaaaa',
+            stroke: '#000000',
+            strokeThickness: 2
+        });
+        currentLivesText.setOrigin(0.5);
+        currentLivesText.setScrollFactor(0);
+        currentLivesText.setDepth(102);
+        
+        // Instructions
+        const instructionText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 80,
+            'Press ENTER to confirm, ESC to cancel', {
+            fontSize: '14px',
+            fontFamily: '"Press Start 2P", monospace',
+            color: '#00ff00',
+            stroke: '#000000',
+            strokeThickness: 2
+        });
+        instructionText.setOrigin(0.5);
+        instructionText.setScrollFactor(0);
+        instructionText.setDepth(102);
+        
+        // Store dialog elements
+        this.restartConfirmDialog = {
+            bg,
+            dialogBg,
+            titleText,
+            livesText,
+            currentLivesText,
+            instructionText
+        };
+        
+        // Set up Enter/ESC key handlers
+        const enterKey = this.input.keyboard.addKey('ENTER');
+        const escKey = this.input.keyboard.addKey('ESC');
+        
+        const confirmHandler = () => {
+            enterKey.off('down', confirmHandler);
+            escKey.off('down', cancelHandler);
+            this.closeRestartDialog();
+            this.restartLevel();
+        };
+        
+        const cancelHandler = () => {
+            enterKey.off('down', confirmHandler);
+            escKey.off('down', cancelHandler);
+            this.closeRestartDialog();
+            this.isPaused = false;
+            this.physics.resume();
+        };
+        
+        enterKey.once('down', confirmHandler);
+        escKey.once('down', cancelHandler);
+    }
+    
+    closeRestartDialog() {
+        if (this.restartConfirmDialog) {
+            this.restartConfirmDialog.bg.destroy();
+            this.restartConfirmDialog.dialogBg.destroy();
+            this.restartConfirmDialog.titleText.destroy();
+            this.restartConfirmDialog.livesText.destroy();
+            this.restartConfirmDialog.currentLivesText.destroy();
+            this.restartConfirmDialog.instructionText.destroy();
+            this.restartConfirmDialog = null;
+        }
+    }
+    
+    restartLevel() {
+        // Show restart message
+        const restartText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2,
+            'RESTARTING...', {
+            fontSize: '32px',
+            fontFamily: '"Press Start 2P", monospace',
+            color: '#ffff00',
+            stroke: '#000000',
+            strokeThickness: 4
+        });
+        restartText.setOrigin(0.5);
+        restartText.setScrollFactor(0);
+        restartText.setDepth(103);
+        
+        // Wait a moment then restart
+        this.time.delayedCall(500, () => {
+            // Stop background music before restarting
+            this.audioManager.stopBackgroundMusic();
+            
+            // Restart the scene with checkpoint values
+            this.scene.restart({
+                level: this.currentLevel,
+                score: this.levelStartScore,
+                lives: this.levelStartLives,
+                isRestart: true  // Important flag to indicate this is a restart
+            });
+        });
     }
 
     update() {

@@ -14,7 +14,7 @@ export const PHYSICS = {
 };
 
 export const PLAYER = {
-    INITIAL_LIVES: 3,
+    INITIAL_LIVES: 1,
     INVINCIBLE_TIME: 2000,
     BLINK_RATE: 100
 };

@@ -24,7 +24,7 @@ When improving visual elements (sprites, backgrounds, UI), follow this iterative
 3. **Screenshot Testing**:
    ```javascript
    // Use Playwright tests to capture visual changes
-   npx playwright test tests/palm-tree.spec.js --headed
+   npx playwright test --headed
    ```
 
 ### Phaser Graphics Capabilities & Limitations
@@ -209,6 +209,7 @@ The seal growth/shrink system includes polished visual feedback:
 - **Spacebar**: Jump (hold for higher), press again for double jump
 - **P**: Pause game
 - **M**: Mute audio
+- **R**: Restart current level (with confirmation)
 - **I**: Show info overlay (displays level information again)
 - **S**: Take screenshot (developer tool)
 - **DD** (double-tap D quickly): Open Developer Menu
@@ -223,13 +224,27 @@ The seal growth/shrink system includes polished visual feedback:
 - Visual feedback: Floating text popups show point sources
 
 #### Death & Respawn
-- Player has 3 lives
+- Player starts with 1 life (not 3)
+- Lives accumulate across levels (can collect extra lives)
 - Death occurs from enemy contact or falling below screen (fall death bypasses invincibility)
 - Respawn at level start with 3 seconds invincibility
 - Camera flash and position reset on respawn
+- Seal always resets to size 1 after death
+
+#### Level Restart System
+- Press 'R' to restart current level (shows confirmation dialog)
+- **Checkpoint System**: When entering a new level, the game saves:
+  - Current lives count (checkpoint)
+  - Current score (checkpoint)
+- **On Restart**:
+  - Lives reset to checkpoint value (what you had when entering the level)
+  - Score resets to checkpoint value
+  - Seal always resets to size 1 (regardless of current size)
+- **Strategic Choice**: Players must decide whether to restart (regain lost lives) or continue with fewer lives
+- Example: Enter level 6 with 7 lives → lose 2 lives → restart → back to 7 lives
 
 ### State Management
-- Lives tracked in Seal entity (3 lives)
+- Lives tracked in Seal entity (starts with 1 life)
 - Score managed by ScoreManager with visual feedback
 - High scores persisted to localStorage
 - Level progression with increasing difficulty
