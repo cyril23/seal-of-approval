@@ -56,6 +56,15 @@ export default class MenuScene extends Phaser.Scene {
             this.startGame();
         });
 
+        // Add mute toggle with M key
+        this.input.keyboard.on('keydown-M', () => {
+            this.audioManager.toggleMute();
+            this.updateMuteIndicator();
+        });
+
+        // Create mute indicator
+        this.createMuteIndicator();
+
         const sealSprite = this.add.image(GAME_WIDTH / 2, 280, 'seal');
         sealSprite.setScale(4);
         
@@ -95,5 +104,43 @@ export default class MenuScene extends Phaser.Scene {
         this.time.delayedCall(500, () => {
             this.scene.start('GameScene', { level: 1 });
         });
+    }
+
+    createMuteIndicator() {
+        // Create background for better visibility
+        const bgPadding = 8;
+        this.muteIndicatorBg = this.add.rectangle(
+            GAME_WIDTH - 40, 
+            40,
+            40 + bgPadding * 2,
+            40 + bgPadding * 2,
+            0x000000, 
+            0.5
+        );
+        this.muteIndicatorBg.setOrigin(0.5);
+
+        // Create mute icon text (only shows when muted)
+        this.muteIndicator = this.add.text(
+            GAME_WIDTH - 40,
+            40,
+            '🔇',
+            {
+                fontSize: '24px',
+                fontFamily: '"Press Start 2P", monospace'
+            }
+        );
+        this.muteIndicator.setOrigin(0.5);
+        
+        // Only show if currently muted
+        this.muteIndicatorBg.setVisible(this.audioManager.isMuted);
+        this.muteIndicator.setVisible(this.audioManager.isMuted);
+    }
+
+    updateMuteIndicator() {
+        if (this.muteIndicator && this.muteIndicatorBg) {
+            // Show indicator only when muted
+            this.muteIndicatorBg.setVisible(this.audioManager.isMuted);
+            this.muteIndicator.setVisible(this.audioManager.isMuted);
+        }
     }
 }

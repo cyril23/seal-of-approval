@@ -1,7 +1,9 @@
 export default class AudioManager {
     constructor(scene) {
         this.scene = scene;
-        this.isMuted = false;
+        // Load mute state from localStorage
+        const savedMuteState = localStorage.getItem('sealMuted');
+        this.isMuted = savedMuteState === 'true';
         this.sounds = {};
         this.currentMusic = null;
         this.isGameMusic = false;
@@ -184,6 +186,9 @@ export default class AudioManager {
 
     toggleMute() {
         this.isMuted = !this.isMuted;
+        
+        // Save mute state to localStorage
+        localStorage.setItem('sealMuted', this.isMuted.toString());
         
         if (this.isMuted) {
             this.stopBackgroundMusic();
