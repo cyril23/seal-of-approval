@@ -1,11 +1,16 @@
 import Phaser from 'phaser';
 import config from './config.js';
+import AudioManager from './managers/AudioManager.js';
 
 window.addEventListener('load', () => {
     const game = new Phaser.Game(config);
     
     // Expose game instance for testing
     window.game = game;
+    
+    // Create global AudioManager instance
+    // Pass null as scene since it's global
+    game.audioManager = new AudioManager(null);
     
     // Add test helper function to jump directly to any level
     // Uses the same proven logic as DevMenuScene.jumpToLevel()

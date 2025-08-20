@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../utils/constants.js';
-import AudioManager from '../managers/AudioManager.js';
 
 export default class MenuScene extends Phaser.Scene {
     constructor() {
@@ -8,7 +7,10 @@ export default class MenuScene extends Phaser.Scene {
     }
 
     create() {
-        this.audioManager = new AudioManager(this);
+        // Use global AudioManager and set scene context
+        this.audioManager = this.game.audioManager;
+        this.audioManager.setScene(this);
+        this.audioManager.currentTheme = 'ocean'; // Store theme for unmute
         this.audioManager.playBackgroundMusic('ocean');
         this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'bg_ocean');
 
@@ -56,11 +58,7 @@ export default class MenuScene extends Phaser.Scene {
             this.startGame();
         });
 
-        // Add mute toggle with M key
-        this.input.keyboard.on('keydown-M', () => {
-            this.audioManager.toggleMute();
-            this.updateMuteIndicator();
-        });
+        // M key is now handled globally in main.js
 
         // Create mute indicator
         this.createMuteIndicator();

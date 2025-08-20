@@ -198,6 +198,10 @@ export default class PreloadScene extends Phaser.Scene {
     }
 
     create() {
+        // Launch the global input scene that runs in parallel with all other scenes
+        this.scene.launch('GlobalInputScene');
+        
+        // Start the menu scene
         this.scene.start('MenuScene');
     }
 }

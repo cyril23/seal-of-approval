@@ -5,6 +5,7 @@ import MenuScene from './scenes/MenuScene.js';
 import GameScene from './scenes/GameScene.js';
 import GameOverScene from './scenes/GameOverScene.js';
 import DevMenuScene from './scenes/DevMenuScene.js';
+import GlobalInputScene from './scenes/GlobalInputScene.js';
 
 export default {
     type: Phaser.AUTO,
@@ -23,5 +24,5 @@ export default {
         mode: Phaser.Scale.NONE,
         autoCenter: Phaser.Scale.CENTER_BOTH
     },
-    scene: [PreloadScene, MenuScene, GameScene, GameOverScene, DevMenuScene]
+    scene: [PreloadScene, MenuScene, GameScene, GameOverScene, DevMenuScene, GlobalInputScene]
 };

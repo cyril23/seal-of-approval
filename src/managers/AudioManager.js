@@ -7,8 +7,17 @@ export default class AudioManager {
         this.sounds = {};
         this.currentMusic = null;
         this.isGameMusic = false;
+        this.currentTheme = null; // Store theme info for global instance
         
         this.createSounds();
+    }
+    
+    // Set the current scene context (for global AudioManager)
+    setScene(scene) {
+        this.scene = scene;
+        if (scene && scene.currentTheme) {
+            this.currentTheme = scene.currentTheme;
+        }
     }
 
     createSounds() {
@@ -193,8 +202,10 @@ export default class AudioManager {
         if (this.isMuted) {
             this.stopBackgroundMusic();
         } else {
-            if (this.scene.currentTheme) {
-                this.playBackgroundMusic(this.scene.currentTheme.name, this.isGameMusic);
+            // Restart music if we have theme info
+            const theme = this.currentTheme || (this.scene && this.scene.currentTheme);
+            if (theme) {
+                this.playBackgroundMusic(theme.name || theme, this.isGameMusic);
             }
         }
         

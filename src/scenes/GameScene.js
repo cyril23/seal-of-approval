@@ -4,7 +4,6 @@ import Enemy from '../entities/Enemy.js';
 import Collectible from '../entities/Collectible.js';
 import LevelGenerator from '../managers/LevelGenerator.js';
 import ScoreManager from '../managers/ScoreManager.js';
-import AudioManager from '../managers/AudioManager.js';
 import InfoOverlay from '../ui/InfoOverlay.js';
 import { getLevelInfo, shouldShowInfo } from '../utils/gameInfo.js';
 import { GAME_WIDTH, GAME_HEIGHT, LEVEL_WIDTH, LEVEL, THEMES, CAMERA, SCORING } from '../utils/constants.js';
@@ -85,7 +84,9 @@ export default class GameScene extends Phaser.Scene {
         console.log('Initializing managers...');
         this.levelGenerator = new LevelGenerator(this);
         this.scoreManager = new ScoreManager(this, this.initialScore);
-        this.audioManager = new AudioManager(this);
+        // Use global AudioManager and set scene context
+        this.audioManager = this.game.audioManager;
+        this.audioManager.setScene(this);
 
         console.log('Creating physics groups...');
         this.platforms = this.physics.add.staticGroup();
@@ -333,10 +334,7 @@ export default class GameScene extends Phaser.Scene {
             this.togglePause();
         });
 
-        this.input.keyboard.on('keydown-M', () => {
-            this.audioManager.toggleMute();
-            this.updateMuteIndicator();
-        });
+        // M key is now handled globally in main.js
 
         this.input.keyboard.on('keydown-ESC', () => {
             this.scene.start('MenuScene');
