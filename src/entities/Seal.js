@@ -460,7 +460,13 @@ export default class Seal {
         // Check if the seal is on an ice platform and determine slipperiness
         if (!this.scene.platforms) return { onIce: false, slipperiness: 'normal' };
 
-        const sealBounds = this.sprite.getBounds();
+        // Use physics body bounds instead of visual sprite bounds for accurate collision
+        const body = this.sprite.body;
+        const sealLeft = body.x;
+        const sealRight = body.x + body.width;
+        const sealTop = body.y;
+        const sealBottom = body.y + body.height;
+        
         let iceInfo = { onIce: false, slipperiness: 'normal' };
 
         this.scene.platforms.children.entries.forEach(platform => {
@@ -469,10 +475,10 @@ export default class Seal {
 
                 // Check if seal is standing on this platform
                 if (this.sprite.body.touching.down &&
-                    sealBounds.bottom >= platformBounds.top - 5 &&
-                    sealBounds.bottom <= platformBounds.top + 10 &&
-                    sealBounds.right > platformBounds.left &&
-                    sealBounds.left < platformBounds.right) {
+                    sealBottom >= platformBounds.top - 5 &&
+                    sealBottom <= platformBounds.top + 10 &&
+                    sealRight > platformBounds.left &&
+                    sealLeft < platformBounds.right) {
                     iceInfo.onIce = true;
 
                     // Get platform type for variable slipperiness
