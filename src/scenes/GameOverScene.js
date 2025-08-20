@@ -42,7 +42,7 @@ export default class GameOverScene extends Phaser.Scene {
         // Display progress points if any were earned
         if (this.progressPoints > 0) {
             const progressText = this.add.text(GAME_WIDTH / 2, 340, 
-                `DISTANCE: ${this.progressDistance}px (+${this.progressPoints} pts)`, {
+                `DISTANCE BONUS: ${this.progressPoints} pts`, {
                 fontSize: '18px',
                 fontFamily: '"Press Start 2P", monospace',
                 color: '#00ffff'

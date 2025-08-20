@@ -521,6 +521,9 @@ export default class GameScene extends Phaser.Scene {
         if (data.type === 'fish') {
             // Grow the seal when eating fish
             this.player.growSize();
+            
+            // Eating a fish always grants one fart (digestion!)
+            this.player.hasFartAvailable = true;
 
             const points = 100;
             this.scoreManager.addScore(points);
@@ -619,7 +622,7 @@ export default class GameScene extends Phaser.Scene {
         if (progress.points > 0) {
             this.scoreManager.addScore(progress.points);
             this.showScorePopup(this.player.sprite.x, this.player.sprite.y - 80,
-                `PROGRESS: ${progress.distance}px = +${progress.points}!`, 0x00ffff);
+                `DISTANCE BONUS: +${progress.points}!`, 0x00ffff);
         }
 
         // Play victory sound

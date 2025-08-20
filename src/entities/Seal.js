@@ -36,6 +36,7 @@ export default class Seal {
         this.doubleJumpAvailable = false;
         this.hasDoubleJumped = false;
         this.wasOnGround = false; // For debugging ground state changes
+        this.hasFartAvailable = false; // Only true after eating a fish
 
         this.updateSizeScale();
     }
@@ -171,8 +172,11 @@ export default class Seal {
                 this.hasDoubleJumped = true;
                 this.scene.audioManager.playSound('doubleJump');
 
-                // Add visual effect for double jump
-                this.createDoubleJumpEffect();
+                // Add visual effect for double jump only if the seal has digested a fish
+                if (this.hasFartAvailable) {
+                    this.createDoubleJumpEffect();
+                    this.hasFartAvailable = false; // Can only fart once per fish eaten
+                }
             }
         }
 
@@ -304,6 +308,7 @@ export default class Seal {
     resetSize() {
         this.currentSize = SIZE_SYSTEM.DEFAULT_SIZE;
         this.updateSizeScale();
+        this.hasFartAvailable = false; // No fart available after respawn/reset
     }
 
     takeDamage() {
