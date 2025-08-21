@@ -166,7 +166,7 @@ export default class InfoOverlay {
         const prompt = this.scene.add.text(
             panelX,
             panelY + panelHeight/2 - 45,
-            'Press SPACE to begin',
+            'Press SPACE or I to begin',
             {
                 fontSize: '28px',
                 fontFamily: 'monospace',
@@ -195,22 +195,35 @@ export default class InfoOverlay {
             ease: 'Power2'
         });
 
-        // Setup space key listener
+        // Setup space and I key listeners for closing
         this.spaceKey = this.scene.input.keyboard.addKey('SPACE');
+        this.iKey = this.scene.input.keyboard.addKey('I');
+        
         this.handleSpacePress = () => {
             if (this.spaceKey.isDown) {
                 this.hide();
             }
         };
+        
+        this.handleIPress = () => {
+            if (this.iKey.isDown) {
+                this.hide();
+            }
+        };
+        
         this.scene.input.keyboard.on('keydown-SPACE', this.handleSpacePress);
+        this.scene.input.keyboard.on('keydown-I', this.handleIPress);
     }
 
     hide(instant = false) {
         if (!this.isShowing) return;
 
-        // Remove space key listener
+        // Remove space and I key listeners
         if (this.handleSpacePress) {
             this.scene.input.keyboard.off('keydown-SPACE', this.handleSpacePress);
+        }
+        if (this.handleIPress) {
+            this.scene.input.keyboard.off('keydown-I', this.handleIPress);
         }
 
         if (instant) {

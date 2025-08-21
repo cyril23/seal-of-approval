@@ -19,6 +19,7 @@ export default class GameScene extends Phaser.Scene {
         this.levelStartLives = null;  // Checkpoint: lives at level start
         this.levelStartScore = 0;  // Checkpoint: score at level start
         this.restartConfirmDialog = null;  // Restart confirmation dialog
+        this.isDevMenuOpen = false;  // Track if dev menu is open
     }
 
     init(data) {
@@ -149,6 +150,12 @@ export default class GameScene extends Phaser.Scene {
             if (this.audioManager) {
                 this.audioManager.stopBackgroundMusic();
             }
+        });
+
+        // Clear dev menu flag when scene resumes
+        this.events.on('resume', () => {
+            console.log('GameScene resumed, clearing dev menu flag');
+            this.isDevMenuOpen = false;
         });
 
         console.log('Fading in camera...');
@@ -331,6 +338,9 @@ export default class GameScene extends Phaser.Scene {
         this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
         this.input.keyboard.on('keydown-P', () => {
+            // Ignore P key if info overlay is showing or dev menu is open
+            if (this.infoOverlay && this.infoOverlay.isShowing) return;
+            if (this.isDevMenuOpen) return;
             this.togglePause();
         });
 
@@ -348,11 +358,21 @@ export default class GameScene extends Phaser.Scene {
             }
         });
 
-        // Info overlay hotkey
+        // Info overlay hotkey - toggles on/off
         this.input.keyboard.on('keydown-I', () => {
-            // Only show if we have info stored and the overlay isn't already showing
-            if (this.currentLevelInfo && !this.infoOverlay.isShowing && this.isLevelStarted) {
-                this.showLevelInfo();
+            // Ignore I key if game is paused or dev menu is open
+            if (this.isPaused) return;
+            if (this.isDevMenuOpen) return;
+            
+            // Toggle info overlay if we have info and level has started
+            if (this.currentLevelInfo && this.isLevelStarted) {
+                if (this.infoOverlay.isShowing) {
+                    // Hide if showing
+                    this.infoOverlay.hide();
+                } else {
+                    // Show if hidden
+                    this.showLevelInfo();
+                }
             }
         });
 
@@ -777,6 +797,17 @@ export default class GameScene extends Phaser.Scene {
             console.log('Closing info overlay before opening developer menu');
             this.infoOverlay.hide(true);  // true = instant hide without animation
         }
+
+        // Clear pause state if game is paused
+        if (this.isPaused) {
+            console.log('Clearing pause state before opening developer menu');
+            this.isPaused = false;
+            this.pauseText.setVisible(false);
+            this.physics.resume();
+        }
+
+        // Mark dev menu as open
+        this.isDevMenuOpen = true;
 
         // Launch the developer menu as an overlay scene
         this.scene.launch('DevMenuScene', {
