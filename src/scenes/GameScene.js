@@ -579,6 +579,13 @@ export default class GameScene extends Phaser.Scene {
     }
 
     handleEnemyCollision(enemy) {
+        // Ghost mode: no collision interaction at all (pass through enemies)
+        if (this.player.ghostMode) {
+            // Do nothing - seal passes through enemies like a ghost
+            return;
+        }
+        
+        // Invincibility from star powerup: defeat enemies on contact
         if (this.player.invincible) {
             this.scoreManager.addScore(200);
             this.showScorePopup(enemy.x, enemy.y, '+200 ENEMY!', 0xff9900);

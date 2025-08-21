@@ -21,7 +21,8 @@ export default class Seal {
         this.maxSize = SIZE_SYSTEM.MAX_SIZE;
         this.sizeScales = SIZE_SYSTEM.SIZE_SCALES;
 
-        this.invincible = false;
+        this.invincible = false;  // For star powerup only
+        this.ghostMode = false;   // For damage protection (can't interact with enemies)
         this.speedBoost = false;
         this.hasMagnet = false;
         this.developerMode = false;  // Developer mode flag
@@ -195,10 +196,18 @@ export default class Seal {
             this.jumpTimer = 15;
         }
 
-        // Handle invincibility visual effects (but not alpha in dev mode)
-        if (this.invincible && !this.developerMode) {
-            const time = this.scene.time.now;
-            this.sprite.setAlpha(Math.sin(time * 0.01) > 0 ? 1 : 0.5);
+        // Handle visual effects for invincibility and ghost mode
+        if (!this.developerMode) {
+            if (this.ghostMode) {
+                // Ghost mode: semi-transparent with gentle blinking
+                const time = this.scene.time.now;
+                const alpha = 0.3 + Math.sin(time * 0.008) * 0.2; // Oscillate between 0.3 and 0.5
+                this.sprite.setAlpha(alpha);
+            } else if (this.invincible) {
+                // Invincibility: strong blinking effect
+                const time = this.scene.time.now;
+                this.sprite.setAlpha(Math.sin(time * 0.01) > 0 ? 1 : 0.5);
+            }
         }
     }
 
@@ -317,13 +326,13 @@ export default class Seal {
             return;
         }
 
-        if (!this.invincible) {
+        if (!this.invincible && !this.ghostMode) {
             if (this.currentSize > 1) {
-                // Shrink instead of losing life
+                // Shrink and enter ghost mode instead of invincibility
                 this.shrinkSize();
-                this.setInvincible(PLAYER.INVINCIBLE_TIME);
+                this.setGhostMode(PLAYER.INVINCIBLE_TIME);
             } else {
-                // At size 1, lose a life
+                // At size 1, lose a life and become invincible
                 this.lives--;
                 this.setInvincible(PLAYER.INVINCIBLE_TIME);
 
@@ -346,6 +355,23 @@ export default class Seal {
         this.scene.time.delayedCall(duration, () => {
             this.invincible = false;
             this.sprite.clearTint();
+            this.sprite.setAlpha(1);
+        });
+    }
+
+    setGhostMode(duration) {
+        this.ghostMode = true;
+        // Ethereal blue-white tint for ghost effect
+        this.sprite.setTint(0xccddff);
+
+        this.scene.time.delayedCall(duration, () => {
+            this.ghostMode = false;
+            // Restore appropriate tint
+            if (this.developerMode) {
+                this.sprite.setTint(0xFF00FF);
+            } else {
+                this.sprite.clearTint();
+            }
             this.sprite.setAlpha(1);
         });
     }
