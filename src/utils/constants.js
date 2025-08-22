@@ -3,6 +3,11 @@ export const GAME_HEIGHT = 768;
 export const TILE_SIZE = 16;
 export const LEVEL_WIDTH = 10240; // 10x screen width for side-scrolling
 
+// Debug settings
+export const DEBUG = {
+    PHYSICS_ENABLED: false  // enable only when tuning bounding boxes
+};
+
 export const PHYSICS = {
     GRAVITY: 800,
     JUMP_VELOCITY: -400,

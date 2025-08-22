@@ -6,7 +6,7 @@ import LevelGenerator from '../managers/LevelGenerator.js';
 import ScoreManager from '../managers/ScoreManager.js';
 import InfoOverlay from '../ui/InfoOverlay.js';
 import { getLevelInfo, shouldShowInfo } from '../utils/gameInfo.js';
-import { GAME_WIDTH, GAME_HEIGHT, LEVEL_WIDTH, LEVEL, THEMES, CAMERA, SCORING } from '../utils/constants.js';
+import { GAME_WIDTH, GAME_HEIGHT, LEVEL_WIDTH, LEVEL, THEMES, CAMERA, SCORING, DEBUG } from '../utils/constants.js';
 
 export default class GameScene extends Phaser.Scene {
     constructor() {
@@ -104,6 +104,12 @@ export default class GameScene extends Phaser.Scene {
         // Set player depth to be above platforms but below UI
         this.player.sprite.setDepth(5);
 
+        // Apply debug settings if enabled
+        if (DEBUG.PHYSICS_ENABLED) {
+            console.log('Enabling physics debug graphics by default');
+            this.player.setPhysicsDebugEnabled(true);
+        }
+
         // Enable world bounds detection for fall death
         // Keep setCollideWorldBounds false to allow free movement left/right/up
         this.player.sprite.body.onWorldBounds = true;
@@ -164,7 +170,10 @@ export default class GameScene extends Phaser.Scene {
         // Create info overlay
         this.infoOverlay = new InfoOverlay(this);
 
-        // Check if we should show info for this level
+        // Always get level info (for manual 'I' key access)
+        this.currentLevelInfo = getLevelInfo(this.currentLevel);
+
+        // Check if we should auto-show info for this level (levels 1-5 only)
         if (shouldShowInfo(this.currentLevel)) {
             this.showLevelInfo();
         } else {
@@ -914,7 +923,7 @@ export default class GameScene extends Phaser.Scene {
 
         // Get info for this level (or use stored info if available)
         if (!this.currentLevelInfo) {
-            this.currentLevelInfo = getLevelInfo(this.currentLevel, this.currentTheme.name);
+            this.currentLevelInfo = getLevelInfo(this.currentLevel);
         }
 
         // Show the overlay

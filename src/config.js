@@ -17,7 +17,7 @@ export default {
         default: 'arcade',
         arcade: {
             gravity: { y: 800 },
-            debug: false
+            debug: false  // toggle Phaser's built-in physics debug
         }
     },
     scale: {

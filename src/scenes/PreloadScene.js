@@ -34,6 +34,32 @@ export default class PreloadScene extends Phaser.Scene {
         canvas.height = 32;
 
         Object.entries(EMOJIS).forEach(([key, emoji]) => {
+            // Special handling for seal - create multiple sizes
+            if (key === 'SEAL') {
+                // Create three different seal textures at optimal resolutions
+                const sealSizes = [
+                    { name: 'seal_size1', size: 48, fontSize: 42 },  // 1.5x scale equivalent
+                    { name: 'seal_size2', size: 64, fontSize: 56 },  // 2x scale equivalent
+                    { name: 'seal_size3', size: 96, fontSize: 84 }   // 3x scale equivalent
+                ];
+                
+                sealSizes.forEach(sealConfig => {
+                    canvas.width = sealConfig.size;
+                    canvas.height = sealConfig.size;
+                    ctx.clearRect(0, 0, sealConfig.size, sealConfig.size);
+                    ctx.font = `${sealConfig.fontSize}px serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(emoji, sealConfig.size / 2, sealConfig.size / 2);
+                    this.textures.addCanvas(sealConfig.name, canvas);
+                });
+                
+                // Also create the default seal texture for compatibility
+                canvas.width = 32;
+                canvas.height = 32;
+            }
+            
+            // Create standard texture for all emojis (including seal)
             ctx.clearRect(0, 0, 32, 32);
             ctx.font = '28px serif';
             ctx.textAlign = 'center';

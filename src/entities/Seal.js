@@ -7,7 +7,8 @@ export default class Seal {
         console.log('Seal.js Version: 2.0 - Size growth system');
 
         this.scene = scene;
-        this.sprite = scene.physics.add.sprite(x, y, 'seal');
+        // Start with size 1 texture
+        this.sprite = scene.physics.add.sprite(x, y, 'seal_size1');
         // Enable world bounds collision for fall death detection
         // The extended bottom boundary (GAME_HEIGHT + 200) allows falling "off-screen"
         this.sprite.setCollideWorldBounds(true);
@@ -213,33 +214,38 @@ export default class Seal {
 
 
     updateSizeScale() {
-        // Scale based on current size
-        const scale = this.sizeScales[this.currentSize - 1];
-        this.sprite.setScale(scale);
+        // Update texture to the appropriate size-specific texture
+        const sizeTextures = ['seal_size1', 'seal_size2', 'seal_size3'];
+        const newTexture = sizeTextures[this.currentSize - 1];
+        this.sprite.setTexture(newTexture);
 
-        // Update physics body to match the scaled sprite
-        // Base sprite is 32x32, but emojis have padding/transparent areas
-        const baseWidth = 32;
-        const baseHeight = 32;
+        // Keep scale at 1.0 to avoid scaling artifacts - the textures are already at the right size
+        this.sprite.setScale(1.0);
+
+        // Update physics body to match the sprite
+        // Each texture is already at the correct pixel size: 48x48, 64x64, 96x96
+        const textureSizes = [48, 64, 96];
+        const baseWidth = textureSizes[this.currentSize - 1];
+        const baseHeight = textureSizes[this.currentSize - 1];
 
         // *** EMPIRICALLY TUNED VALUES - DO NOT CHANGE WITHOUT VISUAL TESTING ***
         // These values were carefully tuned using the Physics Debug overlay system
         // Mathematical formulas fail due to emoji sprites having irregular transparent padding
-        
+
         // Physics body dimensions: Dramatically smaller for larger sizes
         // This compensates for emoji visual weight being concentrated in center
-        const bodyWidthMultipliers = [0.65, 0.43, 0.275];  // Size 1: 65% → Size 3: 27.5%
-        const bodyHeightMultipliers = [0.45, 0.35, 0.22];  // Size 1: 45% → Size 3: 22%
+        const bodyWidthMultipliers = [0.9, 0.9, 0.87];
+        const bodyHeightMultipliers = [0.66, 0.65, 0.64];
 
-        const bodyWidth = baseWidth * scale * bodyWidthMultipliers[this.currentSize - 1];
-        const bodyHeight = baseHeight * scale * bodyHeightMultipliers[this.currentSize - 1];
+        const bodyWidth = baseWidth * bodyWidthMultipliers[this.currentSize - 1];
+        const bodyHeight = baseHeight * bodyHeightMultipliers[this.currentSize - 1];
 
         // Physics body positioning: Custom offsets for perfect visual alignment
         // These values create pixel-perfect collision detection at all sizes
         // Note: Size 1 uses NEGATIVE X offset due to emoji left-side weighting
-        
-        const sizeOffsetsX = [-1, 2, 3];  // Horizontal: Accounts for emoji asymmetric padding
-        const sizeOffsetsY = [4, 3, 5];   // Vertical: Ensures perfect ground contact
+
+        const sizeOffsetsX = [2, 3, 5];  // Horizontal: Accounts for emoji asymmetric padding
+        const sizeOffsetsY = [7, 11, 16];   // Vertical: Ensures perfect ground contact
 
         // Set the physics body size
         // Pass false to prevent auto-centering and maintain full control over offset
@@ -252,8 +258,8 @@ export default class Seal {
         this.sprite.body.setOffset(offsetX, offsetY);
 
         // Enhanced debugging output for offset tuning
-        const mathCenterX = (baseWidth * scale - bodyWidth) / 2;
-        console.log(`Size ${this.currentSize}: scale=${scale}`);
+        const mathCenterX = (baseWidth - bodyWidth) / 2;
+        console.log(`Size ${this.currentSize}: texture=${baseWidth}x${baseHeight}`);
         console.log(`  Body: ${bodyWidth.toFixed(1)}x${bodyHeight.toFixed(1)}, Offsets: X=${offsetX} Y=${offsetY}`);
         console.log(`  Math center would be X=${mathCenterX.toFixed(1)}, using visual center X=${offsetX}`);
 
@@ -419,13 +425,13 @@ export default class Seal {
         // Create a funny fart-like effect with brown puffs
         const brownColors = [0x8B4513, 0xA0522D, 0xCD853F, 0x964B00]; // Various brown shades
         const puffCount = 6; // Multiple small puffs for a cloud effect
-        
+
         for (let i = 0; i < puffCount; i++) {
             // Create puffs in a downward cone pattern
             const angle = Math.PI * 0.5 + (Math.PI * 0.3) * ((i / puffCount) - 0.5); // Downward spread
             const startDistance = 10;
             const randomOffset = Math.random() * 5;
-            
+
             // Each puff is a brown circle
             const puff = this.scene.add.circle(
                 this.sprite.x + Math.cos(angle) * (startDistance + randomOffset),
@@ -434,10 +440,10 @@ export default class Seal {
                 Phaser.Utils.Array.GetRandom(brownColors), // Random brown shade
                 0.6 + Math.random() * 0.3 // Varying opacity
             );
-            
+
             // Set depth so it appears behind the seal
             puff.setDepth(this.sprite.depth - 1);
-            
+
             // Animate each puff dispersing downward and outward
             this.scene.tweens.add({
                 targets: puff,
@@ -452,7 +458,7 @@ export default class Seal {
                     puff.destroy();
                 }
             });
-            
+
             // Add a slight wobble for comedic effect
             this.scene.tweens.add({
                 targets: puff,
@@ -462,7 +468,7 @@ export default class Seal {
                 repeat: 1
             });
         }
-        
+
         // Add one larger central puff for emphasis
         const mainPuff = this.scene.add.circle(
             this.sprite.x,
@@ -472,7 +478,7 @@ export default class Seal {
             0.4
         );
         mainPuff.setDepth(this.sprite.depth - 1);
-        
+
         this.scene.tweens.add({
             targets: mainPuff,
             y: mainPuff.y + 50, // Fall downward
@@ -497,7 +503,7 @@ export default class Seal {
         const sealRight = body.x + body.width;
         const sealTop = body.y;
         const sealBottom = body.y + body.height;
-        
+
         let iceInfo = { onIce: false, slipperiness: 'normal' };
 
         this.scene.platforms.children.entries.forEach(platform => {
@@ -599,7 +605,7 @@ export default class Seal {
 
             // Disable gravity for flying
             this.sprite.body.setAllowGravity(false);
-            
+
             // Disable world bounds collision for free flight
             this.sprite.setCollideWorldBounds(false);
 
@@ -634,7 +640,7 @@ export default class Seal {
 
             // Re-enable gravity
             this.sprite.body.setAllowGravity(true);
-            
+
             // Re-enable world bounds collision for fall death detection
             this.sprite.setCollideWorldBounds(true);
 
@@ -839,7 +845,7 @@ export default class Seal {
         // === LAYER 1: IMMEDIATE IMPACT ===
         // Golden light burst flash
         this.sprite.setTint(0xffd700); // Golden tint instead of white
-        
+
         // Brief screen flash for impact
         const screenFlash = this.scene.add.rectangle(
             this.scene.cameras.main.centerX,
@@ -850,7 +856,7 @@ export default class Seal {
         );
         screenFlash.setScrollFactor(0); // Fixed to camera
         screenFlash.setDepth(999);
-        
+
         this.scene.tweens.add({
             targets: screenFlash,
             alpha: 0,
@@ -861,7 +867,7 @@ export default class Seal {
         // === LAYER 2: NOM NOM TEXT ===
         // Fun eating text that floats up
         const nomText = this.scene.add.text(
-            this.sprite.x, 
+            this.sprite.x,
             this.sprite.y - 30,
             'NOM NOM!',
             {
@@ -874,7 +880,7 @@ export default class Seal {
         );
         nomText.setOrigin(0.5);
         nomText.setDepth(200);
-        
+
         // Animate the text floating up and fading (with delay for better visibility)
         this.scene.tweens.add({
             targets: nomText,
@@ -889,11 +895,11 @@ export default class Seal {
 
         // === LAYER 3: SCALE POP ANIMATION ===
         // Enhanced scale animation with bounce
-        const targetScale = this.sizeScales[this.currentSize - 1];
+        // Since we're using native-sized textures, scale animations use 1.0 as base
         this.scene.tweens.add({
             targets: this.sprite,
-            scaleX: targetScale * 1.3, // Bigger pop
-            scaleY: targetScale * 1.3,
+            scaleX: 1.3, // Bigger pop
+            scaleY: 1.3,
             duration: 200,
             ease: 'Back.easeOut', // Bounce effect
             yoyo: true,
@@ -922,10 +928,10 @@ export default class Seal {
         // === LAYER 1: DAMAGE IMPACT ===
         // Intense red flash
         this.sprite.setTint(0xff3333); // Bright red tint
-        
+
         // Screen shake effect
         this.scene.cameras.main.shake(200, 0.01);
-        
+
         // Brief red screen flash
         const screenFlash = this.scene.add.rectangle(
             this.scene.cameras.main.centerX,
@@ -936,7 +942,7 @@ export default class Seal {
         );
         screenFlash.setScrollFactor(0);
         screenFlash.setDepth(999);
-        
+
         this.scene.tweens.add({
             targets: screenFlash,
             alpha: 0,
@@ -956,7 +962,7 @@ export default class Seal {
             );
             puff.setDepth(40);
             smokePuffs.push(puff);
-            
+
             // Animate puffs dispersing
             this.scene.tweens.add({
                 targets: puff,
@@ -973,21 +979,21 @@ export default class Seal {
 
         // === LAYER 3: COMPRESSION ANIMATION ===
         // Dramatic inward squeeze before settling to new size
-        const targetScale = this.sizeScales[this.currentSize - 1];
-        
+        // Since we're using native-sized textures, scale is always 1.0
+
         // First compress inward dramatically
         this.scene.tweens.add({
             targets: this.sprite,
-            scaleX: targetScale * 0.6, // Squeeze inward
-            scaleY: targetScale * 1.2, // Squash effect
+            scaleX: 0.6, // Squeeze inward
+            scaleY: 1.2, // Squash effect
             duration: 150,
             ease: 'Power2.easeIn',
             onComplete: () => {
-                // Then bounce back to target size
+                // Then bounce back to normal scale
                 this.scene.tweens.add({
                     targets: this.sprite,
-                    scaleX: targetScale,
-                    scaleY: targetScale,
+                    scaleX: 1.0,
+                    scaleY: 1.0,
                     duration: 250,
                     ease: 'Back.easeOut'
                 });
