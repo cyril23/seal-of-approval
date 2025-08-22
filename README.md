@@ -11,7 +11,7 @@ Seal of Approval is a browser-based platformer game built with Phaser 3 and impl
 - **Retro 8-bit Style**: Emoji-based sprites and pixel-perfect visuals at 1024x768 resolution
 - **Side-scrolling Platformer**: Smooth camera following with physics-based movement
 - **Multiple Themes**: Beach, City, Ocean, Harbor, and Arctic environments
-- **Enemy Variety**: Four unique enemy types with distinct AI behaviors
+- **Enemy Variety**: Five unique enemy types with distinct AI behaviors
 - **Power-up System**: Invincibility stars, speed boosts, magnets, time bonuses, and extra lives
 - **Procedural Levels**: Dynamically generated platforms with gap validation
 - **Audio**: Programmatically generated sound effects and music using Web Audio API
@@ -22,18 +22,28 @@ Seal of Approval is a browser-based platformer game built with Phaser 3 and impl
 Control a seal character through themed levels, collecting fish and avoiding enemies:
 
 - **Arrow Keys**: Move left/right
-- **Spacebar**: Jump (hold for higher jumps, press again for double jump)
+- **Spacebar**: Jump (hold for higher jumps, press again for double jump with fart effect 💨)
 - **P**: Pause game
 - **M**: Mute audio
 - **ESC**: Return to menu
 
 ### Game Mechanics
 
-- **Lives System**: Start with 3 lives
-- **Scoring**: Earn points for collecting fish (100), defeating enemies (200), and distance traveled
-- **Power-ups**: Temporary abilities that enhance gameplay
+- **Lives System**: Start with 3 lives, checkpoint saves on level entry
+- **Seal Growth**: Grows through 3 sizes when eating fish, shrinks when damaged
+- **Ghost Mode**: Temporary invulnerability after taking damage (when size > 1)
+- **Scoring**: Fish (100), enemies (200), distance bonus, level completion (1000)
+- **Power-ups**: Star (invincibility), Speed boost, Magnet (attracts fish), Clock (time bonus), Heart (extra life), Mushroom (size growth)
 - **Level Progression**: Complete levels by reaching the goal flag
 - **High Scores**: Persistent high score tracking
+
+### Enemies
+
+- **Human** 🚶: Walks back and forth on platforms
+- **Crab** 🦀: Scuttles quickly with occasional hops
+- **Hawk** 🦅: Patrols and dive-attacks, shows 💤 when resting
+- **Orca** 🐋: Ocean predator with large detection range (cannot be stomped)
+- **Polar Bear** 🐻‍❄️: Arctic hunter with charge attack (cannot be stomped)
 
 ## Technical Details
 
@@ -82,6 +92,7 @@ The game follows a component-based architecture with:
 Press **DD** (double-tap D) to open the developer menu with options for:
 - God Mode (flying, invincibility, super speed)
 - Level selection with theme preview
+- Physics Debug mode (visualize collision boxes)
 - High score reset
 
 ## License
