@@ -2,140 +2,154 @@
 // No survival tips or strategies, just descriptions
 
 export const LEVEL_INFO = {
-    // Level 1 - Basic introduction
+    // Level 1 - Welcome to Paradise
     1: {
         environment: [
-            'Tropical paradise with waves and palm trees',
-            'Standard platforms with normal physics'
+            'Sun-drenched paradise with swaying palms',
+            'Waves crash rhythmically against pristine sandy platforms',
+            'A perfect day at the beach... if you can avoid the locals'
         ],
         creatures: [
             {
                 emoji: '🚶',
-                name: 'HUMAN',
+                name: 'BEACHGOER',
                 behaviors: [
-                    'Walks back and forth',
-                    'Turns at edges and walls'
+                    'Patrols the shoreline with determined steps',
+                    'Sharp reflexes at platform edges',
+                    'Will not tolerate trespassing seals'
                 ]
             },
             {
                 emoji: '🦀',
                 name: 'CRAB',
                 behaviors: [
-                    'Scuttles sideways quickly',
-                    'Occasionally hops'
+                    'Scuttles sideways with surprising speed',
+                    'Unpredictable jumping bursts',
+                    'Small but feisty guardian of the beach'
                 ]
             }
         ]
     },
 
-    // Level 2 - City theme
+    // Level 2 - Urban Jungle
     2: {
         environment: [
-            'Urban landscape with tall buildings',
-            'Streetlights illuminate the platforms',
-            'Some platforms move up and down'
+            'Towering skyscrapers pierce the skyline',
+            'Neon streetlights cast eerie shadows on moving platforms',
+            'Elevators rise and fall between the concrete giants',
+            'The city never sleeps... and neither do its defenders'
         ],
         creatures: [
             {
                 emoji: '🚶',
-                name: 'HUMAN',
+                name: 'CITY DWELLER',
                 behaviors: [
-                    'Patrols the city streets',
-                    'Turns at building edges'
+                    'Vigilantly patrols the urban corridors',
+                    'Expertly navigates building ledges',
+                    'Not amused by seal invasions'
                 ]
             },
             {
                 emoji: '🦅',
                 name: 'HAWK',
                 behaviors: [
-                    'Circles between buildings',
-                    'Swoops down when spotting movement'
+                    'Circles ominously between skyscrapers',
+                    'Locks onto targets from incredible distances',
+                    'Ascends slowly before unleashing devastating dive attacks',
+                    'Shows 💤 exhaustion after intense hunting',
+                    'Brief rest periods before resuming the hunt'
                 ]
             }
         ]
     },
 
-    // Level 3 - Ocean theme
+    // Level 3 - Into the Abyss
     3: {
         environment: [
-            'Underwater ocean environment - the seal swims!',
-            'Use arrow keys to swim in ALL directions',
-            'Swimming has momentum - smooth turns with inertia',
-            'Underwater platforms hold collectibles',
-            'Swim over platforms to collect items'
+            'UNDERWATER REALM - Your seal transforms into a swimmer!',
+            'Arrow keys enable full 360° swimming',
+            'Momentum-based physics create realistic underwater movement',
+            'Inertia makes every turn a graceful arc through the depths',
+            'Submerged platforms hold precious treasures',
+            'Glide over platforms to claim your bounty'
         ],
         creatures: [
             {
                 emoji: '🐋',
-                name: 'ORCA',
+                name: 'ORCA - APEX PREDATOR',
                 behaviors: [
-                    'Swims faster than hawks fly',
-                    'Detects seal from very far away',
-                    'Ascends slowly before diving attack',
-                    'Lightning-fast diving attacks',
-                    'LETHAL - touching or stomping kills the seal',
-                    'Rests with 💤 after attacking',
-                    'Wakes up quickly to hunt again'
+                    'Patrols with terrifying speed and grace',
+                    'Supernatural detection range spans the ocean',
+                    'Rises ominously before the killing strike',
+                    'LETHAL - Any contact means instant death',
+                    'Cannot be defeated by stomping',
+                    'Dive attacks strike like underwater missiles',
+                    'Shows 💤 exhaustion after each hunt',
+                    'Relentless pursuit resumes quickly'
                 ]
             }
         ]
     },
 
-    // Level 4 - Harbor theme
+    // Level 4 - Industrial Wasteland
     4: {
         environment: [
-            'Industrial docks with cargo containers',
-            'Cranes tower overhead',
-            'Water reflections shimmer below'
+            'Grimy industrial docks stacked with rusting cargo containers',
+            'Massive cranes loom like mechanical monsters',
+            'The smell of diesel and danger fills the air'
         ],
         creatures: [
             {
                 emoji: '🚶',
                 name: 'DOCK WORKER',
                 behaviors: [
-                    'Patrols the loading area',
-                    'Navigates around containers'
+                    'Tirelessly guards the shipping lanes',
+                    'Weaves expertly through container mazes',
+                    'Years of experience spotting stowaways'
                 ]
             },
             {
                 emoji: '🦀',
-                name: 'CRAB',
+                name: 'HARBOR CRAB',
                 behaviors: [
-                    'Scurries along the docks',
-                    'Quick sideways movement'
+                    'Skitters along oil-stained docks',
+                    'Hardened by industrial pollution'
                 ]
             },
             {
                 emoji: '🦅',
                 name: 'SEAGULL',
                 behaviors: [
-                    'Circles the harbor',
-                    'Dives for opportunities'
+                    'Swoops through crane cables and rigging',
+                    'Opportunistic predator of the port',
+                    'Dive-bombs anything that moves'
                 ]
             }
         ]
     },
 
-    // Level 5 - Arctic theme (special mechanics)
+    // Level 5 - Frozen Nightmare
     5: {
         environment: [
-            'Ice platforms are slippery - momentum carries you forward',
-            'Glacier blue platforms are extra slippery and dangerous',
-            'Cracked ice (with visible cracks) breaks after standing',
-            'Floating glacier ice bobs up and down',
-            'Aurora borealis illuminates the sky'
+            'TREACHEROUS ICE PHYSICS - Every step is a gamble',
+            'Standard ice sends you sliding with dangerous momentum',
+            'Glacier blue ice - nearly frictionless death traps',
+            'Cracked platforms shatter beneath your weight',
+            'Floating icebergs bob unpredictably on dark waters',
+            'Aurora borealis dances across the frozen wasteland'
         ],
         creatures: [
             {
                 emoji: '🐻‍❄️',
-                name: 'POLAR BEAR',
+                name: 'POLAR BEAR - ARCTIC TITAN',
                 behaviors: [
-                    'Patrols the ice carefully',
-                    'Shows ❗ alert when detecting intruders',
-                    'Roars before charging',
-                    'Charges at high speed',
-                    'Avoid - touching or stomping kills the seal',
-                    'Needs recovery time after charging'
+                    'Methodically stalks across the frozen terrain',
+                    'Shows ❗ alert stance signaling imminent danger',
+                    'Bone-chilling roar precedes the charge',
+                    'Thunderous charge shakes the ice',
+                    'Cannot be defeated by stomping',
+                    'Heavy breathing during recovery phase',
+                    'Returns to hunting with renewed fury'
                 ]
             }
         ]
@@ -143,114 +157,21 @@ export const LEVEL_INFO = {
 };
 
 // Get info for a specific level
-export function getLevelInfo(level, theme) {
-    // Check if we have specific info for this level
-    if (LEVEL_INFO[level]) {
+export function getLevelInfo(level) {
+    // For levels 1-5, return their specific info
+    if (level >= 1 && level <= 5) {
         return LEVEL_INFO[level];
     }
 
-    // For levels without specific info, generate based on theme
-    return getThemeInfo(theme, level);
+    // For levels 6+, cycle through levels 1-5
+    // Level 6 → Level 1, Level 7 → Level 2, ... Level 11 → Level 1, etc.
+    const cycledLevel = ((level - 1) % 5) + 1;
+    return LEVEL_INFO[cycledLevel];
 }
 
-// Generate theme-based info for levels without specific definitions
-function getThemeInfo(theme, level) {
-    const info = {
-        environment: [],
-        creatures: []
-    };
-
-    switch (theme) {
-        case 'beach':
-            info.environment = [
-                'Sunny beach with palm trees',
-                'Waves crash in the background'
-            ];
-            info.creatures = [
-                { emoji: '🦀', name: 'CRAB', behaviors: ['Sideways scuttling', 'Random hops'] },
-                { emoji: '🚶', name: 'BEACHGOER', behaviors: ['Walking patrol', 'Edge detection'] }
-            ];
-            break;
-
-        case 'city':
-            info.environment = [
-                'Urban environment with skyscrapers',
-                'Moving platforms between buildings'
-            ];
-            info.creatures = [
-                { emoji: '🚶', name: 'PEDESTRIAN', behaviors: ['Street patrol', 'Avoids edges'] },
-                { emoji: '🦅', name: 'PIGEON', behaviors: ['Flying between buildings', 'Swooping dives'] }
-            ];
-            break;
-
-        case 'ocean':
-            info.environment = [
-                'Underwater ocean environment',
-                'Arrow keys control swimming in ALL directions',
-                'Momentum-based movement - smooth turns',
-                'Underwater platforms hold collectibles',
-                'Orcas swim freely throughout the water'
-            ];
-            info.creatures = [
-                { emoji: '🐋', name: 'ORCA', behaviors: ['Fast swimmer with huge detection range', 'Lightning-fast diving attacks', 'LETHAL to touch - kills the seal', 'Rest period after diving'] }
-            ];
-            break;
-
-        case 'harbor':
-            info.environment = [
-                'Industrial port with containers',
-                'Cranes and loading equipment'
-            ];
-            info.creatures = [
-                { emoji: '🚶', name: 'WORKER', behaviors: ['Dock patrol', 'Container navigation'] },
-                { emoji: '🦀', name: 'CRAB', behaviors: ['Quick movement', 'Dock scurrying'] },
-                { emoji: '🦅', name: 'SEAGULL', behaviors: ['Harbor circling', 'Opportunistic dives'] }
-            ];
-            break;
-
-        case 'arctic':
-            // Arctic appears every 5 levels
-            info.environment = [
-                'Ice platforms have slippery momentum physics',
-                'Glacier blue ice is dangerously slippery',
-                'Cracked ice (visible cracks) breaks after standing',
-                'Floating glacier platforms bob up and down',
-                'Northern lights dance overhead'
-            ];
-            info.creatures = [
-                { 
-                    emoji: '🐻‍❄️', 
-                    name: 'POLAR BEAR', 
-                    behaviors: [
-                        'Ice patrol with edge detection',
-                        'Alert state with ❗ indicator',
-                        'Loud roar before action',
-                        'High-speed charging',
-                        'Fatal to touch - stomping kills the seal',
-                        'Cooldown period after charging'
-                    ] 
-                }
-            ];
-            break;
-    }
-
-    return info;
-}
-
-// Check if level should show info screen
+// Check if level should show info screen automatically
 export function shouldShowInfo(level) {
-    // Show info for specific milestone levels
-    const infoLevels = [1, 2, 3, 4, 5];
-    
-    // Always show for defined levels
-    if (infoLevels.includes(level)) {
-        return true;
-    }
-    
-    // Show for every 5th level (Arctic theme)
-    if (level % 5 === 0) {
-        return true;
-    }
-    
-    return false;
+    // Only auto-show info for levels 1-5
+    // Levels 6+ won't auto-show (but user can press 'I' to see cycled info)
+    return level >= 1 && level <= 5;
 }
