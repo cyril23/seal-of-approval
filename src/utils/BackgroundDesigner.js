@@ -473,35 +473,484 @@ export default class BackgroundDesigner {
     }
 
     drawOceanTheme() {
-        // Waves
-        this.graphics.lineStyle(3, 0x2E86AB, 0.6);
-        for (let y = 200; y < this.height - 100; y += 40) {
+        // Phase 1: Water depth gradient (light blue at top to deep blue at bottom)
+        const gradientSteps = 50;
+        for (let i = 0; i < gradientSteps; i++) {
+            const ratio = i / gradientSteps;
+            // From light turquoise to deep ocean blue
+            const color = this.interpolateColor(0x40E0D0, 0x003366, ratio);
+            const stepHeight = Math.ceil(this.height / gradientSteps) + 1;
+            this.graphics.fillStyle(color, 1);
+            this.graphics.fillRect(0, i * (this.height / gradientSteps), this.width, stepHeight);
+        }
+
+        // Phase 2: Sunlight rays filtering through water
+        const rayCount = 5;
+        for (let i = 0; i < rayCount; i++) {
+            const rayX = 150 + i * 200;
+            const rayWidth = 60 + Math.sin(i) * 20;
+            const rayAngle = -0.3 + Math.sin(i * 0.5) * 0.1;
+
+            // Create light ray with gradient opacity
+            for (let y = 0; y < this.height; y += 10) {
+                const opacity = 0.08 * (1 - y / this.height);
+                this.graphics.fillStyle(0xFFFFE0, opacity);
+                const xOffset = y * Math.tan(rayAngle);
+                this.graphics.fillRect(rayX + xOffset, y, rayWidth, 10);
+            }
+        }
+
+
+        // Phase 3: Kelp forest (multiple layers for depth)
+        this.drawKelpForest();
+
+
+
+        // Phase 6: Jellyfish
+        this.drawJellyfish();
+
+        // Phase 7: Ocean floor
+        this.drawOceanFloor();
+
+        // Phase 8: Bubble streams
+        this.drawBubbleStreams();
+
+
+        // Phase 9: Floating sea turtle (mid-ground)
+        this.drawSeaTurtle(600, 350);
+
+    }
+
+    drawKelpForest() {
+        // Draw multiple kelp strands - some reaching the surface
+        const kelpPositions = [
+            { x: 80, layer: 0.25, height: 550, sway: 0.5, type: 'wavy' },
+            { x: 150, layer: 0.4, height: 720, sway: 0.3, type: 'straight' },  // Reaches surface
+            { x: 220, layer: 0.35, height: 500, sway: 0.6, type: 'wavy' },
+            { x: 300, layer: 0.3, height: 750, sway: 0.4, type: 'straight' },  // Reaches surface
+            { x: 680, layer: 0.3, height: 520, sway: 0.45, type: 'wavy' },
+            { x: 780, layer: 0.45, height: 770, sway: 0.35, type: 'straight' }, // Reaches surface
+            { x: 880, layer: 0.35, height: 590, sway: 0.5, type: 'wavy' },
+            { x: 950, layer: 0.25, height: 740, sway: 0.6, type: 'straight' }   // Reaches surface
+        ];
+
+        kelpPositions.forEach(kelp => {
+            if (kelp.type === 'wavy') {
+                this.drawWavyKelpStrand(kelp.x, this.height - 50, kelp.height, kelp.layer, kelp.sway);
+            } else {
+                this.drawStraightKelpStrand(kelp.x, this.height - 50, kelp.height, kelp.layer, kelp.sway);
+            }
+        });
+    }
+
+    drawWavyKelpStrand(x, baseY, height, opacity, swayFactor) {
+        // Draw wavy kelp like in reference - continuous flowing shape
+        const segments = 25;
+        const segmentHeight = height / segments;
+        
+        // Draw main wavy stem
+        this.graphics.lineStyle(12, 0x2D5016, opacity);
+        this.graphics.beginPath();
+        this.graphics.moveTo(x, baseY);
+        
+        const points = [];
+        for (let i = 0; i <= segments; i++) {
+            const y = baseY - i * segmentHeight;
+            const sway = Math.sin(i * 0.2) * (20 + i * 0.5) * swayFactor;
+            points.push({x: x + sway, y: y});
+            this.graphics.lineTo(x + sway, y);
+        }
+        this.graphics.strokePath();
+        
+        // Add flowing leaves along the stem
+        for (let i = 2; i < points.length - 2; i++) {
+            if (i % 3 === 0) {
+                const point = points[i];
+                const leafLength = 40 - i * 0.8;
+                const leafAngle = Math.sin(i * 0.5) * 0.5;
+                
+                // Multiple leaves on each side for fullness
+                for (let side = -1; side <= 1; side += 2) {
+                    this.graphics.fillStyle(0x3A6624, opacity * 0.7);
+                    // Main leaf
+                    this.graphics.fillTriangle(
+                        point.x, point.y,
+                        point.x + leafLength * side, point.y - 10,
+                        point.x + leafLength * 0.8 * side, point.y + 10
+                    );
+                    // Secondary smaller leaf
+                    this.graphics.fillStyle(0x4A7634, opacity * 0.5);
+                    this.graphics.fillTriangle(
+                        point.x, point.y - 5,
+                        point.x + leafLength * 0.6 * side, point.y - 12,
+                        point.x + leafLength * 0.5 * side, point.y + 5
+                    );
+                }
+            }
+        }
+    }
+
+    drawStraightKelpStrand(x, baseY, height, opacity, swayFactor) {
+        // Draw straighter kelp with regular leaves pattern
+        const segments = 20;
+        const segmentHeight = height / segments;
+        
+        // Main stem with slight sway
+        for (let i = 0; i < segments; i++) {
+            const y = baseY - i * segmentHeight;
+            const sway = Math.sin(i * 0.15) * 5 * swayFactor;
+            const width = 15 - i * 0.3;
+            
+            this.graphics.fillStyle(0x2D5016, opacity);
+            this.graphics.fillRect(x + sway - width/2, y - segmentHeight, width, segmentHeight);
+        }
+        
+        // Regular pattern of leaves
+        for (let i = 1; i < segments; i += 2) {
+            const y = baseY - i * segmentHeight;
+            const sway = Math.sin(i * 0.15) * 5 * swayFactor;
+            
+            // Alternating left and right leaves
+            const side = (i % 4 === 1) ? -1 : 1;
+            const leafBase = x + sway;
+            const leafLength = 35 - i * 0.8;
+            
+            // Main blade
+            this.graphics.fillStyle(0x3A6624, opacity * 0.8);
+            this.graphics.fillTriangle(
+                leafBase, y,
+                leafBase + leafLength * side, y - 8,
+                leafBase + leafLength * 0.9 * side, y + 8
+            );
+            
+            // Add detail leaves
+            this.graphics.fillStyle(0x4A7634, opacity * 0.6);
+            this.graphics.fillTriangle(
+                leafBase, y - 10,
+                leafBase + leafLength * 0.7 * side, y - 15,
+                leafBase + leafLength * 0.6 * side, y - 5
+            );
+            this.graphics.fillTriangle(
+                leafBase, y + 10,
+                leafBase + leafLength * 0.7 * side, y + 5,
+                leafBase + leafLength * 0.6 * side, y + 15
+            );
+        }
+    }
+
+
+    drawJellyfish() {
+        // Draw ethereal jellyfish
+        this.drawSingleJellyfish(400, 250, 25, 0.3);
+        this.drawSingleJellyfish(800, 180, 20, 0.25);
+        this.drawSingleJellyfish(200, 400, 30, 0.35);
+        // Additional jellyfish in bottom right
+        this.drawSingleJellyfish(850, 500, 22, 0.28);
+    }
+
+    drawSingleJellyfish(x, y, size, opacity) {
+        // Bell/dome
+        this.graphics.fillStyle(0xFFB6C1, opacity);
+        this.graphics.fillEllipse(x, y, size, size * 0.7);
+
+        // Inner glow layers for translucency
+        this.graphics.fillStyle(0xFFFFFF, opacity * 0.4);
+        this.graphics.fillEllipse(x, y - size * 0.2, size * 0.6, size * 0.4);
+        this.graphics.fillStyle(0xFFE0F0, opacity * 0.3);
+        this.graphics.fillEllipse(x, y, size * 0.8, size * 0.5);
+
+        // Connected flowing tentacles
+        for (let i = 0; i < 8; i++) {
+            const tentacleX = x - size * 0.7 + (size * 0.175) * i;
+            const tentacleLength = size * 2 + Math.sin(i) * size * 0.5;
+            
+            // Draw thicker tentacle base that tapers
+            this.graphics.lineStyle(3, 0xFFB6C1, opacity * 0.5);
             this.graphics.beginPath();
-            this.graphics.moveTo(0, y);
-            for (let x = 0; x < this.width; x += 20) {
-                this.graphics.lineTo(x, y + Math.sin(x * 0.05 + y * 0.1) * 10);
+            this.graphics.moveTo(tentacleX, y + size * 0.35);
+            
+            // Create smooth flowing tentacle
+            for (let j = 0; j <= 8; j++) {
+                const progress = j / 8;
+                const ty = y + size * 0.35 + progress * tentacleLength;
+                const wave = Math.sin(progress * Math.PI * 2 + i * 0.5) * (8 - j * 0.5);
+                const tx = tentacleX + wave;
+                
+                // Taper the tentacle
+                const thickness = 3 * (1 - progress * 0.7);
+                this.graphics.lineStyle(thickness, 0xFFB6C1, opacity * 0.5 * (1 - progress * 0.3));
+                
+                if (j > 0) {
+                    this.graphics.lineTo(tx, ty);
+                }
+            }
+            this.graphics.strokePath();
+            
+            // Add inner glow to tentacles
+            this.graphics.lineStyle(1, 0xFFFFFF, opacity * 0.2);
+            this.graphics.beginPath();
+            this.graphics.moveTo(tentacleX, y + size * 0.35);
+            for (let j = 0; j <= 4; j++) {
+                const progress = j / 4;
+                const ty = y + size * 0.35 + progress * tentacleLength * 0.5;
+                const wave = Math.sin(progress * Math.PI * 2 + i * 0.5) * 4;
+                this.graphics.lineTo(tentacleX + wave, ty);
             }
             this.graphics.strokePath();
         }
+    }
 
-        // Distant ship
-        this.graphics.fillStyle(0x333333, 0.7);
-        this.graphics.fillRect(this.width - 300, 180, 60, 20);
-        this.graphics.fillTriangle(this.width - 300, 180, this.width - 300, 160, this.width - 280, 180);
-        this.graphics.fillRect(this.width - 280, 160, 5, 20);
-        this.graphics.fillRect(this.width - 260, 150, 5, 30);
+    drawOceanFloor() {
+        // Sandy ocean floor
+        this.graphics.fillStyle(0xC2B280, 0.6);
+        this.graphics.fillRect(0, this.height - 50, this.width, 50);
 
-        // Hawks
-        this.graphics.lineStyle(2, 0xFFFFFF, 0.8);
-        const hawks = [[200, 100], [350, 80], [500, 120], [650, 90]];
-        hawks.forEach(([x, y]) => {
+        // Sand ripples
+        this.graphics.lineStyle(1, 0x8B7355, 0.4);
+        for (let x = 0; x < this.width; x += 30) {
             this.graphics.beginPath();
-            this.graphics.arc(x - 10, y, 10, 0, Math.PI * 0.5);
+            this.graphics.moveTo(x, this.height - 45);
+            this.graphics.lineTo(x + 15, this.height - 40);
+            this.graphics.lineTo(x + 30, this.height - 45);
             this.graphics.strokePath();
-            this.graphics.beginPath();
-            this.graphics.arc(x + 10, y, 10, Math.PI * 0.5, Math.PI);
-            this.graphics.strokePath();
+        }
+
+        // Multiple starfish (original + duplicates)
+        this.drawStarfish(250, this.height - 60, 15, 0.6);
+        this.drawStarfish(720, this.height - 65, 12, 0.5);
+        // Additional starfish
+        this.drawStarfish(120, this.height - 58, 14, 0.55);
+        this.drawStarfish(380, this.height - 62, 11, 0.5);
+        this.drawStarfish(550, this.height - 56, 13, 0.6);
+        this.drawStarfish(850, this.height - 63, 10, 0.45);
+
+        // Prominent sunken anchor (tilted on sand)
+        this.drawAnchor(480, this.height - 60, 0.7);
+    }
+
+    drawStarfish(x, y, size, opacity) {
+        this.graphics.fillStyle(0xFF6347, opacity);
+
+        // Draw 5-pointed star
+        for (let i = 0; i < 5; i++) {
+            const angle = (Math.PI * 2 / 5) * i - Math.PI / 2;
+            const nextAngle = (Math.PI * 2 / 5) * (i + 1) - Math.PI / 2;
+
+            const x1 = x + Math.cos(angle) * size;
+            const y1 = y + Math.sin(angle) * size;
+            const x2 = x + Math.cos(angle + Math.PI / 5) * (size * 0.4);
+            const y2 = y + Math.sin(angle + Math.PI / 5) * (size * 0.4);
+
+            this.graphics.fillTriangle(x, y, x1, y1, x2, y2);
+        }
+
+        // Center dot
+        this.graphics.fillStyle(0xFFFFFF, opacity * 0.5);
+        this.graphics.fillCircle(x, y, size * 0.2);
+    }
+
+
+    drawAnchor(x, y, opacity) {
+        // Tilted anchor lying on sand - draw as if rotated 30 degrees
+        this.graphics.fillStyle(0x2C3E50, opacity);
+        
+        // Main shaft (tilted to the right)
+        this.graphics.beginPath();
+        this.graphics.moveTo(x - 20, y);
+        this.graphics.lineTo(x + 25, y - 35);
+        this.graphics.lineTo(x + 30, y - 32);
+        this.graphics.lineTo(x - 15, y + 3);
+        this.graphics.closePath();
+        this.graphics.fillPath();
+
+        // Top ring
+        this.graphics.lineStyle(3, 0x2C3E50, opacity);
+        this.graphics.strokeCircle(x + 30, y - 38, 8);
+        this.graphics.fillStyle(0x40E0D0, 0.2);
+        this.graphics.fillCircle(x + 30, y - 38, 5);
+
+        // Left arm (adjusted for tilt)
+        this.graphics.fillStyle(0x2C3E50, opacity);
+        this.graphics.beginPath();
+        this.graphics.moveTo(x - 20, y);
+        this.graphics.lineTo(x - 35, y - 5);
+        this.graphics.lineTo(x - 40, y - 10);
+        this.graphics.lineTo(x - 35, y - 12);
+        this.graphics.lineTo(x - 30, y - 8);
+        this.graphics.lineTo(x - 18, y - 5);
+        this.graphics.closePath();
+        this.graphics.fillPath();
+        
+        // Left fluke
+        this.graphics.fillTriangle(x - 40, y - 10, x - 48, y - 12, x - 38, y - 5);
+        
+        // Right arm (adjusted for tilt)
+        this.graphics.beginPath();
+        this.graphics.moveTo(x - 15, y + 2);
+        this.graphics.lineTo(x - 5, y - 8);
+        this.graphics.lineTo(x - 2, y - 15);
+        this.graphics.lineTo(x + 3, y - 14);
+        this.graphics.lineTo(x + 2, y - 9);
+        this.graphics.lineTo(x - 10, y - 3);
+        this.graphics.closePath();
+        this.graphics.fillPath();
+        
+        // Right fluke
+        this.graphics.fillTriangle(x - 2, y - 15, x + 3, y - 20, x + 5, y - 12);
+
+        // Crossbar (tilted)
+        this.graphics.beginPath();
+        this.graphics.moveTo(x - 5, y - 15);
+        this.graphics.lineTo(x + 10, y - 25);
+        this.graphics.lineTo(x + 12, y - 22);
+        this.graphics.lineTo(x - 3, y - 12);
+        this.graphics.closePath();
+        this.graphics.fillPath();
+        
+        // Rust/aging effect
+        this.graphics.fillStyle(0x8B4513, opacity * 0.3);
+        this.graphics.fillCircle(x + 5, y - 20, 4);
+        this.graphics.fillCircle(x - 30, y - 5, 3);
+        this.graphics.fillCircle(x + 20, y - 30, 3);
+        
+        // Sand partially burying the anchor
+        this.graphics.fillStyle(0xC2B280, opacity * 0.5);
+        this.graphics.beginPath();
+        this.graphics.moveTo(x - 50, y + 5);
+        this.graphics.lineTo(x + 40, y + 5);
+        this.graphics.lineTo(x + 35, y);
+        this.graphics.lineTo(x - 45, y);
+        this.graphics.closePath();
+        this.graphics.fillPath();
+        
+        // More sand mounds
+        this.graphics.fillEllipse(x - 15, y + 2, 25, 8);
+        this.graphics.fillEllipse(x + 10, y + 1, 20, 6);
+    }
+
+    drawBubbleStreams() {
+        // Rising bubble columns - more spread out to avoid overlap
+        const streams = [
+            { x: 150, baseY: this.height - 50, height: 350, bubbleCount: 10 },
+            { x: 450, baseY: this.height - 65, height: 280, bubbleCount: 8 },
+            { x: 750, baseY: this.height - 55, height: 320, bubbleCount: 9 }
+        ];
+
+        streams.forEach(stream => {
+            // Create more organized bubble pattern
+            for (let i = 0; i < stream.bubbleCount; i++) {
+                // Distribute bubbles more evenly along height
+                const heightProgress = i / stream.bubbleCount;
+                const baseHeight = heightProgress * stream.height;
+                const randomOffset = Math.random() * 30 - 15;
+                const y = stream.baseY - baseHeight - randomOffset;
+                
+                // Gentle sway
+                const x = stream.x + Math.sin(heightProgress * Math.PI * 2) * 8;
+                const size = Math.random() * 3 + 2;
+                const opacity = 0.25 - heightProgress * 0.15;
+
+                this.graphics.fillStyle(0xE0FFFF, opacity);
+                this.graphics.fillCircle(x, y, size);
+
+                // Highlight on bubble
+                this.graphics.fillStyle(0xFFFFFF, opacity * 0.5);
+                this.graphics.fillCircle(x - size * 0.3, y - size * 0.3, size * 0.3);
+                
+                // Add smaller companion bubbles occasionally
+                if (i % 3 === 0) {
+                    const companionX = x + Math.random() * 10 - 5;
+                    const companionY = y + Math.random() * 10 - 5;
+                    this.graphics.fillStyle(0xE0FFFF, opacity * 0.7);
+                    this.graphics.fillCircle(companionX, companionY, size * 0.5);
+                }
+            }
         });
+    }
+
+    drawSeaTurtle(x, y) {
+        const opacity = 0.4;
+
+        // Main shell body (filled, no dark outline)
+        this.graphics.fillStyle(0x556B2F, opacity);
+        this.graphics.fillEllipse(x, y, 45, 35);
+
+        // Shell pattern - scutes (plates)
+        this.graphics.fillStyle(0x6B8E23, opacity * 0.8);
+        // Central scutes
+        this.graphics.fillRect(x - 8, y - 20, 16, 15);
+        this.graphics.fillRect(x - 8, y - 5, 16, 15);
+        this.graphics.fillRect(x - 8, y + 10, 16, 12);
+        
+        // Side scutes
+        this.graphics.fillStyle(0x4A5A1F, opacity * 0.7);
+        this.graphics.fillRect(x - 25, y - 15, 15, 12);
+        this.graphics.fillRect(x + 10, y - 15, 15, 12);
+        this.graphics.fillRect(x - 25, y + 3, 15, 12);
+        this.graphics.fillRect(x + 10, y + 3, 15, 12);
+        
+        // Scute borders
+        this.graphics.lineStyle(1, 0x2A3A0F, opacity * 0.5);
+        this.graphics.strokeRect(x - 8, y - 20, 16, 15);
+        this.graphics.strokeRect(x - 8, y - 5, 16, 15);
+        this.graphics.strokeRect(x - 8, y + 10, 16, 12);
+        this.graphics.strokeRect(x - 25, y - 15, 15, 12);
+        this.graphics.strokeRect(x + 10, y - 15, 15, 12);
+        this.graphics.strokeRect(x - 25, y + 3, 15, 12);
+        this.graphics.strokeRect(x + 10, y + 3, 15, 12);
+
+        // Head (connected to shell)
+        this.graphics.fillStyle(0x6B8E23, opacity);
+        this.graphics.fillEllipse(x + 38, y - 3, 15, 12);
+        // Neck connection
+        this.graphics.fillRect(x + 25, y - 8, 20, 10);
+
+        // Front flippers (connected to body)
+        this.graphics.fillStyle(0x556B2F, opacity);
+        // Top front flipper
+        this.graphics.beginPath();
+        this.graphics.moveTo(x + 15, y - 18);
+        this.graphics.lineTo(x + 45, y - 30);
+        this.graphics.lineTo(x + 50, y - 25);
+        this.graphics.lineTo(x + 35, y - 10);
+        this.graphics.lineTo(x + 20, y - 12);
+        this.graphics.closePath();
+        this.graphics.fillPath();
+        
+        // Bottom front flipper
+        this.graphics.beginPath();
+        this.graphics.moveTo(x + 15, y + 18);
+        this.graphics.lineTo(x + 45, y + 30);
+        this.graphics.lineTo(x + 50, y + 25);
+        this.graphics.lineTo(x + 35, y + 10);
+        this.graphics.lineTo(x + 20, y + 12);
+        this.graphics.closePath();
+        this.graphics.fillPath();
+        
+        // Back flippers (connected to body)
+        // Top back flipper
+        this.graphics.beginPath();
+        this.graphics.moveTo(x - 25, y - 12);
+        this.graphics.lineTo(x - 40, y - 18);
+        this.graphics.lineTo(x - 42, y - 12);
+        this.graphics.lineTo(x - 30, y - 5);
+        this.graphics.closePath();
+        this.graphics.fillPath();
+        
+        // Bottom back flipper
+        this.graphics.beginPath();
+        this.graphics.moveTo(x - 25, y + 12);
+        this.graphics.lineTo(x - 40, y + 18);
+        this.graphics.lineTo(x - 42, y + 12);
+        this.graphics.lineTo(x - 30, y + 5);
+        this.graphics.closePath();
+        this.graphics.fillPath();
+
+        // Eyes
+        this.graphics.fillStyle(0x000000, opacity);
+        this.graphics.fillCircle(x + 42, y - 5, 2);
+        this.graphics.fillStyle(0xFFFFFF, opacity * 0.5);
+        this.graphics.fillCircle(x + 43, y - 6, 1);
     }
 
     drawHarborTheme() {
@@ -516,25 +965,25 @@ export default class BackgroundDesigner {
         // Ship lower hull (red/rust colored)
         this.graphics.fillStyle(0x8B4040, 0.3);
         this.graphics.fillRect(400, 275, 280, 15);
-        
+
         // White superstructure/bridge at stern (right side)
         this.graphics.fillStyle(0xE0E0E0, 0.3);
         this.graphics.fillRect(620, 220, 50, 30);
         this.graphics.fillRect(630, 210, 30, 10);
         this.graphics.fillRect(635, 200, 20, 10);
-        
+
         // Bridge windows
         this.graphics.fillStyle(0x404040, 0.3);
         this.graphics.fillRect(625, 225, 8, 5);
         this.graphics.fillRect(635, 225, 8, 5);
         this.graphics.fillRect(645, 225, 8, 5);
         this.graphics.fillRect(655, 225, 8, 5);
-        
+
         // Smokestacks on bridge
         this.graphics.fillStyle(0x505050, 0.3);
         this.graphics.fillRect(640, 195, 4, 5);
         this.graphics.fillRect(646, 195, 4, 5);
-        
+
         // Container stacks on deck (subtle grey tones)
         this.graphics.fillStyle(0x606060, 0.25);
         this.graphics.fillRect(420, 240, 40, 10);
@@ -544,7 +993,7 @@ export default class BackgroundDesigner {
         this.graphics.fillRect(450, 230, 40, 10);
         this.graphics.fillRect(500, 230, 40, 10);
         this.graphics.fillRect(550, 230, 40, 10);
-        
+
         // Deck railing line
         this.graphics.lineStyle(1, 0x808080, 0.2);
         this.graphics.lineBetween(400, 250, 680, 250);
@@ -556,24 +1005,24 @@ export default class BackgroundDesigner {
         // Ship lower hull (red/rust colored)
         this.graphics.fillStyle(0x8B4040, 0.4);
         this.graphics.fillRect(750, 260, 160, 10);
-        
+
         // White bridge/superstructure at stern
         this.graphics.fillStyle(0xE0E0E0, 0.4);
         this.graphics.fillRect(860, 215, 40, 25);
         this.graphics.fillRect(870, 205, 20, 10);
-        
+
         // Bridge windows
         this.graphics.fillStyle(0x404040, 0.4);
         this.graphics.fillRect(865, 220, 6, 4);
         this.graphics.fillRect(873, 220, 6, 4);
         this.graphics.fillRect(881, 220, 6, 4);
         this.graphics.fillRect(889, 220, 6, 4);
-        
+
         // Smokestack
         this.graphics.fillStyle(0x505050, 0.4);
         this.graphics.fillRect(877, 200, 3, 5);
         this.graphics.fillRect(882, 200, 3, 5);
-        
+
         // Container stacks (subtle)
         this.graphics.fillStyle(0x606060, 0.3);
         this.graphics.fillRect(760, 232, 30, 8);
@@ -581,7 +1030,7 @@ export default class BackgroundDesigner {
         this.graphics.fillRect(830, 232, 25, 8);
         this.graphics.fillRect(780, 224, 30, 8);
         this.graphics.fillRect(815, 224, 30, 8);
-        
+
         // Deck railing
         this.graphics.lineStyle(1, 0x808080, 0.25);
         this.graphics.lineBetween(750, 240, 910, 240);
@@ -732,7 +1181,7 @@ export default class BackgroundDesigner {
         // Beak
         this.graphics.fillStyle(0xFFD700, 0.7);
         this.graphics.fillRect(293, 121, 2, 1);
-        
+
         // Second similar seagull at x:350, y:130 (more transparent, forming triangle)
         this.graphics.fillStyle(0xFFFFFF, 0.5); // More transparent
         this.graphics.fillRect(345, 130, 10, 4); // Body
@@ -749,7 +1198,7 @@ export default class BackgroundDesigner {
         // Beak
         this.graphics.fillStyle(0xFFD700, 0.5);
         this.graphics.fillRect(343, 131, 2, 1);
-        
+
         // Third similar seagull at x:250, y:130 (even more transparent)
         this.graphics.fillStyle(0xFFFFFF, 0.45); // Even more transparent
         this.graphics.fillRect(245, 130, 10, 4); // Body
@@ -766,7 +1215,7 @@ export default class BackgroundDesigner {
         // Beak
         this.graphics.fillStyle(0xFFD700, 0.45);
         this.graphics.fillRect(243, 131, 2, 1);
-        
+
         // Rightmost seagull at x:750, y:140 (with clearer, more spread wings)
         this.graphics.fillStyle(0xFFFFFF, 0.65);
         this.graphics.fillRect(746, 140, 12, 4); // Slightly larger body
