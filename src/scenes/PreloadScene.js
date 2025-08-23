@@ -57,6 +57,10 @@ export default class PreloadScene extends Phaser.Scene {
                 // Also create the default seal texture for compatibility
                 canvas.width = 32;
                 canvas.height = 32;
+                // Clear the canvas and reset context after resize to prevent artifacts
+                ctx.clearRect(0, 0, 32, 32);
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
             }
             
             // Create standard texture for all emojis (including seal)

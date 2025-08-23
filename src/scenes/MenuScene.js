@@ -14,7 +14,7 @@ export default class MenuScene extends Phaser.Scene {
         this.audioManager.playBackgroundMusic('ocean');
         this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'bg_ocean');
 
-        const titleText = this.add.text(GAME_WIDTH / 2, 150, '🦭 SEAL OF APPROVAL', {
+        const titleText = this.add.text(GAME_WIDTH / 2, 150, 'SEAL OF APPROVAL', {
             fontSize: '48px',
             fontFamily: '"Press Start 2P", monospace',
             color: '#ffffff',
