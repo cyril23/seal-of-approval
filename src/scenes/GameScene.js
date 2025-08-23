@@ -7,6 +7,7 @@ import ScoreManager from '../managers/ScoreManager.js';
 import InfoOverlay from '../ui/InfoOverlay.js';
 import { getLevelInfo, shouldShowInfo } from '../utils/gameInfo.js';
 import { GAME_WIDTH, GAME_HEIGHT, LEVEL_WIDTH, LEVEL, THEMES, CAMERA, SCORING, DEBUG } from '../utils/constants.js';
+import logger from '../utils/logger.js';
 
 export default class GameScene extends Phaser.Scene {
     constructor() {
@@ -39,22 +40,22 @@ export default class GameScene extends Phaser.Scene {
         if (!isRestart) {
             this.levelStartLives = this.initialLives;
             this.levelStartScore = this.initialScore;
-            console.log('GameScene.init() - NEW LEVEL - Saved checkpoint:',
+            logger.info('GameScene.init() - NEW LEVEL - Saved checkpoint:',
                 'lives:', this.levelStartLives, 'score:', this.levelStartScore);
         } else {
             // On restart, use the saved checkpoint values
             this.initialLives = this.levelStartLives;
             this.initialScore = this.levelStartScore;
-            console.log('GameScene.init() - RESTART - Restoring checkpoint:',
+            logger.info('GameScene.init() - RESTART - Restoring checkpoint:',
                 'lives:', this.levelStartLives, 'score:', this.levelStartScore);
         }
 
-        console.log('GameScene.init() - Starting level:', this.currentLevel,
+        logger.info('GameScene.init() - Starting level:', this.currentLevel,
             'with score:', this.initialScore, 'and lives:', this.initialLives);
     }
 
     create() {
-        console.log('GameScene.create() starting...');
+        logger.debug('GameScene.create() starting...');
 
         // Reset goal reached flag when scene starts/restarts
         this.goalReached = false;
@@ -65,11 +66,11 @@ export default class GameScene extends Phaser.Scene {
         // Explicitly reset dev menu flag when scene starts
         // This ensures it's always false regardless of how the scene was started
         this.isDevMenuOpen = false;
-        console.log('[INIT] Dev menu flag reset to false');
+        logger.debug('[INIT] Dev menu flag reset to false');
 
         // Reset time remaining when scene starts/restarts
         this.timeRemaining = LEVEL.TIME_LIMIT;
-        console.log('Starting level with time:', this.timeRemaining);
+        logger.debug('Starting level with time:', this.timeRemaining);
 
         // Set up world bounds for side-scrolling
         // Extend bottom boundary by 200px so seal visually falls off screen before dying
@@ -81,28 +82,28 @@ export default class GameScene extends Phaser.Scene {
         const themeKeys = Object.keys(THEMES);
         const themeIndex = (this.currentLevel - 1) % themeKeys.length;
         this.currentTheme = THEMES[themeKeys[themeIndex]];
-        console.log(`Level ${this.currentLevel} - Theme: ${this.currentTheme.name}`);
+        logger.info(`Level ${this.currentLevel} - Theme: ${this.currentTheme.name}`);
 
         // Create tiling background
-        console.log('Creating scrolling background...');
+        logger.debug('Creating scrolling background...');
         this.createScrollingBackground();
 
-        console.log('Initializing managers...');
+        logger.debug('Initializing managers...');
         this.levelGenerator = new LevelGenerator(this);
         this.scoreManager = new ScoreManager(this, this.initialScore);
         // Use global AudioManager and set scene context
         this.audioManager = this.game.audioManager;
         this.audioManager.setScene(this);
 
-        console.log('Creating physics groups...');
+        logger.debug('Creating physics groups...');
         this.platforms = this.physics.add.staticGroup();
         this.enemies = this.physics.add.group();
         this.collectibles = this.physics.add.group();
 
-        console.log('Generating level...');
+        logger.debug('Generating level...');
         this.levelGenerator.generateLevel(this.currentTheme, this.currentLevel);
 
-        console.log('Creating player...');
+        logger.debug('Creating player...');
         // Start player at left side of level
         // Pass lives from previous level, or null for default (level 1)
         this.player = new Seal(this, 200, GAME_HEIGHT - 200, this.initialLives);
@@ -111,7 +112,7 @@ export default class GameScene extends Phaser.Scene {
 
         // Apply debug settings if enabled
         if (DEBUG.PHYSICS_ENABLED) {
-            console.log('Enabling physics debug graphics by default');
+            logger.debug('Enabling physics debug graphics by default');
             this.player.setPhysicsDebugEnabled(true);
         }
 
@@ -119,11 +120,11 @@ export default class GameScene extends Phaser.Scene {
         // Keep setCollideWorldBounds false to allow free movement left/right/up
         this.player.sprite.body.onWorldBounds = true;
 
-        console.log('Setting up camera...');
+        logger.debug('Setting up camera...');
         // Set up camera to follow player
         this.setupCamera();
 
-        console.log('Setting up collisions...');
+        logger.debug('Setting up collisions...');
         this.setupCollisions();
 
         // Listen for world bounds collisions (specifically bottom boundary)
@@ -132,8 +133,8 @@ export default class GameScene extends Phaser.Scene {
             if (body === this.player.sprite.body && blockedDown) {
                 // Only process fall death once (flag properly reset in create())
                 if (!this.playerFalling) {
-                    console.log(`Player hit bottom world boundary at size ${this.player.currentSize} - triggering fall death`);
-                    console.log(`Seal Y position: ${this.player.sprite.y.toFixed(1)}, Body bottom: ${body.bottom.toFixed(1)}`);
+                    logger.debug(`Player hit bottom world boundary at size ${this.player.currentSize} - triggering fall death`);
+                    logger.debug(`Seal Y position: ${this.player.sprite.y.toFixed(1)}, Body bottom: ${body.bottom.toFixed(1)}`);
                     
                     // Disable collision to allow sprite to fall through
                     this.player.sprite.setCollideWorldBounds(false);
@@ -141,18 +142,18 @@ export default class GameScene extends Phaser.Scene {
                 }
             }
         });
-        console.log('Setting up controls...');
+        logger.debug('Setting up controls...');
         this.setupControls();
-        console.log('Creating UI...');
+        logger.debug('Creating UI...');
         this.createUI();
         this.updateUI(); // Initialize UI with correct values immediately
-        console.log('Starting timer...');
+        logger.debug('Starting timer...');
         this.startTimer();
 
         // Track distance traveled
         this.maxDistanceTraveled = 0;
 
-        console.log('Starting background music...');
+        logger.debug('Starting background music...');
         // Start in-game background music
         this.audioManager.playBackgroundMusic(this.currentTheme.name, true);
 
@@ -165,39 +166,39 @@ export default class GameScene extends Phaser.Scene {
 
         // Clear dev menu flag when scene resumes
         this.events.on('resume', () => {
-            console.log('GameScene resumed, clearing dev menu flag');
+            logger.debug('GameScene resumed, clearing dev menu flag');
             this.isDevMenuOpen = false;
         });
 
-        console.log('Fading in camera...');
+        logger.debug('Fading in camera...');
         this.cameras.main.fadeIn(500);
 
         // Create info overlay
         this.infoOverlay = new InfoOverlay(this);
 
         // Always get level info (for manual 'I' key access)
-        console.log('[INIT] Getting level info for level', this.currentLevel);
+        logger.debug('[INIT] Getting level info for level', this.currentLevel);
         this.currentLevelInfo = getLevelInfo(this.currentLevel);
-        console.log('[INIT] Level info retrieved:', !!this.currentLevelInfo);
+        logger.debug('[INIT] Level info retrieved:', !!this.currentLevelInfo);
 
         // Check if we should auto-show info for this level (levels 1-5 only)
         if (shouldShowInfo(this.currentLevel)) {
-            console.log('[INIT] Auto-showing info for level', this.currentLevel);
+            logger.debug('[INIT] Auto-showing info for level', this.currentLevel);
             this.showLevelInfo();
         } else {
-            console.log('[INIT] Not auto-showing info for level', this.currentLevel, '- starting immediately');
+            logger.debug('[INIT] Not auto-showing info for level', this.currentLevel, '- starting immediately');
             this.isLevelStarted = true;
         }
 
-        console.log('GameScene.create() complete!');
-        console.log('Game controls: R = Restart Level, P = Pause, M = Mute, I = Info, S = Screenshot, DD = Dev Mode');
+        logger.debug('GameScene.create() complete!');
+        logger.info('Game controls: R = Restart Level, P = Pause, M = Mute, I = Info, S = Screenshot, DD = Dev Mode');
     }
 
     createScrollingBackground() {
         // Create multiple background images to tile across the level
         // Calculate exact number needed to cover full level width
         const bgCount = Math.ceil(LEVEL_WIDTH / GAME_WIDTH) + 1;
-        console.log(`Creating ${bgCount} background tiles to cover level width ${LEVEL_WIDTH}`);
+        logger.debug(`Creating ${bgCount} background tiles to cover level width ${LEVEL_WIDTH}`);
 
         let actualCoverage = 0;
         for (let i = 0; i < bgCount; i++) {
@@ -209,20 +210,20 @@ export default class GameScene extends Phaser.Scene {
 
                 // Debug: log each background position
                 const rightEdge = x + GAME_WIDTH;
-                console.log(`  Background ${i}: x=${x}, covers ${x} to ${rightEdge}`);
+                logger.debug(`  Background ${i}: x=${x}, covers ${x} to ${rightEdge}`);
                 actualCoverage = Math.max(actualCoverage, rightEdge);
 
                 // Debug: Check if image loaded correctly
                 if (!bg.texture || bg.texture.key === '__MISSING') {
-                    console.error(`  WARNING: Background texture failed to load for ${this.currentTheme.name}`);
+                    logger.error(`  WARNING: Background texture failed to load for ${this.currentTheme.name}`);
                 }
             }
         }
 
-        console.log(`Actual background coverage: 0 to ${actualCoverage} (need ${LEVEL_WIDTH})`);
+        logger.debug(`Actual background coverage: 0 to ${actualCoverage} (need ${LEVEL_WIDTH}`);
 
         if (actualCoverage < LEVEL_WIDTH) {
-            console.error(`WARNING: Background coverage insufficient! Gap from ${actualCoverage} to ${LEVEL_WIDTH}`);
+            logger.error(`WARNING: Background coverage insufficient! Gap from ${actualCoverage} to ${LEVEL_WIDTH}`);
         }
 
         // Add celestial objects (sun/moon) that appear only once
@@ -246,7 +247,7 @@ export default class GameScene extends Phaser.Scene {
             moonGraphics.fillStyle(0x0A1929, 1); // Use sky color for overlay
             moonGraphics.fillCircle(moonX - 15, moonY - 5, moonRadius);
             
-            console.log('City crescent moon added at position:', moonX, moonY);
+            logger.debug('City crescent moon added at position:', moonX, moonY);
             
             // Add repeating blinking stars across entire level
             this.createRepeatingStars();
@@ -261,7 +262,7 @@ export default class GameScene extends Phaser.Scene {
             sunGraphics.y = 150;
             
             // Sun stays at fixed world position (doesn't scroll with camera)
-            console.log('Beach sun added at position:', sunGraphics.x, sunGraphics.y);
+            logger.debug('Beach sun added at position:', sunGraphics.x, sunGraphics.y);
         }
     }
 
@@ -311,7 +312,7 @@ export default class GameScene extends Phaser.Scene {
             });
         }
         
-        console.log(`Created ${starsPerScreen * screenCount} stars across ${screenCount} screens`);
+        logger.debug(`Created ${starsPerScreen * screenCount} stars across ${screenCount} screens`);
     }
 
     setupCamera() {
@@ -356,17 +357,17 @@ export default class GameScene extends Phaser.Scene {
         this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
         this.input.keyboard.on('keydown-P', () => {
-            console.log('[P KEY] Pressed - Checking conditions...');
+            logger.debug('[P KEY] Pressed - Checking conditions...');
             // Ignore P key if info overlay is showing or dev menu is open
             if (this.infoOverlay && this.infoOverlay.isShowing) {
-                console.log('[P KEY] Blocked - Info overlay is showing');
+                logger.debug('[P KEY] Blocked - Info overlay is showing');
                 return;
             }
             if (this.isDevMenuOpen) {
-                console.log('[P KEY] Blocked - Dev menu is open');
+                logger.debug('[P KEY] Blocked - Dev menu is open');
                 return;
             }
-            console.log('[P KEY] Toggling pause');
+            logger.debug('[P KEY] Toggling pause');
             this.togglePause();
         });
 
@@ -386,38 +387,38 @@ export default class GameScene extends Phaser.Scene {
 
         // Info overlay hotkey - toggles on/off
         this.input.keyboard.on('keydown-I', () => {
-            console.log('[I KEY] Pressed - Level:', this.currentLevel);
-            console.log('[I KEY] Checking conditions:');
-            console.log('  - isPaused:', this.isPaused);
-            console.log('  - isDevMenuOpen:', this.isDevMenuOpen);
-            console.log('  - currentLevelInfo exists:', !!this.currentLevelInfo);
-            console.log('  - isLevelStarted:', this.isLevelStarted);
+            logger.debug('[I KEY] Pressed - Level:', this.currentLevel);
+            logger.debug('[I KEY] Checking conditions:');
+            logger.debug('  - isPaused:', this.isPaused);
+            logger.debug('  - isDevMenuOpen:', this.isDevMenuOpen);
+            logger.debug('  - currentLevelInfo exists:', !!this.currentLevelInfo);
+            logger.debug('  - isLevelStarted:', this.isLevelStarted);
             
             // Ignore I key if game is paused or dev menu is open
             if (this.isPaused) {
-                console.log('[I KEY] Blocked - Game is paused');
+                logger.debug('[I KEY] Blocked - Game is paused');
                 return;
             }
             if (this.isDevMenuOpen) {
-                console.log('[I KEY] Blocked - Dev menu is open');
+                logger.debug('[I KEY] Blocked - Dev menu is open');
                 return;
             }
             
             // Toggle info overlay if we have info and level has started
             if (this.currentLevelInfo && this.isLevelStarted) {
                 if (this.infoOverlay.isShowing) {
-                    console.log('[I KEY] Hiding info overlay');
+                    logger.debug('[I KEY] Hiding info overlay');
                     // Hide if showing
                     this.infoOverlay.hide();
                 } else {
-                    console.log('[I KEY] Showing info overlay');
+                    logger.debug('[I KEY] Showing info overlay');
                     // Show if hidden
                     this.showLevelInfo();
                 }
             } else {
-                console.log('[I KEY] Cannot toggle - missing requirements');
-                if (!this.currentLevelInfo) console.log('  - No level info available');
-                if (!this.isLevelStarted) console.log('  - Level not started yet');
+                logger.debug('[I KEY] Cannot toggle - missing requirements');
+                if (!this.currentLevelInfo) logger.debug('  - No level info available');
+                if (!this.isLevelStarted) logger.debug('  - Level not started yet');
             }
         });
 
@@ -430,16 +431,16 @@ export default class GameScene extends Phaser.Scene {
         this.input.keyboard.on('keydown-D', () => {
             const currentTime = this.time.now;
             const timeSinceLastD = currentTime - this.lastDKeyTime;
-            console.log('[D KEY] Pressed - Time since last D:', timeSinceLastD, 'ms');
+            logger.debug('[D KEY] Pressed - Time since last D:', timeSinceLastD, 'ms');
 
             // Check for double-D press (within 300ms)
             if (timeSinceLastD < 300) {
-                console.log('[DD] Double-D detected! Opening developer menu');
+                logger.info('[DD] Double-D detected! Opening developer menu');
                 // Double-D pressed - open developer menu
                 this.openDeveloperMenu();
                 this.lastDKeyTime = 0; // Reset to prevent triple press
             } else {
-                console.log('[D KEY] Single D press - waiting for potential double-D');
+                logger.debug('[D KEY] Single D press - waiting for potential double-D');
                 // Single D press - just update time for double-D detection
                 this.lastDKeyTime = currentTime;
             }
@@ -563,7 +564,7 @@ export default class GameScene extends Phaser.Scene {
                     this.updateUI();
 
                     if (this.timeRemaining <= 0) {
-                        console.log('Time ran out! Game over.');
+                        logger.info('Time ran out! Game over.');
                         this.gameOver();
                     }
 
@@ -580,10 +581,10 @@ export default class GameScene extends Phaser.Scene {
     handleCollectiblePickup(collectible) {
         const data = collectible.getData('collectibleData');
 
-        console.log(`Collecting ${data.type} at position (${collectible.x.toFixed(0)}, ${collectible.y.toFixed(0)})`);
-        console.log(`Player position before: (${this.player.sprite.x.toFixed(0)}, ${this.player.sprite.y.toFixed(0)})`);
-        console.log(`Player velocity before: (${this.player.sprite.body.velocity.x.toFixed(0)}, ${this.player.sprite.body.velocity.y.toFixed(0)})`);
-        console.log(`Player on ground before: ${this.player.sprite.body.blocked.down || this.player.sprite.body.touching.down}`);
+        logger.debug(`Collecting ${data.type} at position (${collectible.x.toFixed(0)}, ${collectible.y.toFixed(0)})`);
+        logger.debug(`Player position before: (${this.player.sprite.x.toFixed(0)}, ${this.player.sprite.y.toFixed(0)})`);
+        logger.debug(`Player velocity before: (${this.player.sprite.body.velocity.x.toFixed(0)}, ${this.player.sprite.body.velocity.y.toFixed(0)})`);
+        logger.debug(`Player on ground before: ${this.player.sprite.body.blocked.down || this.player.sprite.body.touching.down}`);
 
         if (data.type === 'fish') {
             // Grow the seal when eating fish
@@ -596,7 +597,7 @@ export default class GameScene extends Phaser.Scene {
             this.scoreManager.addScore(points);
             this.showScorePopup(collectible.x, collectible.y, `+${points} FISH!`, 0x00ff00);
             this.audioManager.playSound('eat');
-            console.log(`Fish eaten! Score: +${points}, Size: ${this.player.currentSize}`);
+            logger.debug(`Fish eaten! Score: +${points}, Size: ${this.player.currentSize}`);
         } else if (data.type === 'star') {
             this.player.setInvincible(10000);
             this.showScorePopup(collectible.x, collectible.y, 'INVINCIBLE!', 0xffff00);
@@ -648,7 +649,7 @@ export default class GameScene extends Phaser.Scene {
                 this.player.takeDamage();
                 this.audioManager.playSound('hurt');
                 
-                console.log(`Player tried to stomp a ${enemy.type}! Taking damage instead.`);
+                logger.info(`Player tried to stomp a ${enemy.type}! Taking damage instead.`);
                 
                 if (this.player.lives <= 0) {
                     this.gameOver();
@@ -727,7 +728,7 @@ export default class GameScene extends Phaser.Scene {
         this.player.lives--;
         this.audioManager.playSound('fall');
 
-        console.log('Player fell to death. Lives remaining:', this.player.lives);
+        logger.info('Player fell to death. Lives remaining:', this.player.lives);
 
         if (this.player.lives <= 0) {
             this.gameOver();
@@ -815,16 +816,16 @@ export default class GameScene extends Phaser.Scene {
     }
 
     togglePause() {
-        console.log('[PAUSE] Toggling pause from', this.isPaused, 'to', !this.isPaused);
+        logger.debug('[PAUSE] Toggling pause from', this.isPaused, 'to', !this.isPaused);
         this.isPaused = !this.isPaused;
         this.pauseText.setVisible(this.isPaused);
 
         if (this.isPaused) {
             this.physics.pause();
-            console.log('[PAUSE] Game paused');
+            logger.info('[PAUSE] Game paused');
         } else {
             this.physics.resume();
-            console.log('[PAUSE] Game resumed');
+            logger.info('[PAUSE] Game resumed');
         }
     }
 
@@ -840,24 +841,24 @@ export default class GameScene extends Phaser.Scene {
 
         // Visual feedback
         if (newState) {
-            console.log('Developer Mode: ENABLED');
+            logger.info('Developer Mode: ENABLED');
         } else {
-            console.log('Developer Mode: DISABLED');
+            logger.info('Developer Mode: DISABLED');
         }
     }
 
     openDeveloperMenu() {
-        console.log('Opening Developer Menu...');
+        logger.debug('Opening Developer Menu...');
 
         // Close info overlay instantly if it's showing
         if (this.infoOverlay && this.infoOverlay.isShowing) {
-            console.log('Closing info overlay before opening developer menu');
+            logger.debug('Closing info overlay before opening developer menu');
             this.infoOverlay.hide(true);  // true = instant hide without animation
         }
 
         // Clear pause state if game is paused
         if (this.isPaused) {
-            console.log('Clearing pause state before opening developer menu');
+            logger.debug('Clearing pause state before opening developer menu');
             this.isPaused = false;
             this.pauseText.setVisible(false);
             this.physics.resume();
@@ -882,12 +883,12 @@ export default class GameScene extends Phaser.Scene {
         const bodyPos = this.player.sprite.body ?
             `Body: (${this.player.sprite.body.x.toFixed(0)}, ${this.player.sprite.body.y.toFixed(0)})` : 'Body: N/A';
 
-        console.log(`=== SCREENSHOT CAPTURE ===`);
-        console.log(`Progress: ${progress}% (Position: ${this.player.sprite.x.toFixed(0)} / ${LEVEL.GOAL_POSITION})`);
-        console.log(`Player: ${playerPos}, ${bodyPos}`);
-        console.log(`Theme: ${this.currentTheme.name}`);
-        console.log(`Lives: ${this.player.lives}, Score: ${this.scoreManager.score}`);
-        console.log(`On Ground: ${this.player.sprite.body ? this.player.sprite.body.blocked.down : 'N/A'}`);
+        logger.info(`=== SCREENSHOT CAPTURE ===`);
+        logger.info(`Progress: ${progress}% (Position: ${this.player.sprite.x.toFixed(0)} / ${LEVEL.GOAL_POSITION})`);
+        logger.info(`Player: ${playerPos}, ${bodyPos}`);
+        logger.info(`Theme: ${this.currentTheme.name}`);
+        logger.info(`Lives: ${this.player.lives}, Score: ${this.scoreManager.score}`);
+        logger.info(`On Ground: ${this.player.sprite.body ? this.player.sprite.body.blocked.down : 'N/A'}`);
 
         // Capture the current game canvas
         this.game.renderer.snapshot((image) => {
@@ -898,8 +899,8 @@ export default class GameScene extends Phaser.Scene {
             link.href = image.src;
             link.click();
 
-            console.log('Screenshot saved as:', link.download);
-            console.log(`=========================`);
+            logger.info('Screenshot saved as:', link.download);
+            logger.info(`=========================`);
 
             // Show visual feedback
             this.cameras.main.flash(100, 255, 255, 255, true);
@@ -960,24 +961,24 @@ export default class GameScene extends Phaser.Scene {
     }
 
     showLevelInfo() {
-        console.log('[INFO OVERLAY] showLevelInfo() called for level', this.currentLevel);
+        logger.debug('[INFO OVERLAY] showLevelInfo() called for level', this.currentLevel);
         // Pause physics and timer
         this.physics.pause();
         this.isLevelStarted = false;
 
         // Get info for this level (or use stored info if available)
         if (!this.currentLevelInfo) {
-            console.log('[INFO OVERLAY] Fetching level info for level', this.currentLevel);
+            logger.debug('[INFO OVERLAY] Fetching level info for level', this.currentLevel);
             this.currentLevelInfo = getLevelInfo(this.currentLevel);
         }
 
         // Show the overlay
-        console.log('[INFO OVERLAY] Showing overlay with theme:', this.currentTheme.name);
+        logger.debug('[INFO OVERLAY] Showing overlay with theme:', this.currentTheme.name);
         this.infoOverlay.show(this.currentLevel, this.currentTheme.name, this.currentLevelInfo);
     }
 
     onInfoOverlayHidden() {
-        console.log('[INFO OVERLAY] Hidden - resuming game');
+        logger.debug('[INFO OVERLAY] Hidden - resuming game');
         // Resume physics and start the level
         this.physics.resume();
         this.isLevelStarted = true;

@@ -1,10 +1,11 @@
 import Phaser from 'phaser';
 import { PHYSICS, PLAYER, GAME_HEIGHT, SIZE_SYSTEM, SIZE_EFFECTS } from '../utils/constants.js';
+import logger from '../utils/logger.js';
 
 export default class Seal {
     constructor(scene, x, y, lives = null) {
         // Version tracking for cache verification
-        console.log('Seal.js Version: 2.0 - Size growth system');
+        logger.debug('Seal.js Version: 2.0 - Size growth system');
 
         this.scene = scene;
         // Start with size 1 texture
@@ -147,7 +148,7 @@ export default class Seal {
 
         // Log collision state changes for debugging
         if (this.wasOnGround !== onGround) {
-            console.log(`Ground state changed: ${this.wasOnGround} -> ${onGround} at Y: ${this.sprite.y.toFixed(0)}`);
+            logger.debug(`Ground state changed: ${this.wasOnGround} -> ${onGround} at Y: ${this.sprite.y.toFixed(0)}`);
             this.wasOnGround = onGround;
         }
 
@@ -259,9 +260,9 @@ export default class Seal {
 
         // Enhanced debugging output for offset tuning
         const mathCenterX = (baseWidth - bodyWidth) / 2;
-        console.log(`Size ${this.currentSize}: texture=${baseWidth}x${baseHeight}`);
-        console.log(`  Body: ${bodyWidth.toFixed(1)}x${bodyHeight.toFixed(1)}, Offsets: X=${offsetX} Y=${offsetY}`);
-        console.log(`  Math center would be X=${mathCenterX.toFixed(1)}, using visual center X=${offsetX}`);
+        logger.debug(`Size ${this.currentSize}: texture=${baseWidth}x${baseHeight}`);
+        logger.debug(`  Body: ${bodyWidth.toFixed(1)}x${bodyHeight.toFixed(1)}, Offsets: X=${offsetX} Y=${offsetY}`);
+        logger.debug(`  Math center would be X=${mathCenterX.toFixed(1)}, using visual center X=${offsetX}`);
 
         // Refresh physics body visualizer if active (in dev mode)
         if (this.physicsDebugGraphics) {
@@ -291,7 +292,7 @@ export default class Seal {
                 this.scene.audioManager.playSound('grow');
             }
 
-            console.log(`Seal grew to size ${this.currentSize}, Y adjusted to maintain ground contact`);
+            logger.debug(`Seal grew to size ${this.currentSize}, Y adjusted to maintain ground contact`);
         }
     }
 
@@ -316,7 +317,7 @@ export default class Seal {
                 this.scene.audioManager.playSound('shrink');
             }
 
-            console.log(`Seal shrunk to size ${this.currentSize}, Y adjusted to maintain ground contact`);
+            logger.debug(`Seal shrunk to size ${this.currentSize}, Y adjusted to maintain ground contact`);
         }
     }
 
@@ -601,7 +602,7 @@ export default class Seal {
 
         if (enabled) {
             // Enable developer mode
-            console.log('Seal: Developer mode ENABLED');
+            logger.info('Seal: Developer mode ENABLED');
 
             // Disable gravity for flying
             this.sprite.body.setAllowGravity(false);
@@ -636,7 +637,7 @@ export default class Seal {
             // Note: Physics debug is now separate - use setPhysicsDebugEnabled() to toggle
         } else {
             // Disable developer mode
-            console.log('Seal: Developer mode DISABLED');
+            logger.info('Seal: Developer mode DISABLED');
 
             // Re-enable gravity
             this.sprite.body.setAllowGravity(true);
@@ -730,10 +731,10 @@ export default class Seal {
         this.physicsDebugEnabled = enabled;
 
         if (enabled) {
-            console.log('Seal: Physics debug ENABLED');
+            logger.info('Seal: Physics debug ENABLED');
             this.createPhysicsBodyVisualizer();
         } else {
-            console.log('Seal: Physics debug DISABLED');
+            logger.info('Seal: Physics debug DISABLED');
             this.removePhysicsBodyVisualizer();
         }
     }
@@ -742,7 +743,7 @@ export default class Seal {
         this.isSwimming = enabled;
 
         if (enabled) {
-            console.log('Seal: Swimming mode ENABLED (Ocean theme)');
+            logger.debug('Seal: Swimming mode ENABLED (Ocean theme)');
             // Disable gravity for swimming
             this.sprite.body.setAllowGravity(false);
             // Initialize swimming velocities
@@ -751,7 +752,7 @@ export default class Seal {
             // Create bubble effect
             this.createBubbleEffect();
         } else {
-            console.log('Seal: Swimming mode DISABLED');
+            logger.debug('Seal: Swimming mode DISABLED');
             // Re-enable gravity
             this.sprite.body.setAllowGravity(true);
             // Clean up bubble effect
@@ -921,7 +922,7 @@ export default class Seal {
             }
         });
 
-        console.log('🌟 Enhanced growth effect played!');
+        logger.debug('🌟 Enhanced growth effect played!');
     }
 
     createShrinkEffect() {
@@ -1018,6 +1019,6 @@ export default class Seal {
             });
         });
 
-        console.log('💥 Enhanced shrink effect played!');
+        logger.debug('💥 Enhanced shrink effect played!');
     }
 }

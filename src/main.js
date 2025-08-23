@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import config from './config.js';
 import AudioManager from './managers/AudioManager.js';
+import logger from './utils/logger.js';
 
 window.addEventListener('load', () => {
     const game = new Phaser.Game(config);
@@ -16,11 +17,11 @@ window.addEventListener('load', () => {
     // Uses the same proven logic as DevMenuScene.jumpToLevel()
     window.jumpToLevel = function(levelNumber) {
         if (!window.game || !window.game.scene) {
-            console.error('Game not initialized');
+            logger.error('Game not initialized');
             return false;
         }
         
-        console.log(`Jumping to level ${levelNumber}`);
+        logger.info(`Jumping to level ${levelNumber}`);
         
         // Try to preserve current lives if GameScene is active
         let currentLives = null;
@@ -28,7 +29,7 @@ window.addEventListener('load', () => {
         const gameScene = activeScenes.find(scene => scene.scene.key === 'GameScene');
         if (gameScene && gameScene.player) {
             currentLives = gameScene.player.lives;
-            console.log(`Preserving ${currentLives} lives from current game`);
+            logger.info(`Preserving ${currentLives} lives from current game`);
         }
         
         // Stop the GameScene completely (same as dev menu)

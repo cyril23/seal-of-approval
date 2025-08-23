@@ -3,6 +3,7 @@ import Collectible from '../entities/Collectible.js';
 import SpawnManager from './SpawnManager.js';
 import PlatformColorManager from './PlatformColorManager.js';
 import { LEVEL_WIDTH, GAME_HEIGHT, LEVEL, TILE_SIZE } from '../utils/constants.js';
+import logger from '../utils/logger.js';
 
 export default class LevelGenerator {
     constructor(scene) {
@@ -12,7 +13,7 @@ export default class LevelGenerator {
     }
 
     generateLevel(theme, levelNumber) {
-        console.log('Generating level', levelNumber, 'with theme', theme.name);
+        logger.info('Generating level', levelNumber, 'with theme', theme.name);
         
         // Reset spawn manager for new level
         this.spawnManager.reset();
@@ -26,28 +27,28 @@ export default class LevelGenerator {
         const collectibleCount = LEVEL.MIN_COLLECTIBLES + Math.floor(Math.random() * (LEVEL.MAX_COLLECTIBLES - LEVEL.MIN_COLLECTIBLES));
         
         // All themes including ocean need platforms for collectibles
-        console.log('Creating', platformCount, 'platforms...');
+        logger.debug('Creating', platformCount, 'platforms...');
         const platforms = this.createSideScrollingPlatforms(platformCount, theme);
         
-        console.log('Validating platform gaps...');
+        logger.debug('Validating platform gaps...');
         this.validateAndFixPlatformGaps(platforms, theme);
         
         // Apply arctic theme modifications if needed
         if (theme.name === 'arctic') {
-            console.log('Applying arctic ice physics to platforms...');
+            logger.debug('Applying arctic ice physics to platforms...');
             this.applyArcticFeatures(platforms);
         }
         
-        console.log('Creating goal...');
+        logger.debug('Creating goal...');
         this.createGoal();
         
-        console.log('Spawning', enemyCount, 'enemies...');
+        logger.debug('Spawning', enemyCount, 'enemies...');
         this.spawnEnemies(theme, enemyCount);
         
-        console.log('Spawning', collectibleCount, 'collectibles...');
+        logger.debug('Spawning', collectibleCount, 'collectibles...');
         this.spawnCollectibles(collectibleCount, theme);
         
-        console.log('Level generation complete!');
+        logger.info('Level generation complete!');
     }
     
 
@@ -88,7 +89,7 @@ export default class LevelGenerator {
             
             // Only stop if we're very close to the goal
             if (currentX > LEVEL.GOAL_POSITION - 300) {
-                console.log(`Platform generation stopping at X=${currentX} (${Math.floor(currentX / LEVEL.GOAL_POSITION * 100)}% progress)`);
+                logger.debug(`Platform generation stopping at X=${currentX} (${Math.floor(currentX / LEVEL.GOAL_POSITION * 100)}% progress)`);
                 break;
             }
             
@@ -125,7 +126,7 @@ export default class LevelGenerator {
             actualPlatformsGenerated++;
         }
         
-        console.log(`Generated ${actualPlatformsGenerated} regular platforms, last at X=${currentX}`);
+        logger.debug(`Generated ${actualPlatformsGenerated} regular platforms, last at X=${currentX}`);
         
         // Add more frequent ground platforms throughout the level for safety
         // Version 9.4: Increased frequency from 1500 to 1000 for better coverage
@@ -153,11 +154,11 @@ export default class LevelGenerator {
         
         if (lastRegularPlatform) {
             const gapToGoal = LEVEL.GOAL_POSITION - (lastRegularPlatform.x + lastRegularPlatform.displayWidth / 2);
-            console.log(`Gap from last platform (x=${lastRegularPlatform.x}) to goal: ${gapToGoal.toFixed(0)}px`);
+            logger.debug(`Gap from last platform (x=${lastRegularPlatform.x}) to goal: ${gapToGoal.toFixed(0)}px`);
             
             // Version 9.4: Fill ANY gap larger than jump distance
             if (gapToGoal > LEVEL.MAX_GAP) {
-                console.log(`Filling gap to goal with bridge platforms...`);
+                logger.debug(`Filling gap to goal with bridge platforms...`);
                 
                 // Calculate how many platforms we need
                 const numBridges = Math.ceil(gapToGoal / 180) - 1;
@@ -179,11 +180,11 @@ export default class LevelGenerator {
                     bridgePlatform.refreshBody();
                     bridgePlatform.setData('platformType', 'normal');
                     platforms.push(bridgePlatform);
-                    console.log(`Added bridge platform ${i}/${numBridges} at X:${bridgeX.toFixed(0)}, Y:${bridgeY.toFixed(0)}`);
+                    logger.debug(`Added bridge platform ${i}/${numBridges} at X:${bridgeX.toFixed(0)}, Y:${bridgeY.toFixed(0)}`);
                 }
             }
         } else {
-            console.log('WARNING: Could not find last regular platform before goal!');
+            logger.warn('WARNING: Could not find last regular platform before goal!');
         }
         
         // Version 9.4: Final validation - check for any remaining large gaps
@@ -193,13 +194,13 @@ export default class LevelGenerator {
             const gap = finalSorted[i + 1].x - (finalSorted[i].x + finalSorted[i].displayWidth / 2);
             if (gap > LEVEL.MAX_GAP + 100) {
                 const progress = Math.floor(finalSorted[i].x / LEVEL.GOAL_POSITION * 100);
-                console.log(`WARNING: Large gap of ${gap.toFixed(0)}px remains at ${progress}% progress!`);
+                logger.warn(`WARNING: Large gap of ${gap.toFixed(0)}px remains at ${progress}% progress!`);
                 largeGapFound = true;
             }
         }
         
         if (!largeGapFound) {
-            console.log('Platform generation complete - all gaps are jumpable');
+            logger.debug('Platform generation complete - all gaps are jumpable');
         }
         
         return platforms;
@@ -234,7 +235,7 @@ export default class LevelGenerator {
         const MAX_VERTICAL_JUMP_UP = 150; // Maximum height player can jump up
         const MAX_VERTICAL_JUMP_DOWN = 250; // Maximum safe fall distance
         
-        console.log('Starting platform gap validation with', platforms.length, 'platforms');
+        logger.debug('Starting platform gap validation with', platforms.length, 'platforms');
         
         // Sort platforms by X position
         platforms.sort((a, b) => a.x - b.x);
@@ -246,7 +247,7 @@ export default class LevelGenerator {
         // Check each gap between consecutive platforms
         for (let i = 0; i < platforms.length - 1; i++) {
             if (bridgesAdded >= MAX_BRIDGES) {
-                console.warn('Maximum bridge platforms reached, stopping gap validation');
+                logger.warn('Maximum bridge platforms reached, stopping gap validation');
                 break;
             }
             
@@ -270,7 +271,7 @@ export default class LevelGenerator {
             const isFallTooFar = verticalDiff > 0 && verticalDiff > MAX_VERTICAL_JUMP_DOWN;
             
             if (isGapTooWide || isJumpTooHigh || isFallTooFar) {
-                console.log(`Gap ${i}: ${horizontalGap.toFixed(0)}px wide, ${verticalDiff.toFixed(0)}px vertical - Adding bridge`);
+                logger.debug(`Gap ${i}: ${horizontalGap.toFixed(0)}px wide, ${verticalDiff.toFixed(0)}px vertical - Adding bridge`);
                 
                 // Calculate bridge position
                 let bridgeX, bridgeY;
@@ -310,7 +311,7 @@ export default class LevelGenerator {
             }
         }
         
-        console.log('Platform gap validation complete. Added', bridgesAdded, 'bridge platforms');
+        logger.debug('Platform gap validation complete. Added', bridgesAdded, 'bridge platforms');
         return platforms;
     }
 
@@ -342,7 +343,7 @@ export default class LevelGenerator {
         
         // Ocean theme - spawn swimming enemies in open water
         if (theme.name === 'ocean') {
-            console.log(`Spawning ${count} swimming enemies in open water`);
+            logger.debug(`Spawning ${count} swimming enemies in open water`);
             
             // Calculate evenly distributed X positions
             // Start further away (1000px) to give player time before encountering lethal orcas
@@ -350,7 +351,7 @@ export default class LevelGenerator {
             const maxX = LEVEL.GOAL_POSITION - 400;
             const spawnRange = maxX - minX;
             
-            console.log(`Ocean enemy spawn range: X:${minX} to X:${maxX} (${spawnRange}px wide)`);
+            logger.debug(`Ocean enemy spawn range: X:${minX} to X:${maxX} (${spawnRange}px wide`);
             
             for (let i = 0; i < count; i++) {
                 // Proper even distribution from 0% to 100% of spawn range
@@ -365,7 +366,7 @@ export default class LevelGenerator {
                 this.scene.enemies.add(enemy);
                 
                 const percentPosition = (targetX / LEVEL.GOAL_POSITION * 100).toFixed(1);
-                console.log(`Spawned swimming ${enemyType} at (${targetX.toFixed(0)}, ${targetY.toFixed(0)}) - ${percentPosition}% of level`);
+                logger.debug(`Spawned swimming ${enemyType} at (${targetX.toFixed(0)}, ${targetY.toFixed(0)}) - ${percentPosition}% of level`);
             }
             return; // Exit early for ocean theme
         }
@@ -380,7 +381,7 @@ export default class LevelGenerator {
         const sortedPlatforms = [...spawnablePlatforms].sort((a, b) => a.x - b.x);
         
         if (sortedPlatforms.length === 0) {
-            console.warn('No spawnable platforms available for enemies');
+            logger.warn('No spawnable platforms available for enemies');
             return;
         }
         
@@ -389,8 +390,8 @@ export default class LevelGenerator {
         const maxX = sortedPlatforms[sortedPlatforms.length - 1].x;
         const spawnRange = maxX - minX;
         
-        console.log(`Enemy spawn range: X:${minX.toFixed(0)} to X:${maxX.toFixed(0)} (${spawnRange.toFixed(0)}px wide)`);
-        console.log(`Spawning ${count} enemies with even distribution`);
+        logger.debug(`Enemy spawn range: X:${minX.toFixed(0)} to X:${maxX.toFixed(0)} (${spawnRange.toFixed(0)}px wide)`);
+        logger.debug(`Spawning ${count} enemies with even distribution`);
         
         // Calculate target X positions for even distribution
         const targetPositions = [];
@@ -437,7 +438,7 @@ export default class LevelGenerator {
             }
             
             if (!nearestPlatform) {
-                console.warn(`No valid platform found for target X:${targetX.toFixed(0)}`);
+                logger.warn(`No valid platform found for target X:${targetX.toFixed(0)}`);
                 continue;
             }
             
@@ -468,13 +469,13 @@ export default class LevelGenerator {
                 // Log spawn for debugging
                 const actualPercent = ((position.x / LEVEL_WIDTH) * 100).toFixed(1);
                 const targetPercent = ((targetX / LEVEL_WIDTH) * 100).toFixed(1);
-                console.log(`Enemy ${enemiesSpawned}/${count}: ${enemyType} at X:${position.x.toFixed(0)} (${actualPercent}%, target was ${targetPercent}%)`);
+                logger.debug(`Enemy ${enemiesSpawned}/${count}: ${enemyType} at X:${position.x.toFixed(0)} (${actualPercent}%, target was ${targetPercent}%)`);
             } else {
-                console.warn(`Failed to find valid spawn position on platform at X:${nearestPlatform.x}`);
+                logger.warn(`Failed to find valid spawn position on platform at X:${nearestPlatform.x}`);
             }
         }
         
-        console.log(`Successfully spawned ${enemiesSpawned}/${count} enemies with even distribution`);
+        logger.debug(`Successfully spawned ${enemiesSpawned}/${count} enemies with even distribution`);
     }
 
     spawnCollectibles(count, theme) {
@@ -549,11 +550,11 @@ export default class LevelGenerator {
             }
         }
         
-        console.log(`Spawned ${collectiblesSpawned}/${count} collectibles in ${theme.name} theme`);
+        logger.debug(`Spawned ${collectiblesSpawned}/${count} collectibles in ${theme.name} theme`);
     }
 
     spawnSpecialPowerups() {
-        console.log('Spawning special powerups with exact counts and position constraints...');
+        logger.debug('Spawning special powerups with exact counts and position constraints...');
         
         // Spawn exactly 2 magnets (25-35% and 55-65% progress, never after 80%)
         const magnetPositions = [
@@ -610,7 +611,7 @@ export default class LevelGenerator {
             this.spawnPowerupAtProgress('life', 0.80 + Phaser.Math.FloatBetween(-0.05, 0.05));
         }
         
-        console.log(`Special powerups spawned: 2 magnets, ${starCount} star(s), ${speedCount} speed(s), ${timeCount} time bonus(es), ${lifeCount} extra life/lives`);
+        logger.debug(`Special powerups spawned: 2 magnets, ${starCount} star(s), ${speedCount} speed(s), ${timeCount} time bonus(es), ${lifeCount} extra life/lives`);
     }
     
     spawnPowerupAtProgress(type, progressPercent) {
@@ -629,12 +630,12 @@ export default class LevelGenerator {
                 const collectible = new Collectible(this.scene, position.x, position.y, type);
                 this.scene.collectibles.add(collectible);
                 this.spawnManager.registerPosition(position.x, position.y, type);
-                console.log(`Spawned ${type} at ${Math.round(progressPercent * 100)}% progress (x: ${position.x})`);
+                logger.debug(`Spawned ${type} at ${Math.round(progressPercent * 100)}% progress (x: ${position.x})`);
             } else {
-                console.warn(`Could not find valid position for ${type} at ${Math.round(progressPercent * 100)}% progress`);
+                logger.warn(`Could not find valid position for ${type} at ${Math.round(progressPercent * 100)}% progress`);
             }
         } else {
-            console.warn(`No platform found near ${Math.round(progressPercent * 100)}% progress for ${type}`);
+            logger.warn(`No platform found near ${Math.round(progressPercent * 100)}% progress for ${type}`);
         }
     }
     

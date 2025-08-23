@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, THEMES } from '../utils/constants.js';
+import logger from '../utils/logger.js';
 
 export default class DevMenuScene extends Phaser.Scene {
     constructor() {
@@ -579,20 +580,20 @@ export default class DevMenuScene extends Phaser.Scene {
     }
     
     jumpToLevel() {
-        console.log(`Jumping to level ${this.selectedLevel}`);
+        logger.info(`Jumping to level ${this.selectedLevel}`);
         
         // Clear the dev menu flag in parent scene before jumping
         // This ensures clean state transition
         if (this.parentScene) {
             this.parentScene.isDevMenuOpen = false;
-            console.log('[DD MENU] Cleared isDevMenuOpen flag in parent scene before jump');
+            logger.debug('[DD MENU] Cleared isDevMenuOpen flag in parent scene before jump');
         }
         
         // Use the global jumpToLevel function for consistency
         if (window.jumpToLevel) {
             window.jumpToLevel(this.selectedLevel);
         } else {
-            console.error('Global jumpToLevel function not found');
+            logger.error('Global jumpToLevel function not found');
         }
     }
     

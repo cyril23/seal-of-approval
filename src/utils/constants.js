@@ -5,7 +5,8 @@ export const LEVEL_WIDTH = 10240; // 10x screen width for side-scrolling
 
 // Debug settings
 export const DEBUG = {
-    PHYSICS_ENABLED: false  // enable only when tuning bounding boxes
+    PHYSICS_ENABLED: false,  // enable only when tuning bounding boxes
+    LOG_LEVEL: 'debug'       // 'none', 'info', or 'debug' - set to 'debug' for development
 };
 
 export const PHYSICS = {
