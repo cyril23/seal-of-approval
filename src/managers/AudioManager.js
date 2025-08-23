@@ -37,6 +37,11 @@ export default class AudioManager {
             // Size change sounds
             grow: () => this.playArpeggio([400, 500, 600, 700], 0.15),
             shrink: () => this.playArpeggio([600, 500, 400, 300], 0.15),
+            // Bonus point counting sounds - multiple variations for engaging rhythm
+            bonusTick: () => this.playTone(1000, 0.05, 'sine'),
+            bonusTickHigh: () => this.playTone(1200, 0.05, 'sine'),
+            bonusTickLow: () => this.playTone(800, 0.05, 'sine'),
+            bonusComplete: () => this.playArpeggio([600, 800, 1000, 1200], 0.2),
             // Arctic theme sounds
             roar: () => this.playRoar(),
             charge: () => this.playCharge(),

@@ -7,10 +7,12 @@ export default class GameOverScene extends Phaser.Scene {
     }
 
     init(data) {
-        this.finalScore = data.score || 0;
+        this.baseScore = data.score || 0; // Score before distance bonus
+        this.finalScore = data.score || 0; // Will be updated after animation
         this.finalLevel = data.level || 1;
         this.progressDistance = data.progressDistance || 0;
         this.progressPoints = data.progressPoints || 0;
+        this.scoreManager = data.scoreManager; // Receive ScoreManager for animation
     }
 
     create() {
@@ -25,12 +27,13 @@ export default class GameOverScene extends Phaser.Scene {
         });
         gameOverText.setOrigin(0.5);
         
-        const scoreText = this.add.text(GAME_WIDTH / 2, 240, `FINAL SCORE: ${this.finalScore}`, {
+        // Create score text that will be updated after animation
+        this.scoreText = this.add.text(GAME_WIDTH / 2, 240, `FINAL SCORE: ${this.finalScore}`, {
             fontSize: '28px',
             fontFamily: '"Press Start 2P", monospace',
             color: '#ffffff'
         });
-        scoreText.setOrigin(0.5);
+        this.scoreText.setOrigin(0.5);
         
         const levelText = this.add.text(GAME_WIDTH / 2, 300, `REACHED LEVEL: ${this.finalLevel}`, {
             fontSize: '24px',
@@ -39,48 +42,76 @@ export default class GameOverScene extends Phaser.Scene {
         });
         levelText.setOrigin(0.5);
         
-        // Display progress points if any were earned
-        if (this.progressPoints > 0) {
-            const progressText = this.add.text(GAME_WIDTH / 2, 340, 
-                `DISTANCE BONUS: ${this.progressPoints} pts`, {
-                fontSize: '18px',
-                fontFamily: '"Press Start 2P", monospace',
-                color: '#00ffff'
-            });
-            progressText.setOrigin(0.5);
-        }
-        
-        const highScore = localStorage.getItem('sealHighScore') || 0;
-        let highScoreMessage = '';
-        
-        if (this.finalScore > highScore) {
-            localStorage.setItem('sealHighScore', this.finalScore);
-            highScoreMessage = 'NEW HIGH SCORE!';
+        // Instead of displaying static text, animate the distance bonus if present
+        if (this.progressPoints > 0 && this.scoreManager) {
+            // Add game over sound
+            if (this.scoreManager.scene && this.scoreManager.scene.audioManager) {
+                this.scoreManager.scene.audioManager.playSound('gameOver');
+            }
             
-            const newHighScoreText = this.add.text(GAME_WIDTH / 2, 420, highScoreMessage, {
-                fontSize: '28px',
-                fontFamily: '"Press Start 2P", monospace',
-                color: '#ffff00'
-            });
-            newHighScoreText.setOrigin(0.5);
-            
-            this.tweens.add({
-                targets: newHighScoreText,
-                scaleX: 1.2,
-                scaleY: 1.2,
-                duration: 500,
-                ease: 'Power2',
-                yoyo: true,
-                repeat: -1
+            // Wait a moment then animate the distance bonus
+            this.time.delayedCall(1500, () => {
+                // Set the scene context for ScoreManager animations
+                this.scoreManager.scene = this;
+                
+                // Create a temporary audioManager reference for sound effects
+                this.audioManager = this.scoreManager.scene.audioManager || {
+                    playSound: (name) => {
+                        // Fallback: create temporary audio context for bonus sounds
+                        if (name === 'bonusTick') {
+                            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                            const oscillator = audioContext.createOscillator();
+                            const gainNode = audioContext.createGain();
+                            oscillator.connect(gainNode);
+                            gainNode.connect(audioContext.destination);
+                            oscillator.type = 'sine';
+                            oscillator.frequency.value = 1000;
+                            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.05);
+                            oscillator.start(audioContext.currentTime);
+                            oscillator.stop(audioContext.currentTime + 0.05);
+                        }
+                    }
+                };
+                
+                // Animate the distance bonus
+                this.scoreManager.animateBonusPoints(this.progressPoints, 'DISTANCE', () => {
+                    // Update final score display after animation
+                    this.finalScore = this.scoreManager.score;
+                    this.scoreText.setText(`FINAL SCORE: ${this.finalScore}`);
+                    
+                    // Flash the score text
+                    this.scoreText.setColor('#00ff00');
+                    this.tweens.add({
+                        targets: this.scoreText,
+                        scaleX: 1.2,
+                        scaleY: 1.2,
+                        duration: 300,
+                        yoyo: true,
+                        onComplete: () => {
+                            this.scoreText.setColor('#ffffff');
+                        }
+                    });
+                    
+                    // Check and save high score after bonus
+                    this.scoreManager.saveHighScore();
+                    this.checkHighScore();
+                });
             });
         } else {
-            const highScoreText = this.add.text(GAME_WIDTH / 2, 420, `HIGH SCORE: ${highScore}`, {
-                fontSize: '20px',
-                fontFamily: '"Press Start 2P", monospace',
-                color: '#aaaaaa'
-            });
-            highScoreText.setOrigin(0.5);
+            // No distance bonus, play game over sound immediately
+            if (this.scoreManager && this.scoreManager.scene && this.scoreManager.scene.audioManager) {
+                this.scoreManager.scene.audioManager.playSound('gameOver');
+            }
+            this.checkHighScore();
         }
+        
+        // Create UI method to update score display during animation
+        this.updateUI = () => {
+            if (this.scoreManager) {
+                this.scoreText.setText(`FINAL SCORE: ${this.scoreManager.score}`);
+            }
+        };
         
         const restartText = this.add.text(GAME_WIDTH / 2, 480, 'PRESS SPACE TO PLAY AGAIN', {
             fontSize: '20px',
@@ -114,6 +145,36 @@ export default class GameOverScene extends Phaser.Scene {
         });
         
         this.createSadSeal();
+    }
+    
+    checkHighScore() {
+        const highScore = localStorage.getItem('sealHighScore') || 0;
+        
+        if (this.finalScore > highScore) {
+            const newHighScoreText = this.add.text(GAME_WIDTH / 2, 420, 'NEW HIGH SCORE!', {
+                fontSize: '28px',
+                fontFamily: '"Press Start 2P", monospace',
+                color: '#ffff00'
+            });
+            newHighScoreText.setOrigin(0.5);
+            
+            this.tweens.add({
+                targets: newHighScoreText,
+                scaleX: 1.2,
+                scaleY: 1.2,
+                duration: 500,
+                ease: 'Power2',
+                yoyo: true,
+                repeat: -1
+            });
+        } else {
+            const highScoreText = this.add.text(GAME_WIDTH / 2, 420, `HIGH SCORE: ${highScore}`, {
+                fontSize: '20px',
+                fontFamily: '"Press Start 2P", monospace',
+                color: '#aaaaaa'
+            });
+            highScoreText.setOrigin(0.5);
+        }
     }
 
     createSadSeal() {

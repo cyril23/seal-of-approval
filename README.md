@@ -32,7 +32,6 @@ Control a seal character through themed levels, collecting fish and avoiding ene
 - **Lives System**: Start with 3 lives, checkpoint saves on level entry
 - **Seal Growth**: Grows through 3 sizes when eating fish, shrinks when damaged
 - **Ghost Mode**: Temporary invulnerability after taking damage (when size > 1)
-- **Scoring**: Fish (100), enemies (200), distance bonus, level completion (1000)
 - **Power-ups**: Star (invincibility), Speed boost, Magnet (attracts fish), Clock (time bonus), Heart (extra life), Mushroom (size growth)
 - **Level Progression**: Complete levels by reaching the goal flag
 - **High Scores**: Persistent high score tracking
@@ -44,6 +43,42 @@ Control a seal character through themed levels, collecting fish and avoiding ene
 - **Hawk** 🦅: Patrols and dive-attacks, shows 💤 when resting
 - **Orca** 🐋: Ocean predator with large detection range (cannot be stomped)
 - **Polar Bear** 🐻‍❄️: Arctic hunter with charge attack (cannot be stomped)
+
+## Scoring System
+
+### Base Points
+
+- **Fish Collection**: 100 points per fish 🐟
+- **Enemy Defeat**: Points vary by enemy type (when stomped or destroyed while invincible)
+  - Crab: 150 points
+  - Human: 200 points
+  - Hawk: 250 points
+  - Polar Bear: 300 points (invincibility required - cannot stomp)
+  - Orca: 400 points (invincibility required - cannot stomp)
+- **Level Completion Bonus**: 1000 points for reaching the goal flag
+- **Time Bonus**: 10 points × remaining seconds (awarded at level completion)
+- **Distance Bonus**: 10 points per 100 pixels traveled (awarded at level end or game over)
+
+### Combo Multiplier
+
+Consecutive scoring actions within 3 seconds trigger the combo system:
+- **Multiplier Formula**: 1 + (combo count × 0.5)
+- **Example Progression**:
+  - 1st fish/enemy: 1.0x multiplier (100 points for fish)
+  - 2nd consecutive: 1.5x multiplier (150 points for fish)
+  - 3rd consecutive: 2.0x multiplier (200 points for fish)
+  - 4th consecutive: 2.5x multiplier (250 points for fish)
+  - And so on...
+- **Reset**: Combo resets after 3 seconds of no scoring actions
+- **Visual Feedback**: Yellow score popups for combos, "COMBO x#!" text appears for 3+ combos
+
+### Scoring Strategy Tips
+
+- **Maintain Combos**: Chain fish collection and enemy defeats for maximum points
+- **Speed Completion**: Finish levels quickly for higher time bonuses
+- **Explore Thoroughly**: Travel the full level width for distance bonus points
+- **Use Power-ups**: Invincibility allows defeating lethal enemies for high points
+- **Perfect Runs**: Combine all bonuses for maximum score potential
 
 ## Technical Details
 

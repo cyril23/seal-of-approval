@@ -686,18 +686,6 @@ export default class GameScene extends Phaser.Scene {
         // Add completion bonus
         this.scoreManager.addScore(SCORING.LEVEL_COMPLETE_BONUS);
 
-        // Add time bonus
-        const timeBonus = this.timeRemaining * SCORING.TIME_BONUS_MULTIPLIER;
-        this.scoreManager.addScore(timeBonus);
-
-        // Add progress points
-        const progress = this.calculateProgressPoints();
-        if (progress.points > 0) {
-            this.scoreManager.addScore(progress.points);
-            this.showScorePopup(this.player.sprite.x, this.player.sprite.y - 80,
-                `DISTANCE BONUS: +${progress.points}!`, 0x00ffff);
-        }
-
         // Play victory sound
         this.audioManager.playSound('levelComplete');
 
@@ -713,9 +701,34 @@ export default class GameScene extends Phaser.Scene {
         completeText.setOrigin(0.5);
         completeText.setScrollFactor(0);
 
-        // Proceed to next level
-        this.time.delayedCall(3000, () => {
-            this.nextLevel();
+        // Calculate bonuses
+        const timeBonus = this.timeRemaining * SCORING.TIME_BONUS_MULTIPLIER;
+        const progress = this.calculateProgressPoints();
+        
+        // Wait a moment then animate time bonus
+        this.time.delayedCall(1500, () => {
+            // Hide level complete text
+            completeText.destroy();
+            
+            // Animate time bonus
+            this.scoreManager.animateBonusPoints(timeBonus, 'TIME', () => {
+                // After time bonus, animate distance bonus if any
+                if (progress.points > 0) {
+                    this.time.delayedCall(500, () => {
+                        this.scoreManager.animateBonusPoints(progress.points, 'DISTANCE', () => {
+                            // Proceed to next level after all bonuses
+                            this.time.delayedCall(1000, () => {
+                                this.nextLevel();
+                            });
+                        });
+                    });
+                } else {
+                    // No distance bonus, proceed to next level
+                    this.time.delayedCall(1000, () => {
+                        this.nextLevel();
+                    });
+                }
+            });
         });
     }
 
@@ -943,12 +956,10 @@ export default class GameScene extends Phaser.Scene {
     gameOver() {
         this.timerEvent.destroy();
 
-        // Calculate and add progress points before saving high score
+        // Calculate progress points but DON'T add them yet - let GameOverScene animate them
         const progress = this.calculateProgressPoints();
-        if (progress.points > 0) {
-            this.scoreManager.addScore(progress.points);
-        }
 
+        // Save high score with current score (before distance bonus)
         this.scoreManager.saveHighScore();
         this.audioManager.stopBackgroundMusic();
 
@@ -956,7 +967,8 @@ export default class GameScene extends Phaser.Scene {
             score: this.scoreManager.score,
             level: this.currentLevel,
             progressDistance: progress.distance,
-            progressPoints: progress.points
+            progressPoints: progress.points,
+            scoreManager: this.scoreManager // Pass scoreManager for animation
         });
     }
 
