@@ -361,7 +361,12 @@ export default class Seal {
 
         this.scene.time.delayedCall(duration, () => {
             this.invincible = false;
-            this.sprite.clearTint();
+            // Restore appropriate tint
+            if (this.developerMode) {
+                this.sprite.setTint(0xFF00FF);  // Purple for God mode
+            } else {
+                this.sprite.clearTint();
+            }
             this.sprite.setAlpha(1);
         });
     }
