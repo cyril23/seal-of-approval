@@ -479,11 +479,7 @@ export default class GameScene extends Phaser.Scene {
 
 
         // Add progress bar
-        this.progressText = this.add.text(GAME_WIDTH / 2, 60, 'PROGRESS: 0%', {
-            fontSize: '16px',
-            fontFamily: '"Press Start 2P", monospace',
-            color: '#00ff00'
-        });
+        this.progressText = this.add.text(GAME_WIDTH / 2, 60, 'PROGRESS: 0%', uiStyle);
         this.progressText.setOrigin(0.5, 0);
         this.progressText.setScrollFactor(0);
 
