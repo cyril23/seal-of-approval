@@ -484,14 +484,14 @@ export default class GameScene extends Phaser.Scene {
         this.progressText.setScrollFactor(0);
 
         // Developer mode indicator
-        this.devModeText = this.add.text(GAME_WIDTH / 2, 100, 'GOD MODE', {
-            fontSize: '24px',
+        this.devModeText = this.add.text(GAME_WIDTH - 20, 50, 'GOD MODE', {
+            fontSize: '20px',
             fontFamily: '"Press Start 2P", monospace',
             color: '#FF00FF',
             stroke: '#000000',
-            strokeThickness: 3
+            strokeThickness: 2
         });
-        this.devModeText.setOrigin(0.5, 0);
+        this.devModeText.setOrigin(1, 0);
         this.devModeText.setScrollFactor(0);
         this.devModeText.setVisible(false);
 

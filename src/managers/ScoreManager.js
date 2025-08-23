@@ -75,6 +75,7 @@ export default class ScoreManager {
             }
         );
         comboText.setOrigin(0.5);
+        comboText.setScrollFactor(0);
         
         this.scene.tweens.add({
             targets: comboText,
