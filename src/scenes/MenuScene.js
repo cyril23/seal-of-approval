@@ -80,12 +80,12 @@ export default class MenuScene extends Phaser.Scene {
 
     createFishAnimation() {
         for (let i = 0; i < 5; i++) {
-            const fish = this.add.image(-30, 100 + Math.random() * 120, 'fish');
+            const fish = this.add.image(GAME_WIDTH + 30, 100 + Math.random() * 120, 'fish');
             fish.setScale(0.8);
             
             this.tweens.add({
                 targets: fish,
-                x: GAME_WIDTH + 30,
+                x: -30,
                 duration: 8000 + Math.random() * 4000,
                 delay: i * 1500,
                 repeat: -1,
