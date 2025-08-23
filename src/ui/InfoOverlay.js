@@ -8,8 +8,13 @@ export default class InfoOverlay {
     }
 
     show(levelNumber, theme, info) {
-        if (this.isShowing) return;
+        console.log('[INFO OVERLAY UI] show() called for level', levelNumber, 'theme:', theme);
+        if (this.isShowing) {
+            console.log('[INFO OVERLAY UI] Already showing - ignoring');
+            return;
+        }
         this.isShowing = true;
+        console.log('[INFO OVERLAY UI] Creating overlay display');
 
         // Create container for all overlay elements
         this.container = this.scene.add.container(0, 0);
@@ -201,12 +206,14 @@ export default class InfoOverlay {
         
         this.handleSpacePress = () => {
             if (this.spaceKey.isDown) {
+                console.log('[INFO OVERLAY UI] Space pressed - hiding overlay');
                 this.hide();
             }
         };
         
         this.handleIPress = () => {
             if (this.iKey.isDown) {
+                console.log('[INFO OVERLAY UI] I pressed - hiding overlay');
                 this.hide();
             }
         };
@@ -216,7 +223,11 @@ export default class InfoOverlay {
     }
 
     hide(instant = false) {
-        if (!this.isShowing) return;
+        console.log('[INFO OVERLAY UI] hide() called, instant:', instant);
+        if (!this.isShowing) {
+            console.log('[INFO OVERLAY UI] Not showing - ignoring hide request');
+            return;
+        }
 
         // Remove space and I key listeners
         if (this.handleSpacePress) {

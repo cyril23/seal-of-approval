@@ -158,15 +158,20 @@ export const LEVEL_INFO = {
 
 // Get info for a specific level
 export function getLevelInfo(level) {
+    console.log('[getLevelInfo] Called for level', level);
     // For levels 1-5, return their specific info
     if (level >= 1 && level <= 5) {
+        console.log('[getLevelInfo] Returning direct info for level', level);
         return LEVEL_INFO[level];
     }
 
     // For levels 6+, cycle through levels 1-5
     // Level 6 → Level 1, Level 7 → Level 2, ... Level 11 → Level 1, etc.
     const cycledLevel = ((level - 1) % 5) + 1;
-    return LEVEL_INFO[cycledLevel];
+    console.log('[getLevelInfo] Level', level, 'cycling to level', cycledLevel, 'info');
+    const info = LEVEL_INFO[cycledLevel];
+    console.log('[getLevelInfo] Returning info:', !!info);
+    return info;
 }
 
 // Check if level should show info screen automatically

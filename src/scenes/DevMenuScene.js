@@ -580,6 +580,14 @@ export default class DevMenuScene extends Phaser.Scene {
     
     jumpToLevel() {
         console.log(`Jumping to level ${this.selectedLevel}`);
+        
+        // Clear the dev menu flag in parent scene before jumping
+        // This ensures clean state transition
+        if (this.parentScene) {
+            this.parentScene.isDevMenuOpen = false;
+            console.log('[DD MENU] Cleared isDevMenuOpen flag in parent scene before jump');
+        }
+        
         // Use the global jumpToLevel function for consistency
         if (window.jumpToLevel) {
             window.jumpToLevel(this.selectedLevel);

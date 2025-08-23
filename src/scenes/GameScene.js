@@ -61,6 +61,11 @@ export default class GameScene extends Phaser.Scene {
         
         // Reset player falling flag when scene starts/restarts
         this.playerFalling = false;
+        
+        // Explicitly reset dev menu flag when scene starts
+        // This ensures it's always false regardless of how the scene was started
+        this.isDevMenuOpen = false;
+        console.log('[INIT] Dev menu flag reset to false');
 
         // Reset time remaining when scene starts/restarts
         this.timeRemaining = LEVEL.TIME_LIMIT;
@@ -171,12 +176,16 @@ export default class GameScene extends Phaser.Scene {
         this.infoOverlay = new InfoOverlay(this);
 
         // Always get level info (for manual 'I' key access)
+        console.log('[INIT] Getting level info for level', this.currentLevel);
         this.currentLevelInfo = getLevelInfo(this.currentLevel);
+        console.log('[INIT] Level info retrieved:', !!this.currentLevelInfo);
 
         // Check if we should auto-show info for this level (levels 1-5 only)
         if (shouldShowInfo(this.currentLevel)) {
+            console.log('[INIT] Auto-showing info for level', this.currentLevel);
             this.showLevelInfo();
         } else {
+            console.log('[INIT] Not auto-showing info for level', this.currentLevel, '- starting immediately');
             this.isLevelStarted = true;
         }
 
@@ -347,9 +356,17 @@ export default class GameScene extends Phaser.Scene {
         this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
         this.input.keyboard.on('keydown-P', () => {
+            console.log('[P KEY] Pressed - Checking conditions...');
             // Ignore P key if info overlay is showing or dev menu is open
-            if (this.infoOverlay && this.infoOverlay.isShowing) return;
-            if (this.isDevMenuOpen) return;
+            if (this.infoOverlay && this.infoOverlay.isShowing) {
+                console.log('[P KEY] Blocked - Info overlay is showing');
+                return;
+            }
+            if (this.isDevMenuOpen) {
+                console.log('[P KEY] Blocked - Dev menu is open');
+                return;
+            }
+            console.log('[P KEY] Toggling pause');
             this.togglePause();
         });
 
@@ -369,19 +386,38 @@ export default class GameScene extends Phaser.Scene {
 
         // Info overlay hotkey - toggles on/off
         this.input.keyboard.on('keydown-I', () => {
+            console.log('[I KEY] Pressed - Level:', this.currentLevel);
+            console.log('[I KEY] Checking conditions:');
+            console.log('  - isPaused:', this.isPaused);
+            console.log('  - isDevMenuOpen:', this.isDevMenuOpen);
+            console.log('  - currentLevelInfo exists:', !!this.currentLevelInfo);
+            console.log('  - isLevelStarted:', this.isLevelStarted);
+            
             // Ignore I key if game is paused or dev menu is open
-            if (this.isPaused) return;
-            if (this.isDevMenuOpen) return;
+            if (this.isPaused) {
+                console.log('[I KEY] Blocked - Game is paused');
+                return;
+            }
+            if (this.isDevMenuOpen) {
+                console.log('[I KEY] Blocked - Dev menu is open');
+                return;
+            }
             
             // Toggle info overlay if we have info and level has started
             if (this.currentLevelInfo && this.isLevelStarted) {
                 if (this.infoOverlay.isShowing) {
+                    console.log('[I KEY] Hiding info overlay');
                     // Hide if showing
                     this.infoOverlay.hide();
                 } else {
+                    console.log('[I KEY] Showing info overlay');
                     // Show if hidden
                     this.showLevelInfo();
                 }
+            } else {
+                console.log('[I KEY] Cannot toggle - missing requirements');
+                if (!this.currentLevelInfo) console.log('  - No level info available');
+                if (!this.isLevelStarted) console.log('  - Level not started yet');
             }
         });
 
@@ -393,13 +429,17 @@ export default class GameScene extends Phaser.Scene {
         // Developer menu with double-D detection
         this.input.keyboard.on('keydown-D', () => {
             const currentTime = this.time.now;
+            const timeSinceLastD = currentTime - this.lastDKeyTime;
+            console.log('[D KEY] Pressed - Time since last D:', timeSinceLastD, 'ms');
 
             // Check for double-D press (within 300ms)
-            if (currentTime - this.lastDKeyTime < 300) {
+            if (timeSinceLastD < 300) {
+                console.log('[DD] Double-D detected! Opening developer menu');
                 // Double-D pressed - open developer menu
                 this.openDeveloperMenu();
                 this.lastDKeyTime = 0; // Reset to prevent triple press
             } else {
+                console.log('[D KEY] Single D press - waiting for potential double-D');
                 // Single D press - just update time for double-D detection
                 this.lastDKeyTime = currentTime;
             }
@@ -775,13 +815,16 @@ export default class GameScene extends Phaser.Scene {
     }
 
     togglePause() {
+        console.log('[PAUSE] Toggling pause from', this.isPaused, 'to', !this.isPaused);
         this.isPaused = !this.isPaused;
         this.pauseText.setVisible(this.isPaused);
 
         if (this.isPaused) {
             this.physics.pause();
+            console.log('[PAUSE] Game paused');
         } else {
             this.physics.resume();
+            console.log('[PAUSE] Game resumed');
         }
     }
 
@@ -917,20 +960,24 @@ export default class GameScene extends Phaser.Scene {
     }
 
     showLevelInfo() {
+        console.log('[INFO OVERLAY] showLevelInfo() called for level', this.currentLevel);
         // Pause physics and timer
         this.physics.pause();
         this.isLevelStarted = false;
 
         // Get info for this level (or use stored info if available)
         if (!this.currentLevelInfo) {
+            console.log('[INFO OVERLAY] Fetching level info for level', this.currentLevel);
             this.currentLevelInfo = getLevelInfo(this.currentLevel);
         }
 
         // Show the overlay
+        console.log('[INFO OVERLAY] Showing overlay with theme:', this.currentTheme.name);
         this.infoOverlay.show(this.currentLevel, this.currentTheme.name, this.currentLevelInfo);
     }
 
     onInfoOverlayHidden() {
+        console.log('[INFO OVERLAY] Hidden - resuming game');
         // Resume physics and start the level
         this.physics.resume();
         this.isLevelStarted = true;
