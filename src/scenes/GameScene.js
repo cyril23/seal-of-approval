@@ -618,10 +618,6 @@ export default class GameScene extends Phaser.Scene {
 
         collectible.destroy();
         this.updateUI();
-
-        if (this.collectibles.countActive() === 0) {
-            this.nextLevel();
-        }
     }
 
     handleEnemyCollision(enemy) {
