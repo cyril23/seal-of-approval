@@ -28,7 +28,7 @@ export default class GameOverScene extends Phaser.Scene {
         gameOverText.setOrigin(0.5);
         
         // Create score text that will be updated after animation
-        this.scoreText = this.add.text(GAME_WIDTH / 2, 240, `FINAL SCORE: ${this.finalScore}`, {
+        this.scoreText = this.add.text(GAME_WIDTH / 2, 200, `FINAL SCORE: ${this.finalScore}`, {
             fontSize: '28px',
             fontFamily: '"Press Start 2P", monospace',
             color: '#ffffff'
@@ -113,7 +113,7 @@ export default class GameOverScene extends Phaser.Scene {
             }
         };
         
-        const restartText = this.add.text(GAME_WIDTH / 2, 480, 'PRESS SPACE TO PLAY AGAIN', {
+        const restartText = this.add.text(GAME_WIDTH / 2, 620, 'PRESS SPACE TO PLAY AGAIN', {
             fontSize: '20px',
             fontFamily: '"Press Start 2P", monospace',
             color: '#00ff00'
@@ -129,7 +129,7 @@ export default class GameOverScene extends Phaser.Scene {
             repeat: -1
         });
         
-        const menuText = this.add.text(GAME_WIDTH / 2, 540, 'PRESS ESC FOR MENU', {
+        const menuText = this.add.text(GAME_WIDTH / 2, 660, 'PRESS ESC FOR MENU', {
             fontSize: '16px',
             fontFamily: '"Press Start 2P", monospace',
             color: '#aaaaaa'
