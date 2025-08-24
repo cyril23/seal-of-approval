@@ -12,7 +12,7 @@ export default class DevMenuScene extends Phaser.Scene {
         this.parentScene = data.parentScene;
         
         // Menu state management
-        this.menuState = 'main'; // 'main', 'levelSelect', or 'physicsDebug'
+        this.menuState = 'main'; // 'main', 'levelSelect', 'levelEntry', or 'physicsDebug'
         this.mainMenuIndex = 0;
         this.selectedLevel = this.currentLevel;
         
@@ -60,9 +60,14 @@ export default class DevMenuScene extends Phaser.Scene {
         this.physicsDebugContainer = this.add.container(0, 0);
         this.physicsDebugContainer.setVisible(false);
         
+        // Create container for level entry submenu
+        this.levelEntryContainer = this.add.container(0, 0);
+        this.levelEntryContainer.setVisible(false);
+        
         // Create all menus
         this.createMainMenu();
         this.createLevelMenu();
+        this.createLevelEntryMenu();
         this.createPhysicsDebugMenu();
         
         // Setup controls
@@ -100,19 +105,24 @@ export default class DevMenuScene extends Phaser.Scene {
             `Toggle God Mode ${godModeStatus}`, menuStyle);
         this.godModeText.setOrigin(0.5);
         
-        // Option 2: Change Level
-        this.changeLevelText = this.add.text(GAME_WIDTH / 2, menuY + optionSpacing, 
-            'Change Level', menuStyle);
-        this.changeLevelText.setOrigin(0.5);
+        // Option 2: Browse Levels
+        this.browseLevelsText = this.add.text(GAME_WIDTH / 2, menuY + optionSpacing, 
+            'Browse Levels', menuStyle);
+        this.browseLevelsText.setOrigin(0.5);
         
-        // Option 3: Physics Debug Settings
+        // Option 3: Enter Level
+        this.enterLevelText = this.add.text(GAME_WIDTH / 2, menuY + optionSpacing * 2, 
+            'Enter Level', menuStyle);
+        this.enterLevelText.setOrigin(0.5);
+        
+        // Option 4: Physics Debug Settings
         const physicsDebugStatus = this.isPhysicsDebugActive ? '[ON]' : '[OFF]';
-        this.physicsDebugText = this.add.text(GAME_WIDTH / 2, menuY + optionSpacing * 2, 
+        this.physicsDebugText = this.add.text(GAME_WIDTH / 2, menuY + optionSpacing * 3, 
             `Physics Debug Settings ${physicsDebugStatus}`, menuStyle);
         this.physicsDebugText.setOrigin(0.5);
         
-        // Option 4: Reset High Score
-        this.resetScoreText = this.add.text(GAME_WIDTH / 2, menuY + optionSpacing * 3, 
+        // Option 5: Reset High Score
+        this.resetScoreText = this.add.text(GAME_WIDTH / 2, menuY + optionSpacing * 4, 
             `Reset High Score (${highScore})`, menuStyle);
         this.resetScoreText.setOrigin(0.5);
         
@@ -143,7 +153,8 @@ export default class DevMenuScene extends Phaser.Scene {
         // Add all to main menu container
         this.mainMenuContainer.add([
             this.godModeText,
-            this.changeLevelText,
+            this.browseLevelsText,
+            this.enterLevelText,
             this.physicsDebugText,
             this.resetScoreText,
             this.mainSelectionIndicator,
@@ -154,7 +165,8 @@ export default class DevMenuScene extends Phaser.Scene {
         // Store menu options for easy access
         this.mainMenuOptions = [
             this.godModeText,
-            this.changeLevelText,
+            this.browseLevelsText,
+            this.enterLevelText,
             this.physicsDebugText,
             this.resetScoreText
         ];
@@ -194,6 +206,63 @@ export default class DevMenuScene extends Phaser.Scene {
             this.levelSubtitle,
             this.levelInstructions,
             this.levelListContainer
+        ]);
+    }
+    
+    createLevelEntryMenu() {
+        const titleStyle = {
+            fontSize: '24px',
+            fontFamily: '"Press Start 2P", monospace',
+            color: '#00ffff',
+            stroke: '#000000',
+            strokeThickness: 2
+        };
+        
+        const numberStyle = {
+            fontSize: '48px',
+            fontFamily: '"Press Start 2P", monospace',
+            color: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 3
+        };
+        
+        const instructionStyle = {
+            fontSize: '14px',
+            fontFamily: '"Press Start 2P", monospace',
+            color: '#aaaaaa'
+        };
+        
+        // Title
+        this.levelEntryTitle = this.add.text(GAME_WIDTH / 2, 150, 'ENTER LEVEL NUMBER', titleStyle);
+        this.levelEntryTitle.setOrigin(0.5);
+        
+        // Level number display with cursor
+        this.enteredLevel = '';
+        this.levelNumberText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2, '_', numberStyle);
+        this.levelNumberText.setOrigin(0.5);
+        
+        // Instructions
+        this.levelEntryInstructions = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 100, 
+            'TYPE LEVEL NUMBER   ENTER TO JUMP   ESC TO CANCEL', 
+            instructionStyle);
+        this.levelEntryInstructions.setOrigin(0.5);
+        
+        // Error message (initially hidden)
+        this.levelEntryError = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 100, '', {
+            fontSize: '16px',
+            fontFamily: '"Press Start 2P", monospace',
+            color: '#ff0000',
+            stroke: '#000000',
+            strokeThickness: 2
+        });
+        this.levelEntryError.setOrigin(0.5);
+        
+        // Add all to level entry container
+        this.levelEntryContainer.add([
+            this.levelEntryTitle,
+            this.levelNumberText,
+            this.levelEntryInstructions,
+            this.levelEntryError
         ]);
     }
     
@@ -292,10 +361,23 @@ export default class DevMenuScene extends Phaser.Scene {
         ]);
     }
     
+    showLevelEntryMenu() {
+        this.menuState = 'levelEntry';
+        this.mainMenuContainer.setVisible(false);
+        this.levelMenuContainer.setVisible(false);
+        this.physicsDebugContainer.setVisible(false);
+        this.levelEntryContainer.setVisible(true);
+        this.titleText.setText('DEVELOPER MENU');
+        this.enteredLevel = '';
+        this.levelNumberText.setText('_');
+        this.levelEntryError.setText('');
+    }
+    
     showPhysicsDebugMenu() {
         this.menuState = 'physicsDebug';
         this.mainMenuContainer.setVisible(false);
         this.levelMenuContainer.setVisible(false);
+        this.levelEntryContainer.setVisible(false);
         this.physicsDebugContainer.setVisible(true);
         this.titleText.setText('DEVELOPER MENU');
     }
@@ -532,6 +614,8 @@ export default class DevMenuScene extends Phaser.Scene {
                 this.activateMainMenuOption();
             } else if (this.menuState === 'levelSelect') {
                 this.jumpToLevel();
+            } else if (this.menuState === 'levelEntry') {
+                this.jumpToEnteredLevel();
             } else if (this.menuState === 'physicsDebug') {
                 this.togglePhysicsDebug();
             }
@@ -539,7 +623,7 @@ export default class DevMenuScene extends Phaser.Scene {
         
         // ESC key behavior
         this.input.keyboard.on('keydown-ESC', () => {
-            if (this.menuState === 'levelSelect' || this.menuState === 'physicsDebug') {
+            if (this.menuState === 'levelSelect' || this.menuState === 'levelEntry' || this.menuState === 'physicsDebug') {
                 // Go back to main menu
                 this.showMainMenu();
             } else {
@@ -547,10 +631,41 @@ export default class DevMenuScene extends Phaser.Scene {
                 this.closeMenu();
             }
         });
+        
+        // Number input for level entry
+        const digitKeys = ['ZERO', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE'];
+        const numpadKeys = ['NUMPAD_ZERO', 'NUMPAD_ONE', 'NUMPAD_TWO', 'NUMPAD_THREE', 'NUMPAD_FOUR', 
+                            'NUMPAD_FIVE', 'NUMPAD_SIX', 'NUMPAD_SEVEN', 'NUMPAD_EIGHT', 'NUMPAD_NINE'];
+        
+        for (let i = 0; i <= 9; i++) {
+            // Regular number keys
+            this.input.keyboard.on(`keydown-${digitKeys[i]}`, () => {
+                if (this.menuState === 'levelEntry' && this.enteredLevel.length < 7) {
+                    this.enteredLevel += i.toString();
+                    this.updateLevelEntryDisplay();
+                }
+            });
+            
+            // Numpad keys
+            this.input.keyboard.on(`keydown-${numpadKeys[i]}`, () => {
+                if (this.menuState === 'levelEntry' && this.enteredLevel.length < 7) {
+                    this.enteredLevel += i.toString();
+                    this.updateLevelEntryDisplay();
+                }
+            });
+        }
+        
+        // Backspace for level entry
+        this.input.keyboard.on('keydown-BACKSPACE', () => {
+            if (this.menuState === 'levelEntry' && this.enteredLevel.length > 0) {
+                this.enteredLevel = this.enteredLevel.slice(0, -1);
+                this.updateLevelEntryDisplay();
+            }
+        });
     }
     
     navigateMainMenu(direction) {
-        this.mainMenuIndex = Math.max(0, Math.min(3, this.mainMenuIndex + direction));
+        this.mainMenuIndex = Math.max(0, Math.min(4, this.mainMenuIndex + direction));
         this.updateMainMenuSelection();
     }
     
@@ -576,13 +691,16 @@ export default class DevMenuScene extends Phaser.Scene {
             case 0: // Toggle God Mode
                 this.toggleGodMode();
                 break;
-            case 1: // Change Level
+            case 1: // Browse Levels
                 this.showLevelMenu();
                 break;
-            case 2: // Physics Debug Settings
+            case 2: // Enter Level
+                this.showLevelEntryMenu();
+                break;
+            case 3: // Physics Debug Settings
                 this.showPhysicsDebugMenu();
                 break;
-            case 3: // Reset High Score
+            case 4: // Reset High Score
                 this.resetHighScore();
                 break;
         }
@@ -637,6 +755,7 @@ export default class DevMenuScene extends Phaser.Scene {
         this.menuState = 'main';
         this.mainMenuContainer.setVisible(true);
         this.levelMenuContainer.setVisible(false);
+        this.levelEntryContainer.setVisible(false);
         this.physicsDebugContainer.setVisible(false);
         this.titleText.setText('DEVELOPER MENU');
         this.updateMainMenuSelection();
@@ -745,6 +864,49 @@ export default class DevMenuScene extends Phaser.Scene {
         // Use the global jumpToLevel function for consistency
         if (window.jumpToLevel) {
             window.jumpToLevel(this.selectedLevel);
+        } else {
+            logger.error('Global jumpToLevel function not found');
+        }
+    }
+    
+    updateLevelEntryDisplay() {
+        if (this.enteredLevel.length === 0) {
+            this.levelNumberText.setText('_');
+        } else {
+            this.levelNumberText.setText(this.enteredLevel + '_');
+        }
+        this.levelEntryError.setText('');
+    }
+    
+    jumpToEnteredLevel() {
+        if (this.enteredLevel.length === 0) {
+            this.levelEntryError.setText('Please enter a level number');
+            return;
+        }
+        
+        const levelNumber = parseInt(this.enteredLevel, 10);
+        
+        if (isNaN(levelNumber) || levelNumber < 1) {
+            this.levelEntryError.setText('Invalid level number');
+            return;
+        }
+        
+        if (levelNumber > 9999999) {
+            this.levelEntryError.setText('Level number too large');
+            return;
+        }
+        
+        logger.info(`Jumping to entered level ${levelNumber}`);
+        
+        // Clear the dev menu flag in parent scene before jumping
+        if (this.parentScene) {
+            this.parentScene.isDevMenuOpen = false;
+            logger.debug('[DD MENU] Cleared isDevMenuOpen flag in parent scene before jump');
+        }
+        
+        // Use the global jumpToLevel function for consistency
+        if (window.jumpToLevel) {
+            window.jumpToLevel(levelNumber);
         } else {
             logger.error('Global jumpToLevel function not found');
         }
