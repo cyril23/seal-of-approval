@@ -21,6 +21,13 @@ export default class DevMenuScene extends Phaser.Scene {
         
         // Check if physics debug is currently active
         this.isPhysicsDebugActive = this.parentScene?.player?.physicsDebugEnabled || false;
+        
+        // Dynamic loading properties
+        this.loadedStartLevel = 1;
+        this.loadedEndLevel = 1;
+        this.loadBatchSize = 50; // Load 50 levels at a time
+        this.maxTotalLevels = 999999; // Effectively unlimited
+        this.levelTextMap = new Map(); // Map to track text objects by level
     }
 
     create() {
@@ -168,7 +175,7 @@ export default class DevMenuScene extends Phaser.Scene {
         
         // Instructions
         this.levelInstructions = this.add.text(GAME_WIDTH / 2, 140, 
-            'USE ↑↓ TO SELECT   ENTER TO JUMP   ESC TO GO BACK', 
+            'USE ↑↓ TO SELECT   PAGE UP/DOWN FOR ±30   ENTER TO JUMP   ESC TO GO BACK', 
             instructionStyle);
         this.levelInstructions.setOrigin(0.5);
         
@@ -309,15 +316,15 @@ export default class DevMenuScene extends Phaser.Scene {
     }
     
     createLevelList() {
-        const themeKeys = Object.keys(THEMES);
-        const listStyle = {
+        // Initialize styles for reuse
+        this.listStyle = {
             fontSize: '16px',
             fontFamily: '"Press Start 2P", monospace',
             color: '#ffffff'
         };
         
         // Enemy emoji mapping - matches EMOJIS from constants.js
-        const enemyEmojis = {
+        this.enemyEmojis = {
             'crab': '🦀',
             'hawk': '🦅',
             'human': '🚶',
@@ -325,51 +332,14 @@ export default class DevMenuScene extends Phaser.Scene {
             'polarbear': '🐻‍❄️'
         };
         
-        // Show levels 1 through current level + 100
-        const startLevel = 1;
-        const endLevel = this.currentLevel + 100;
-        
+        // Initialize level texts array
         this.levelTexts = [];
         
-        for (let level = startLevel; level <= endLevel; level++) {
-            const themeIndex = (level - 1) % themeKeys.length;
-            const themeName = themeKeys[themeIndex];
-            const theme = THEMES[themeName];
-            
-            // Position in list
-            const yPos = (level - this.currentLevel) * 25;
-            
-            // Level number and theme
-            const levelText = this.add.text(-300, yPos, `Level ${level.toString().padStart(3, ' ')}`, listStyle);
-            levelText.setData('level', level);
-            
-            // Theme name with color indicator
-            const themeText = this.add.text(-100, yPos, themeName.toUpperCase(), {
-                ...listStyle,
-                color: this.getThemeColor(themeName)
-            });
-            
-            // Enemy types
-            const enemies = theme.enemies || [];
-            const enemyString = enemies.map(e => enemyEmojis[e] || e.substr(0,3).toUpperCase()).join(' ');
-            const enemyText = this.add.text(100, yPos, enemyString, {
-                ...listStyle,
-                fontSize: '14px',
-                color: '#ff9999'
-            });
-            
-            // Add current level indicator
-            if (level === this.currentLevel) {
-                const currentText = this.add.text(250, yPos, '← CURRENT', {
-                    ...listStyle,
-                    color: '#00ff00'
-                });
-                this.levelListContainer.add(currentText);
-            }
-            
-            this.levelListContainer.add([levelText, themeText, enemyText]);
-            this.levelTexts.push({ level, levelText, themeText, enemyText, yPos });
-        }
+        // Load initial batch centered around current level
+        const initialStart = Math.max(1, this.currentLevel - this.loadBatchSize);
+        const initialEnd = Math.min(this.currentLevel + this.maxTotalLevels, this.currentLevel + this.loadBatchSize);
+        
+        this.loadLevelBatch(initialStart, initialEnd);
         
         // Level selection indicator
         this.levelSelectionIndicator = this.add.text(-330, 0, '>', {
@@ -391,6 +361,125 @@ export default class DevMenuScene extends Phaser.Scene {
         }
     }
     
+    loadLevelBatch(startLevel, endLevel) {
+        const themeKeys = Object.keys(THEMES);
+        
+        logger.debug(`[DD MENU] Loading level batch: ${startLevel} to ${endLevel}`);
+        
+        // Update loaded range
+        this.loadedStartLevel = Math.min(this.loadedStartLevel || startLevel, startLevel);
+        this.loadedEndLevel = Math.max(this.loadedEndLevel || endLevel, endLevel);
+        
+        let loadedCount = 0;
+        for (let level = startLevel; level <= endLevel; level++) {
+            // Skip if already loaded
+            if (this.levelTextMap.has(level)) continue;
+            
+            const themeIndex = (level - 1) % themeKeys.length;
+            const themeName = themeKeys[themeIndex];
+            const theme = THEMES[themeName];
+            
+            // Position in list
+            const yPos = (level - this.currentLevel) * 25;
+            
+            // Level number and theme
+            const levelText = this.add.text(-300, yPos, `Level ${level.toString().padStart(3, ' ')}`, this.listStyle);
+            levelText.setData('level', level);
+            
+            // Theme name with color indicator
+            const themeText = this.add.text(-100, yPos, themeName.toUpperCase(), {
+                ...this.listStyle,
+                color: this.getThemeColor(themeName)
+            });
+            
+            // Enemy types
+            const enemies = theme.enemies || [];
+            const enemyString = enemies.map(e => this.enemyEmojis[e] || e.substr(0,3).toUpperCase()).join(' ');
+            const enemyText = this.add.text(100, yPos, enemyString, {
+                ...this.listStyle,
+                fontSize: '14px',
+                color: '#ff9999'
+            });
+            
+            // Create level item object
+            const levelItem = { 
+                level, 
+                levelText, 
+                themeText, 
+                enemyText, 
+                yPos,
+                currentText: null
+            };
+            
+            // Add current level indicator
+            if (level === this.currentLevel) {
+                const currentText = this.add.text(250, yPos, '← CURRENT', {
+                    ...this.listStyle,
+                    color: '#00ff00'
+                });
+                levelItem.currentText = currentText;
+                this.levelListContainer.add(currentText);
+            }
+            
+            this.levelListContainer.add([levelText, themeText, enemyText]);
+            this.levelTexts.push(levelItem);
+            this.levelTextMap.set(level, levelItem);
+            loadedCount++;
+        }
+        
+        // Sort levelTexts array by level number
+        this.levelTexts.sort((a, b) => a.level - b.level);
+        
+        logger.debug(`[DD MENU] Loaded ${loadedCount} levels. Total loaded range: ${this.loadedStartLevel} to ${this.loadedEndLevel} (${this.levelTextMap.size} total)`);
+    }
+    
+    checkAndLoadMoreLevels() {
+        const loadThreshold = 20; // Load more when within 20 levels of edge
+        const cleanupDistance = 150; // Remove levels more than 150 away
+        
+        // Check if we need to load more levels at the boundaries
+        if (this.selectedLevel - this.loadedStartLevel < loadThreshold && this.loadedStartLevel > 1) {
+            const newStart = Math.max(1, this.loadedStartLevel - this.loadBatchSize);
+            this.loadLevelBatch(newStart, this.loadedStartLevel - 1);
+        }
+        
+        const maxLevel = this.currentLevel + this.maxTotalLevels;
+        if (this.loadedEndLevel - this.selectedLevel < loadThreshold && this.loadedEndLevel < maxLevel) {
+            const newEnd = Math.min(maxLevel, this.loadedEndLevel + this.loadBatchSize);
+            this.loadLevelBatch(this.loadedEndLevel + 1, newEnd);
+        }
+        
+        // Clean up distant levels to maintain performance
+        const beforeCleanup = this.levelTexts.length;
+        this.levelTexts = this.levelTexts.filter(item => {
+            const distance = Math.abs(item.level - this.selectedLevel);
+            if (distance > cleanupDistance) {
+                // Remove from container and destroy
+                item.levelText.destroy();
+                item.themeText.destroy();
+                item.enemyText.destroy();
+                if (item.currentText) item.currentText.destroy();
+                this.levelTextMap.delete(item.level);
+                
+                // Update loaded range
+                if (item.level === this.loadedStartLevel) {
+                    this.loadedStartLevel = Math.min(...this.levelTextMap.keys());
+                }
+                if (item.level === this.loadedEndLevel) {
+                    this.loadedEndLevel = Math.max(...this.levelTextMap.keys());
+                }
+                
+                return false;
+            }
+            return true;
+        });
+        
+        const removedCount = beforeCleanup - this.levelTexts.length;
+        if (removedCount > 0) {
+            logger.debug(`[DD MENU] Cleaned up ${removedCount} distant levels. New range: ${this.loadedStartLevel} to ${this.loadedEndLevel} (${this.levelTextMap.size} total)`);
+        }
+    }
+    
     setupControls() {
         this.cursors = this.input.keyboard.createCursorKeys();
         
@@ -408,6 +497,19 @@ export default class DevMenuScene extends Phaser.Scene {
                 this.navigateMainMenu(1);
             } else if (this.menuState === 'levelSelect') {
                 this.navigateLevelMenu(1);
+            }
+        });
+        
+        // Page Up/Down navigation for level selection (30 levels at a time)
+        this.input.keyboard.on('keydown-PAGE_UP', () => {
+            if (this.menuState === 'levelSelect') {
+                this.navigateLevelMenu(-30);
+            }
+        });
+        
+        this.input.keyboard.on('keydown-PAGE_DOWN', () => {
+            if (this.menuState === 'levelSelect') {
+                this.navigateLevelMenu(30);
             }
         });
         
@@ -532,27 +634,65 @@ export default class DevMenuScene extends Phaser.Scene {
         this.mainMenuContainer.setVisible(false);
         this.levelMenuContainer.setVisible(true);
         this.titleText.setText('DEVELOPER MENU');
+        
+        // Ensure selected level is loaded
+        if (!this.levelTextMap.has(this.selectedLevel)) {
+            const batchStart = Math.max(1, this.selectedLevel - this.loadBatchSize / 2);
+            const batchEnd = Math.min(this.currentLevel + this.maxTotalLevels, this.selectedLevel + this.loadBatchSize / 2);
+            this.loadLevelBatch(batchStart, batchEnd);
+        }
+        
         this.updateLevelSelection();
     }
     
     navigateLevelMenu(direction) {
-        if (direction < 0 && this.selectedLevel > 1) {
-            this.selectedLevel--;
+        const oldLevel = this.selectedLevel;
+        
+        // Handle both single steps and page jumps
+        if (direction < 0) {
+            this.selectedLevel = Math.max(1, this.selectedLevel + direction);
         } else if (direction > 0) {
-            this.selectedLevel++;
+            // Don't go beyond the max level we're showing
+            const maxLevel = this.currentLevel + this.maxTotalLevels;
+            this.selectedLevel = Math.min(maxLevel, this.selectedLevel + direction);
         }
         
-        this.updateLevelSelection();
-        this.scrollList();
+        // Only update if level actually changed
+        if (this.selectedLevel !== oldLevel) {
+            // Check if we need to load more levels
+            this.checkAndLoadMoreLevels();
+            
+            // If selected level is not loaded yet, load a batch around it
+            if (!this.levelTextMap.has(this.selectedLevel)) {
+                const batchStart = Math.max(1, this.selectedLevel - this.loadBatchSize / 2);
+                const batchEnd = Math.min(this.currentLevel + this.maxTotalLevels, this.selectedLevel + this.loadBatchSize / 2);
+                this.loadLevelBatch(batchStart, batchEnd);
+            }
+            
+            this.updateLevelSelection();
+            this.scrollList();
+        }
     }
     
     updateLevelSelection() {
         // Find the text object for the selected level
-        const selectedItem = this.levelTexts.find(item => item.level === this.selectedLevel);
+        const selectedItem = this.levelTextMap.get(this.selectedLevel);
         
         if (selectedItem) {
-            // Position the selection indicator
-            this.levelSelectionIndicator.setY(selectedItem.yPos);
+            // Recalculate Y positions for all visible items based on selected level
+            this.levelTexts.forEach(item => {
+                const newYPos = (item.level - this.selectedLevel) * 25;
+                item.yPos = newYPos;
+                item.levelText.setY(newYPos);
+                item.themeText.setY(newYPos);
+                item.enemyText.setY(newYPos);
+                if (item.currentText) {
+                    item.currentText.setY(newYPos);
+                }
+            });
+            
+            // Position the selection indicator at 0 (selected level position)
+            this.levelSelectionIndicator.setY(0);
             
             // Highlight selected level
             this.levelTexts.forEach(item => {
@@ -568,8 +708,8 @@ export default class DevMenuScene extends Phaser.Scene {
     }
     
     scrollList() {
-        // Smoothly scroll the list to keep selected level visible
-        const targetY = GAME_HEIGHT / 2 + 20 - (this.selectedLevel - this.currentLevel) * 25;
+        // Center the container on screen since selected level is always at y=0
+        const targetY = GAME_HEIGHT / 2 + 20;
         
         this.tweens.add({
             targets: this.levelListContainer,
