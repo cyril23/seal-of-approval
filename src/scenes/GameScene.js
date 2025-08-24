@@ -710,6 +710,9 @@ export default class GameScene extends Phaser.Scene {
         if (this.goalReached) return; // Prevent multiple triggers
         this.goalReached = true;
 
+        // Instantly pause physics to prevent enemies from moving after completion
+        this.physics.pause();
+
         // Stop timer
         this.timerEvent.destroy();
 
