@@ -18,6 +18,9 @@ export default class GameOverScene extends Phaser.Scene {
     create() {
         this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'bg_ocean');
         
+        // Use global AudioManager
+        this.audioManager = this.game.audioManager;
+        
         const gameOverText = this.add.text(GAME_WIDTH / 2, 120, 'GAME OVER', {
             fontSize: '64px',
             fontFamily: '"Press Start 2P", monospace',
@@ -53,26 +56,6 @@ export default class GameOverScene extends Phaser.Scene {
             this.time.delayedCall(1500, () => {
                 // Set the scene context for ScoreManager animations
                 this.scoreManager.scene = this;
-                
-                // Create a temporary audioManager reference for sound effects
-                this.audioManager = this.scoreManager.scene.audioManager || {
-                    playSound: (name) => {
-                        // Fallback: create temporary audio context for bonus sounds
-                        if (name === 'bonusTick') {
-                            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                            const oscillator = audioContext.createOscillator();
-                            const gainNode = audioContext.createGain();
-                            oscillator.connect(gainNode);
-                            gainNode.connect(audioContext.destination);
-                            oscillator.type = 'sine';
-                            oscillator.frequency.value = 1000;
-                            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.05);
-                            oscillator.start(audioContext.currentTime);
-                            oscillator.stop(audioContext.currentTime + 0.05);
-                        }
-                    }
-                };
                 
                 // Animate the distance bonus
                 this.scoreManager.animateBonusPoints(this.progressPoints, 'DISTANCE', () => {
