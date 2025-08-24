@@ -63,6 +63,26 @@ export default class PreloadScene extends Phaser.Scene {
                 ctx.textBaseline = 'middle';
             }
             
+            // Special handling for checkpoint - create high-resolution texture
+            if (key === 'CHECKPOINT') {
+                // Create high-res checkpoint texture for 2.5x scale equivalent
+                canvas.width = 64;
+                canvas.height = 64;
+                ctx.clearRect(0, 0, 64, 64);
+                ctx.font = '56px serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(emoji, 32, 32);
+                this.textures.addCanvas('checkpoint_hd', canvas);
+                
+                // Reset canvas for standard texture
+                canvas.width = 32;
+                canvas.height = 32;
+                ctx.clearRect(0, 0, 32, 32);
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+            }
+            
             // Create standard texture for all emojis (including seal)
             ctx.clearRect(0, 0, 32, 32);
             ctx.font = '28px serif';

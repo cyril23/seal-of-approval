@@ -3,13 +3,15 @@ import { PHYSICS, PLAYER, GAME_HEIGHT, SIZE_SYSTEM, SIZE_EFFECTS } from '../util
 import logger from '../utils/logger.js';
 
 export default class Seal {
-    constructor(scene, x, y, lives = null) {
+    constructor(scene, x, y, lives = null, initialSize = 1) {
         // Version tracking for cache verification
         logger.debug('Seal.js Version: 2.0 - Size growth system');
 
         this.scene = scene;
-        // Start with size 1 texture
-        this.sprite = scene.physics.add.sprite(x, y, 'seal_size1');
+        // Start with specified size texture (clamped to valid range)
+        this.currentSize = Math.min(Math.max(initialSize, 1), SIZE_SYSTEM.MAX_SIZE);
+        const textureKey = `seal_size${this.currentSize}`;
+        this.sprite = scene.physics.add.sprite(x, y, textureKey);
         // Enable world bounds collision for fall death detection
         // The extended bottom boundary (GAME_HEIGHT + 200) allows falling "off-screen"
         this.sprite.setCollideWorldBounds(true);
@@ -18,8 +20,7 @@ export default class Seal {
         // Use provided lives or default to initial lives for level 1
         this.lives = lives !== null ? lives : PLAYER.INITIAL_LIVES;
 
-        // Size system properties
-        this.currentSize = SIZE_SYSTEM.DEFAULT_SIZE;
+        // Size system properties (currentSize already set above)
         this.maxSize = SIZE_SYSTEM.MAX_SIZE;
         this.sizeScales = SIZE_SYSTEM.SIZE_SCALES;
 
@@ -40,8 +41,23 @@ export default class Seal {
         this.hasDoubleJumped = false;
         this.wasOnGround = false; // For debugging ground state changes
         this.hasFartAvailable = false; // Only true after eating a fish
+        
+        // Initialize timers for power-ups tracking
+        this.invincibleTimer = null;
+        this.speedTimer = null;
+        this.magnetTimer = null;
+        
+        // Track visual effects for proper cleanup
+        this.speedParticles = null;
+        this.magnetField = null;
+        this.magnetUpdateEvent = null;
 
         this.updateSizeScale();
+        
+        // Enable double jump if starting at size > 1
+        if (this.currentSize > 1) {
+            this.hasFartAvailable = true;
+        }
     }
 
     update(cursors, spaceKey) {
@@ -326,6 +342,63 @@ export default class Seal {
         this.updateSizeScale();
         this.hasFartAvailable = false; // No fart available after respawn/reset
     }
+    
+    resetPowerUps() {
+        // Reset all temporary power-ups but preserve size
+        this.invincible = false;
+        this.speedBoost = false;
+        this.hasMagnet = false;
+        this.ghostMode = false;
+        
+        // Clear any active visual effects
+        this.sprite.clearTint();
+        this.sprite.setAlpha(1);
+        
+        // Clear any active timers for power-ups
+        if (this.invincibleTimer) {
+            this.invincibleTimer.destroy();
+            this.invincibleTimer = null;
+        }
+        if (this.speedTimer) {
+            this.speedTimer.destroy();
+            this.speedTimer = null;
+        }
+        if (this.magnetTimer) {
+            this.magnetTimer.destroy();
+            this.magnetTimer = null;
+        }
+        
+        // Destroy speed boost particles if they exist
+        if (this.speedParticles) {
+            this.speedParticles.destroy();
+            this.speedParticles = null;
+        }
+        
+        // Destroy magnet field visual if it exists
+        if (this.magnetField) {
+            this.magnetField.destroy();
+            this.magnetField = null;
+        }
+        
+        // Clear magnet update event if it exists
+        if (this.magnetUpdateEvent) {
+            this.magnetUpdateEvent.destroy();
+            this.magnetUpdateEvent = null;
+        }
+        
+        // Clear dev mode particles if they exist
+        if (this.devModeParticles) {
+            this.devModeParticles.destroy();
+            this.devModeParticles = null;
+        }
+        
+        // Restore purple tint if in developer mode
+        if (this.developerMode) {
+            this.sprite.setTint(0xFF00FF);
+        }
+        
+        logger.debug('Power-ups reset for seal');
+    }
 
     takeDamage() {
         // God mode in developer mode
@@ -358,9 +431,15 @@ export default class Seal {
     setInvincible(duration) {
         this.invincible = true;
         this.sprite.setTint(0xffff00);
+        
+        // Clear any existing timer
+        if (this.invincibleTimer) {
+            this.invincibleTimer.destroy();
+        }
 
-        this.scene.time.delayedCall(duration, () => {
+        this.invincibleTimer = this.scene.time.delayedCall(duration, () => {
             this.invincible = false;
+            this.invincibleTimer = null;
             // Restore appropriate tint
             if (this.developerMode) {
                 this.sprite.setTint(0xFF00FF);  // Purple for God mode
@@ -390,8 +469,16 @@ export default class Seal {
 
     setSpeedBoost(duration) {
         this.speedBoost = true;
+        
+        // Clear any existing timer and particles
+        if (this.speedTimer) {
+            this.speedTimer.destroy();
+        }
+        if (this.speedParticles) {
+            this.speedParticles.destroy();
+        }
 
-        const particles = this.scene.add.particles(0, 0, 'speed', {
+        this.speedParticles = this.scene.add.particles(0, 0, 'speed', {
             follow: this.sprite,
             scale: { start: 0.5, end: 0 },
             speed: { min: 50, max: 100 },
@@ -399,31 +486,55 @@ export default class Seal {
             frequency: 50
         });
 
-        this.scene.time.delayedCall(duration, () => {
+        this.speedTimer = this.scene.time.delayedCall(duration, () => {
             this.speedBoost = false;
-            particles.destroy();
+            this.speedTimer = null;
+            if (this.speedParticles) {
+                this.speedParticles.destroy();
+                this.speedParticles = null;
+            }
         });
     }
 
     setMagnet(duration) {
         this.hasMagnet = true;
+        
+        // Clear any existing timer and visual effects
+        if (this.magnetTimer) {
+            this.magnetTimer.destroy();
+        }
+        if (this.magnetField) {
+            this.magnetField.destroy();
+        }
+        if (this.magnetUpdateEvent) {
+            this.magnetUpdateEvent.destroy();
+        }
 
-        const magnetField = this.scene.add.circle(this.sprite.x, this.sprite.y, 100, 0x00ffff, 0.2);
-        magnetField.setStrokeStyle(2, 0x00ffff, 0.5);
+        this.magnetField = this.scene.add.circle(this.sprite.x, this.sprite.y, 100, 0x00ffff, 0.2);
+        this.magnetField.setStrokeStyle(2, 0x00ffff, 0.5);
 
-        const updateMagnet = this.scene.time.addEvent({
+        this.magnetUpdateEvent = this.scene.time.addEvent({
             delay: 16,
             callback: () => {
-                magnetField.x = this.sprite.x;
-                magnetField.y = this.sprite.y;
+                if (this.magnetField) {
+                    this.magnetField.x = this.sprite.x;
+                    this.magnetField.y = this.sprite.y;
+                }
             },
             loop: true
         });
 
-        this.scene.time.delayedCall(duration, () => {
+        this.magnetTimer = this.scene.time.delayedCall(duration, () => {
             this.hasMagnet = false;
-            magnetField.destroy();
-            updateMagnet.destroy();
+            this.magnetTimer = null;
+            if (this.magnetField) {
+                this.magnetField.destroy();
+                this.magnetField = null;
+            }
+            if (this.magnetUpdateEvent) {
+                this.magnetUpdateEvent.destroy();
+                this.magnetUpdateEvent = null;
+            }
         });
     }
 

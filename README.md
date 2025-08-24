@@ -25,15 +25,19 @@ Control a seal character through themed levels, collecting fish and avoiding ene
 - **Spacebar**: Jump (hold for higher jumps, press again for double jump with fart effect 💨)
 - **P**: Pause game
 - **M**: Mute audio
+- **R**: Restart level (keeps current lives and score, resets seal to size 1)
+- **I**: Toggle level info overlay
 - **ESC**: Return to menu
 
 ### Game Mechanics
 
-- **Lives System**: Start with 3 lives, checkpoint saves on level entry
+- **Lives System**: Start with 1 life, gain extra lives from heart power-ups
+- **Checkpoint System**: Red flag 🚩 at 50% of level width - respawn there after death if reached
 - **Seal Growth**: Grows through 3 sizes when eating fish, shrinks when damaged
 - **Ghost Mode**: Temporary invulnerability after taking damage (when size > 1)
 - **Power-ups**: Star (invincibility), Speed boost, Magnet (attracts fish), Clock (time bonus), Heart (extra life), Mushroom (size growth)
-- **Level Progression**: Complete levels by reaching the goal flag
+- **Level Progression**: Complete levels by reaching the goal flag, seal size preserved between levels
+- **Death & Respawn**: Lose 1 life and reset to size 1, respawn at checkpoint if reached (sky drop) or level start
 - **High Scores**: Persistent high score tracking
 
 ### Enemies

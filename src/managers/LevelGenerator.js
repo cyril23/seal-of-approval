@@ -42,6 +42,9 @@ export default class LevelGenerator {
         logger.debug('Creating goal...');
         this.createGoal();
         
+        logger.debug('Creating checkpoint...');
+        this.createCheckpoint();
+        
         logger.debug('Spawning', enemyCount, 'enemies...');
         this.spawnEnemies(theme, enemyCount);
         
@@ -336,6 +339,51 @@ export default class LevelGenerator {
         
         // Store reference in scene
         this.scene.goal = goal;
+    }
+    
+    createCheckpoint() {
+        // Create checkpoint flag at approximately 50% of level width
+        const checkpointX = LEVEL_WIDTH * 0.5;  // Exactly at 50%
+        
+        // Find the nearest platform to place the checkpoint above
+        const platforms = this.scene.platforms.children.entries;
+        let nearestPlatform = null;
+        let minDistance = Infinity;
+        
+        for (const platform of platforms) {
+            const distance = Math.abs(platform.x - checkpointX);
+            if (distance < minDistance) {
+                minDistance = distance;
+                nearestPlatform = platform;
+            }
+        }
+        
+        // Place checkpoint above the nearest platform
+        let checkpointY = GAME_HEIGHT - 120;  // Default height
+        if (nearestPlatform) {
+            checkpointY = nearestPlatform.y - 40;  // Place above platform (adjusted for HD texture size)
+            // Store actual X position of checkpoint (centered on platform)
+            this.scene.checkpointX = nearestPlatform.x;
+        } else {
+            // Fallback if no platform found
+            this.scene.checkpointX = checkpointX;
+        }
+        
+        this.scene.checkpointY = checkpointY;
+        
+        // Create checkpoint flag sprite using high-res texture (no scaling needed)
+        const checkpoint = this.scene.physics.add.sprite(this.scene.checkpointX, checkpointY, 'checkpoint_hd');
+        checkpoint.setData('isCheckpoint', true);
+        
+        // Checkpoint flag stays stationary (no animation)
+        
+        // Add collision with platforms
+        this.scene.physics.add.collider(checkpoint, this.scene.platforms);
+        
+        // Store reference in scene
+        this.scene.checkpoint = checkpoint;
+        
+        logger.info(`Checkpoint created at X:${this.scene.checkpointX.toFixed(0)} (${(this.scene.checkpointX / LEVEL_WIDTH * 100).toFixed(1)}% of level)`);
     }
 
     spawnEnemies(theme, count) {

@@ -17,10 +17,11 @@ export default class GameScene extends Phaser.Scene {
         this.timeRemaining = LEVEL.TIME_LIMIT;
         this.lastDKeyTime = 0;  // For double-D detection
         this.currentLevelInfo = null;  // Store level info for 'I' key
-        this.levelStartLives = null;  // Checkpoint: lives at level start
-        this.levelStartScore = 0;  // Checkpoint: score at level start
         this.restartConfirmDialog = null;  // Restart confirmation dialog
         this.isDevMenuOpen = false;  // Track if dev menu is open
+        this.reachedCheckpoint = false;  // Track if player reached mid-level checkpoint
+        this.checkpointX = 0;  // X position of checkpoint
+        this.checkpointY = 0;  // Y position of checkpoint
     }
 
     init(data) {
@@ -31,27 +32,18 @@ export default class GameScene extends Phaser.Scene {
         this.currentLevel = data?.level || 1;
         this.initialScore = data?.score || 0;
         this.initialLives = data?.lives || null;  // Lives from previous level, or null for level 1
+        this.initialSize = data?.size || 1;  // Seal size from previous level, default to 1
         this.currentLevelInfo = null;  // Reset cached level info for new level
 
-        // Check if this is a restart or a new level
+        // Check if this is a restart (R key) - if so, force size to 1
         const isRestart = data?.isRestart || false;
-
-        // Only save checkpoint on NEW level entry, not on restart
-        if (!isRestart) {
-            this.levelStartLives = this.initialLives;
-            this.levelStartScore = this.initialScore;
-            logger.info('GameScene.init() - NEW LEVEL - Saved checkpoint:',
-                'lives:', this.levelStartLives, 'score:', this.levelStartScore);
-        } else {
-            // On restart, use the saved checkpoint values
-            this.initialLives = this.levelStartLives;
-            this.initialScore = this.levelStartScore;
-            logger.info('GameScene.init() - RESTART - Restoring checkpoint:',
-                'lives:', this.levelStartLives, 'score:', this.levelStartScore);
+        if (isRestart) {
+            this.initialSize = 1;  // Always reset to size 1 on restart
+            logger.info('GameScene.init() - RESTART - Size reset to 1');
         }
 
         logger.info('GameScene.init() - Starting level:', this.currentLevel,
-            'with score:', this.initialScore, 'and lives:', this.initialLives);
+            'with score:', this.initialScore, 'lives:', this.initialLives, 'size:', this.initialSize);
     }
 
     create() {
@@ -62,6 +54,9 @@ export default class GameScene extends Phaser.Scene {
         
         // Reset player falling flag when scene starts/restarts
         this.playerFalling = false;
+        
+        // Reset checkpoint flag when scene starts/restarts
+        this.reachedCheckpoint = false;
         
         // Explicitly reset dev menu flag when scene starts
         // This ensures it's always false regardless of how the scene was started
@@ -105,10 +100,13 @@ export default class GameScene extends Phaser.Scene {
 
         logger.debug('Creating player...');
         // Start player at left side of level
-        // Pass lives from previous level, or null for default (level 1)
-        this.player = new Seal(this, 200, GAME_HEIGHT - 200, this.initialLives);
+        // Pass lives and size from previous level (size resets to 1 on restart)
+        this.player = new Seal(this, 200, GAME_HEIGHT - 200, this.initialLives, this.initialSize);
         // Set player depth to be above platforms but below UI
         this.player.sprite.setDepth(5);
+        
+        // Reset all power-ups when starting/restarting level
+        this.player.resetPowerUps();
 
         // Apply debug settings if enabled
         if (DEBUG.PHYSICS_ENABLED) {
@@ -348,6 +346,13 @@ export default class GameScene extends Phaser.Scene {
         if (this.goal) {
             this.physics.add.overlap(this.player.sprite, this.goal, () => {
                 this.handleGoalReached();
+            });
+        }
+        
+        // Add checkpoint collision
+        if (this.checkpoint) {
+            this.physics.add.overlap(this.player.sprite, this.checkpoint, () => {
+                this.handleCheckpointReached();
             });
         }
     }
@@ -668,6 +673,39 @@ export default class GameScene extends Phaser.Scene {
         this.updateUI();
     }
 
+    handleCheckpointReached() {
+        if (this.reachedCheckpoint) return; // Prevent multiple triggers
+        this.reachedCheckpoint = true;
+        
+        logger.info('Checkpoint reached!');
+        
+        // Visual feedback - just turn the checkpoint green (no animation)
+        this.checkpoint.setTint(0x00ff00);
+        
+        // Play a success sound
+        this.audioManager.playSound('powerup');
+        
+        // Show checkpoint message
+        const checkpointText = this.add.text(this.checkpoint.x, this.checkpoint.y - 50,
+            'CHECKPOINT!', {
+            fontSize: '20px',
+            fontFamily: '"Press Start 2P", monospace',
+            color: '#00ff00',
+            stroke: '#000000',
+            strokeThickness: 3
+        });
+        checkpointText.setOrigin(0.5);
+        
+        // Animate text floating up and fading
+        this.tweens.add({
+            targets: checkpointText,
+            y: checkpointText.y - 30,
+            alpha: 0,
+            duration: 1500,
+            onComplete: () => checkpointText.destroy()
+        });
+    }
+    
     handleGoalReached() {
         if (this.goalReached) return; // Prevent multiple triggers
         this.goalReached = true;
@@ -746,9 +784,22 @@ export default class GameScene extends Phaser.Scene {
     respawnPlayer() {
         // Flash the screen red briefly
         this.cameras.main.flash(500, 255, 0, 0);
+        
+        // Determine respawn position based on checkpoint
+        let respawnX = 200;  // Default to level start
+        let respawnY = GAME_HEIGHT - 200;
+        
+        if (this.reachedCheckpoint) {
+            // Respawn at checkpoint position (drop from sky)
+            respawnX = this.checkpointX;
+            respawnY = 50;  // Start high in the sky for safe landing
+            logger.info('Respawning at checkpoint position');
+        } else {
+            logger.info('Respawning at level start');
+        }
 
-        // Reset player position to start of level
-        this.player.sprite.setPosition(200, GAME_HEIGHT - 200);
+        // Reset player position
+        this.player.sprite.setPosition(respawnX, respawnY);
         this.player.sprite.setVelocity(0, 0);
 
         // Re-enable world bounds collision for the respawned player
@@ -756,12 +807,21 @@ export default class GameScene extends Phaser.Scene {
 
         // Reset to size 1 after death
         this.player.resetSize();
+        
+        // Clear all power-ups on respawn
+        this.player.resetPowerUps();
 
         // Give temporary invincibility
         this.player.setInvincible(3000);
 
-        // Reset camera to follow player
-        this.cameras.main.scrollX = 0;
+        // Reset camera appropriately
+        if (this.reachedCheckpoint) {
+            // Set camera to checkpoint area
+            this.cameras.main.scrollX = Math.max(0, respawnX - GAME_WIDTH / 2);
+        } else {
+            // Reset camera to level start
+            this.cameras.main.scrollX = 0;
+        }
 
         // Update UI
         this.updateUI();
@@ -936,11 +996,12 @@ export default class GameScene extends Phaser.Scene {
         this.time.delayedCall(2000, () => {
             // Stop background music before restarting scene to prevent overlap
             this.audioManager.stopBackgroundMusic();
-            // Pass current lives to the next level
+            // Pass current lives AND size to the next level
             this.scene.restart({
                 level: this.currentLevel,
                 score: this.scoreManager.score,
-                lives: this.player.lives
+                lives: this.player.lives,
+                size: this.player.currentSize  // Preserve seal size between levels
             });
         });
     }
@@ -1120,11 +1181,12 @@ export default class GameScene extends Phaser.Scene {
             // Stop background music before restarting
             this.audioManager.stopBackgroundMusic();
 
-            // Restart the scene with checkpoint values
+            // Restart the scene with CURRENT values (not checkpoint)
+            // Size will be reset to 1 via isRestart flag
             this.scene.restart({
                 level: this.currentLevel,
-                score: this.levelStartScore,
-                lives: this.levelStartLives,
+                score: this.scoreManager.score,  // Keep current score
+                lives: this.player.lives,  // Keep current lives
                 isRestart: true  // Important flag to indicate this is a restart
             });
         });

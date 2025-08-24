@@ -178,7 +178,8 @@ export const EMOJIS = {
     ORCA: '🐋',
     CRAB: '🦀',
     POLARBEAR: '🐻‍❄️',
-    GOAL: '🏁'
+    GOAL: '🏁',
+    CHECKPOINT: '🚩'  // Red flag for checkpoint
 };
 
 export const SIZE_SYSTEM = {
