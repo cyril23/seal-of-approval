@@ -28,6 +28,10 @@ export default class DevMenuScene extends Phaser.Scene {
         this.loadBatchSize = 50; // Load 50 levels at a time
         this.maxTotalLevels = 999999; // Effectively unlimited
         this.levelTextMap = new Map(); // Map to track text objects by level
+        
+        // Throttle timing for PAGE_UP/DOWN keys to prevent browser crash
+        this.lastPageNavTime = 0;
+        this.pageNavThrottleDelay = 100; // Only process page navigation every 100ms
     }
 
     create() {
@@ -501,15 +505,24 @@ export default class DevMenuScene extends Phaser.Scene {
         });
         
         // Page Up/Down navigation for level selection (30 levels at a time)
+        // Throttled to prevent browser crash when keys are held down
         this.input.keyboard.on('keydown-PAGE_UP', () => {
             if (this.menuState === 'levelSelect') {
-                this.navigateLevelMenu(-30);
+                const currentTime = Date.now();
+                if (currentTime - this.lastPageNavTime >= this.pageNavThrottleDelay) {
+                    this.lastPageNavTime = currentTime;
+                    this.navigateLevelMenu(-30);
+                }
             }
         });
         
         this.input.keyboard.on('keydown-PAGE_DOWN', () => {
             if (this.menuState === 'levelSelect') {
-                this.navigateLevelMenu(30);
+                const currentTime = Date.now();
+                if (currentTime - this.lastPageNavTime >= this.pageNavThrottleDelay) {
+                    this.lastPageNavTime = currentTime;
+                    this.navigateLevelMenu(30);
+                }
             }
         });
         
