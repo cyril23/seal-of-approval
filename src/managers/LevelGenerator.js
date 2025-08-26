@@ -552,6 +552,22 @@ export default class LevelGenerator {
                     // Ocean fish float in water
                     if (type === 'fish') {
                         collectible.body.setAllowGravity(false);
+                        
+                        // Enable direct control so physics body follows tweened position
+                        // CRITICAL: Without this, fish flicker between various Y positions because
+                        // the physics body doesn't sync with the tweened sprite position
+                        collectible.body.setDirectControl(true);
+                        
+                        // Start bobbing animation AFTER physics is configured
+                        // Using collectible.y directly (no originalY capture)
+                        this.scene.tweens.add({
+                            targets: collectible,
+                            y: collectible.y - 8,  // Using collectible.y directly
+                            duration: 2000,
+                            ease: 'Sine.inOut',
+                            yoyo: true,
+                            repeat: -1
+                        });
                     }
                     
                     this.scene.collectibles.add(collectible);
