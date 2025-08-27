@@ -18,13 +18,19 @@ export default class InfoOverlay {
         logger.debug('[INFO OVERLAY UI] Creating overlay display');
 
         // Create container for all overlay elements
-        this.container = this.scene.add.container(0, 0);
+        // Position at camera center and fix to viewport
+        this.container = this.scene.add.container(
+            this.scene.cameras.main.width / 2,
+            this.scene.cameras.main.height / 2
+        );
         this.container.setDepth(1000);
+        // Use setScrollFactor method to apply to container AND all children
+        this.container.setScrollFactor(0, 0);
 
         // Semi-transparent background
         const bg = this.scene.add.rectangle(
-            this.scene.cameras.main.width / 2,
-            this.scene.cameras.main.height / 2,
+            0, // Relative to container center
+            0, // Relative to container center
             this.scene.cameras.main.width,
             this.scene.cameras.main.height,
             0x000000,
@@ -45,8 +51,8 @@ export default class InfoOverlay {
         // Main info panel - bigger size
         const panelWidth = 750;
         const panelHeight = 600;
-        const panelX = this.scene.cameras.main.width / 2;
-        const panelY = this.scene.cameras.main.height / 2;
+        const panelX = 0;  // Relative to container center
+        const panelY = 0;  // Relative to container center
 
         const panel = this.scene.add.rectangle(
             panelX,
@@ -69,8 +75,8 @@ export default class InfoOverlay {
         // Title
         const titleText = this.getThemeTitle(levelNumber, theme);
         const title = this.scene.add.text(
-            panelX,
-            panelY - panelHeight/2 + 40,
+            0,  // Relative to container center
+            -panelHeight/2 + 40,  // Relative to container center
             titleText,
             {
                 fontSize: '40px',
@@ -83,11 +89,11 @@ export default class InfoOverlay {
         this.container.add(title);
 
         // Environment section
-        let currentY = panelY - panelHeight/2 + 100;
+        let currentY = -panelHeight/2 + 100;  // Relative to container center
         
         if (info.environment && info.environment.length > 0) {
             const envTitle = this.scene.add.text(
-                panelX - panelWidth/2 + 40,
+                -panelWidth/2 + 40,  // Relative to container center
                 currentY,
                 'ENVIRONMENT:',
                 {
@@ -102,7 +108,7 @@ export default class InfoOverlay {
 
             info.environment.forEach(feature => {
                 const text = this.scene.add.text(
-                    panelX - panelWidth/2 + 50,
+                    -panelWidth/2 + 50,  // Relative to container center
                     currentY,
                     `• ${feature}`,
                     {
@@ -120,7 +126,7 @@ export default class InfoOverlay {
         // Creatures section
         if (info.creatures && info.creatures.length > 0) {
             const creaturesTitle = this.scene.add.text(
-                panelX - panelWidth/2 + 40,
+                -panelWidth/2 + 40,  // Relative to container center
                 currentY,
                 'CREATURES:',
                 {
@@ -136,7 +142,7 @@ export default class InfoOverlay {
             info.creatures.forEach(creature => {
                 // Creature name with emoji
                 const nameText = this.scene.add.text(
-                    panelX - panelWidth/2 + 50,
+                    -panelWidth/2 + 50,  // Relative to container center
                     currentY,
                     `${creature.emoji} ${creature.name}`,
                     {
@@ -152,7 +158,7 @@ export default class InfoOverlay {
                 // Creature behaviors
                 creature.behaviors.forEach(behavior => {
                     const behaviorText = this.scene.add.text(
-                        panelX - panelWidth/2 + 70,
+                        -panelWidth/2 + 70,  // Relative to container center
                         currentY,
                         `• ${behavior}`,
                         {
@@ -170,8 +176,8 @@ export default class InfoOverlay {
 
         // Start prompt
         const prompt = this.scene.add.text(
-            panelX,
-            panelY + panelHeight/2 - 45,
+            0,  // Relative to container center
+            panelHeight/2 - 45,  // Relative to container center
             'Press SPACE or I to begin',
             {
                 fontSize: '28px',
