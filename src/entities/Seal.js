@@ -47,6 +47,11 @@ export default class Seal {
         this.speedTimer = null;
         this.magnetTimer = null;
         
+        // Track remaining time when paused
+        this.invincibleTimeRemaining = 0;
+        this.speedTimeRemaining = 0;
+        this.magnetTimeRemaining = 0;
+        
         // Track visual effects for proper cleanup
         this.speedParticles = null;
         this.magnetField = null;
@@ -536,6 +541,83 @@ export default class Seal {
                 this.magnetUpdateEvent = null;
             }
         });
+    }
+
+    pausePowerUps() {
+        // Store remaining time for each active power-up and destroy timers
+        if (this.invincibleTimer) {
+            this.invincibleTimeRemaining = this.invincibleTimer.getRemaining();
+            this.invincibleTimer.destroy();
+            this.invincibleTimer = null;
+        }
+
+        if (this.speedTimer) {
+            this.speedTimeRemaining = this.speedTimer.getRemaining();
+            this.speedTimer.destroy();
+            this.speedTimer = null;
+        }
+
+        if (this.magnetTimer) {
+            this.magnetTimeRemaining = this.magnetTimer.getRemaining();
+            this.magnetTimer.destroy();
+            this.magnetTimer = null;
+        }
+
+        // Also pause the magnet field update event
+        if (this.magnetUpdateEvent) {
+            this.magnetUpdateEvent.paused = true;
+        }
+    }
+
+    resumePowerUps() {
+        // Restore power-up timers with remaining time
+        if (this.invincible && this.invincibleTimeRemaining > 0) {
+            this.invincibleTimer = this.scene.time.delayedCall(this.invincibleTimeRemaining, () => {
+                this.invincible = false;
+                this.invincibleTimer = null;
+                // Restore appropriate tint
+                if (this.developerMode) {
+                    this.sprite.setTint(0xFF00FF);  // Purple for God mode
+                } else {
+                    this.sprite.clearTint();
+                }
+                this.sprite.setAlpha(1);
+            });
+            this.invincibleTimeRemaining = 0;
+        }
+
+        if (this.speedBoost && this.speedTimeRemaining > 0) {
+            this.speedTimer = this.scene.time.delayedCall(this.speedTimeRemaining, () => {
+                this.speedBoost = false;
+                this.speedTimer = null;
+                if (this.speedParticles) {
+                    this.speedParticles.destroy();
+                    this.speedParticles = null;
+                }
+            });
+            this.speedTimeRemaining = 0;
+        }
+
+        if (this.hasMagnet && this.magnetTimeRemaining > 0) {
+            this.magnetTimer = this.scene.time.delayedCall(this.magnetTimeRemaining, () => {
+                this.hasMagnet = false;
+                this.magnetTimer = null;
+                if (this.magnetField) {
+                    this.magnetField.destroy();
+                    this.magnetField = null;
+                }
+                if (this.magnetUpdateEvent) {
+                    this.magnetUpdateEvent.destroy();
+                    this.magnetUpdateEvent = null;
+                }
+            });
+            this.magnetTimeRemaining = 0;
+        }
+
+        // Resume magnet field update event
+        if (this.magnetUpdateEvent) {
+            this.magnetUpdateEvent.paused = false;
+        }
     }
 
     createDoubleJumpEffect() {

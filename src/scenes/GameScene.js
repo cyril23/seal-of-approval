@@ -890,9 +890,17 @@ export default class GameScene extends Phaser.Scene {
 
         if (this.isPaused) {
             this.physics.pause();
+            // Pause power-up timers
+            if (this.player) {
+                this.player.pausePowerUps();
+            }
             logger.info('[PAUSE] Game paused');
         } else {
             this.physics.resume();
+            // Resume power-up timers
+            if (this.player) {
+                this.player.resumePowerUps();
+            }
             logger.info('[PAUSE] Game resumed');
         }
     }
@@ -1033,6 +1041,11 @@ export default class GameScene extends Phaser.Scene {
         // Pause physics and timer
         this.physics.pause();
         this.isLevelStarted = false;
+        
+        // Pause power-up timers
+        if (this.player) {
+            this.player.pausePowerUps();
+        }
 
         // Get info for this level (or use stored info if available)
         if (!this.currentLevelInfo) {
@@ -1050,12 +1063,22 @@ export default class GameScene extends Phaser.Scene {
         // Resume physics and start the level
         this.physics.resume();
         this.isLevelStarted = true;
+        
+        // Resume power-up timers
+        if (this.player) {
+            this.player.resumePowerUps();
+        }
     }
 
     showRestartConfirmation() {
         // Pause the game
         this.isPaused = true;
         this.physics.pause();
+        
+        // Pause power-up timers
+        if (this.player) {
+            this.player.pausePowerUps();
+        }
 
         // Create semi-transparent background
         const bg = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.8);
@@ -1147,6 +1170,11 @@ export default class GameScene extends Phaser.Scene {
             this.closeRestartDialog();
             this.isPaused = false;
             this.physics.resume();
+            
+            // Resume power-up timers
+            if (this.player) {
+                this.player.resumePowerUps();
+            }
         };
 
         enterKey.once('down', confirmHandler);
